@@ -2479,6 +2479,7 @@ dependencies = [
  "paste",
  "pymath",
  "rand_core 0.9.3",
+ "ruff_python_trivia",
  "rustix",
  "rustpython-common",
  "rustpython-derive",
