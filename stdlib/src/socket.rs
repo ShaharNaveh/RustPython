@@ -10,6 +10,14 @@ pub fn make_module(vm: &VirtualMachine) -> PyRef<PyModule> {
     _socket::make_module(vm)
 }
 
+#[cfg(target_arch = "wasm32")]
+#[pymodule]
+mod _socket {
+    #[pyattr]
+    pub const __WASI_RIFLAGS_RECV_DATA_TRUNCATED: i32 = 2;
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 #[pymodule]
 mod _socket {
     use crate::common::lock::{PyMappedRwLockReadGuard, PyRwLock, PyRwLockReadGuard};

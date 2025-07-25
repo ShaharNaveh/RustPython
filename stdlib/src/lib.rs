@@ -43,7 +43,6 @@ mod statistics;
 mod suggestions;
 // TODO: maybe make this an extension module, if we ever get those
 // mod re;
-#[cfg(not(target_arch = "wasm32"))]
 pub mod socket;
 #[cfg(all(unix, not(target_os = "redox")))]
 mod syslog;
