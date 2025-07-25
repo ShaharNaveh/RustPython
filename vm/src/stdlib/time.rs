@@ -121,7 +121,7 @@ mod decl {
         Ok(())
     }
 
-    #[cfg(not(target_os = "wasi"))]
+    //#[cfg(not(target_os = "wasi"))]
     #[pyfunction]
     fn time_ns(vm: &VirtualMachine) -> PyResult<u64> {
         Ok(duration_since_system_now(vm)?.as_nanos() as u64)
