@@ -43,7 +43,6 @@ mod statistics;
 mod suggestions;
 // TODO: maybe make this an extension module, if we ever get those
 // mod re;
-#[cfg(not(target_arch = "wasm32"))]
 pub mod socket;
 #[cfg(all(unix, not(target_os = "redox")))]
 mod syslog;
@@ -140,6 +139,7 @@ pub fn get_module_inits() -> impl Iterator<Item = (Cow<'static, str>, StdlibInit
             "zlib" => zlib::make_module,
             "_statistics" => statistics::make_module,
             "_suggestions" => suggestions::make_module,
+            "_socket" => socket::make_module,
             // crate::vm::sysmodule::sysconfigdata_name() => sysconfigdata::make_module,
         }
         #[cfg(any(unix, target_os = "wasi"))]
@@ -153,7 +153,6 @@ pub fn get_module_inits() -> impl Iterator<Item = (Cow<'static, str>, StdlibInit
         #[cfg(not(target_arch = "wasm32"))]
         {
             "_multiprocessing" => multiprocessing::make_module,
-            "_socket" => socket::make_module,
         }
         #[cfg(not(any(target_os = "android", target_arch = "wasm32")))]
         {
