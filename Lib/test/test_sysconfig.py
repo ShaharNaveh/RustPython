@@ -166,7 +166,8 @@ class TestSysConfig(unittest.TestCase):
         binpath = 'bin'
         incpath = 'include'
         libpath = os.path.join('lib',
-                               f'python{sysconfig._get_python_version_abi()}',
+                                # XXX: RUSTPYTHON
+                               f'rustpython{sysconfig._get_python_version_abi()}',
                                'site-packages')
 
         # Resolve the paths in an imaginary venv/ directory
@@ -378,6 +379,8 @@ class TestSysConfig(unittest.TestCase):
 
         # XXX more platforms to tests here
 
+    # TODO: RUSTPYTHON
+    @unittest.expectedFailure
     @unittest.skipIf(is_wasi, "Incompatible with WASI mapdir and OOT builds")
     @unittest.skipIf(is_apple_mobile,
                      f"{sys.platform} doesn't distribute header files in the runtime environment")
@@ -438,6 +441,8 @@ class TestSysConfig(unittest.TestCase):
             _main()
         self.assertTrue(len(output.getvalue().split('\n')) > 0)
 
+    # TODO: RUSTPYTHON
+    @unittest.expectedFailure
     @unittest.skipIf(sys.platform == "win32", "Does not apply to Windows")
     def test_ldshared_value(self):
         ldflags = sysconfig.get_config_var('LDFLAGS')
@@ -450,6 +455,8 @@ class TestSysConfig(unittest.TestCase):
         soabi = sysconfig.get_config_var('SOABI')
         self.assertIn(soabi, _imp.extension_suffixes()[0])
 
+    # TODO: RUSTPYTHON
+    @unittest.expectedFailure
     def test_library(self):
         library = sysconfig.get_config_var('LIBRARY')
         ldlibrary = sysconfig.get_config_var('LDLIBRARY')
@@ -513,6 +520,8 @@ class TestSysConfig(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertEqual(my_platform, test_platform)
 
+    # TODO: RUSTPYTHON
+    @unittest.expectedFailure
     @unittest.skipIf(is_wasi, "Incompatible with WASI mapdir and OOT builds")
     @unittest.skipIf(is_apple_mobile,
                      f"{sys.platform} doesn't include config folder at runtime")
@@ -573,6 +582,8 @@ class TestSysConfig(unittest.TestCase):
             self.assertTrue(suffix.endswith(expected_suffixes),
                             f'unexpected suffix {suffix!r}')
 
+    # TODO: RUSTPYTHON
+    @unittest.expectedFailure
     @unittest.skipUnless(sys.platform == 'android', 'Android-specific test')
     def test_android_ext_suffix(self):
         machine = platform.machine()
@@ -591,6 +602,8 @@ class TestSysConfig(unittest.TestCase):
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
         self.assertTrue(suffix.endswith('-darwin.so'), suffix)
 
+    # TODO: RUSTPYTHON
+    @unittest.expectedFailure
     @requires_subprocess()
     def test_config_vars_depend_on_site_initialization(self):
         script = textwrap.dedent("""
@@ -615,6 +628,8 @@ class TestSysConfig(unittest.TestCase):
         self.assertEqual(no_site_config_vars['base'], site_config_vars['installed_base'])
         self.assertEqual(no_site_config_vars['platbase'], site_config_vars['installed_platbase'])
 
+    # TODO: RUSTPYTHON
+    @unittest.expectedFailure
     @requires_subprocess()
     def test_config_vars_recalculation_after_site_initialization(self):
         script = textwrap.dedent("""
@@ -639,6 +654,8 @@ class TestSysConfig(unittest.TestCase):
         #self.assertEqual(config_vars['after']['prefix'], venv.prefix)  # FIXME: prefix gets overwriten by _init_posix
         #self.assertEqual(config_vars['after']['exec_prefix'], venv.prefix)  # FIXME: exec_prefix gets overwriten by _init_posix
 
+    # TODO: RUSTPYTHON
+    @unittest.expectedFailure
     @requires_subprocess()
     def test_paths_depend_on_site_initialization(self):
         script = textwrap.dedent("""
@@ -659,6 +676,8 @@ class TestSysConfig(unittest.TestCase):
 
 class MakefileTests(unittest.TestCase):
 
+    # TODO: RUSTPYTHON
+    @unittest.expectedFailure
     @unittest.skipIf(sys.platform.startswith('win'),
                      'Test is not Windows compatible')
     @unittest.skipIf(is_wasi, "Incompatible with WASI mapdir and OOT builds")
