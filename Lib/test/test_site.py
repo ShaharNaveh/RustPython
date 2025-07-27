@@ -323,9 +323,7 @@ class HelperFunctionsTests(unittest.TestCase):
         self.assertEqual(site.USER_SITE, user_site)
         self.assertTrue(user_site.startswith(site.USER_BASE), user_site)
         self.assertEqual(site.USER_BASE, site.getuserbase())
-    
-    # TODO: RUSTPYTHON
-    @unittest.expectedFailure
+
     def test_getsitepackages(self):
         site.PREFIXES = ['xoxo']
         dirs = site.getsitepackages()
