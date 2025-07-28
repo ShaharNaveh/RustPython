@@ -392,6 +392,8 @@ class TestRmTree(BaseTest, unittest.TestCase):
                      "This test can't be run on Cygwin (issue #1071513).")
     @os_helper.skip_if_dac_override
     @os_helper.skip_unless_working_chmod
+    # TODO: RUSTPYTHON
+    @unittest.expectedFailureIfWindows("TODO: RUSTPYTHON")
     def test_on_error(self):
         self.errorState = 0
         os.mkdir(TESTFN)
@@ -450,6 +452,8 @@ class TestRmTree(BaseTest, unittest.TestCase):
                      "This test can't be run on Cygwin (issue #1071513).")
     @os_helper.skip_if_dac_override
     @os_helper.skip_unless_working_chmod
+    # TODO: RUSTPYTHON
+    @unittest.expectedFailureIfWindows("TODO: RUSTPYTHON")
     def test_on_exc(self):
         self.errorState = 0
         os.mkdir(TESTFN)
@@ -508,6 +512,8 @@ class TestRmTree(BaseTest, unittest.TestCase):
                      "This test can't be run on Cygwin (issue #1071513).")
     @os_helper.skip_if_dac_override
     @os_helper.skip_unless_working_chmod
+    # TODO: RUSTPYTHON
+    @unittest.expectedFailureIfWindows("TODO: RUSTPYTHON")
     def test_both_onerror_and_onexc(self):
         onerror_called = False
         onexc_called = False

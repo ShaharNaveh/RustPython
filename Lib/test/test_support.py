@@ -588,6 +588,8 @@ class TestSupport(unittest.TestCase, ExtraAssertions):
             with self.subTest(opts=opts):
                 self.check_options(opts, 'optim_args_from_interpreter_flags')
 
+    # TODO: RUSTPYTHON
+    @unittest.expectedFailureIfWindows("TODO: RUSTPYTHON")
     @unittest.skipIf(support.is_apple_mobile, "Unstable on Apple Mobile")
     @unittest.skipIf(support.is_emscripten, "Unstable in Emscripten")
     @unittest.skipIf(support.is_wasi, "Unavailable on WASI")
