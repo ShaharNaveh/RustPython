@@ -666,6 +666,7 @@ mod decl {
         }
     }
 
+    #[derive(Default)]
     struct GroupByState {
         current_value: Option<PyObjectRef>,
         current_key: Option<PyObjectRef>,
@@ -729,12 +730,7 @@ mod decl {
             Self {
                 iterable,
                 key_func: key.flatten(),
-                state: PyMutex::new(GroupByState {
-                    current_key: None,
-                    current_value: None,
-                    next_group: false,
-                    grouper: None,
-                }),
+                state: PyMutex::new(GroupByState::default()),
             }
             .into_ref_with_type(vm, cls)
             .map(Into::into)
@@ -1385,7 +1381,7 @@ mod decl {
             }
 
             let mut pools: Vec<PyObjectRef> = Vec::new();
-            for element in zelf.pools.iter() {
+            for element in &zelf.pools {
                 pools.push(element.clone().into_pytuple(vm).into());
             }
 

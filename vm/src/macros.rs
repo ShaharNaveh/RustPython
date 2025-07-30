@@ -46,7 +46,7 @@ macro_rules! extend_class {
 macro_rules! py_namespace {
     ( $vm:expr, { $($name:expr => $value:expr),* $(,)* }) => {
         {
-            let namespace = $crate::builtins::PyNamespace::new_ref(&$vm.ctx);
+            let namespace = $crate::object::PyPayload::into_ref($crate::builtins::PyNamespace {}, &$vm.ctx);
             let obj = $crate::object::AsObject::as_object(&namespace);
             $(
                 obj.generic_setattr($vm.ctx.intern_str($name), $crate::function::PySetterValue::Assign($value.into()), $vm).unwrap();
@@ -183,6 +183,15 @@ macro_rules! match_class {
 macro_rules! identifier(
     ($as_ctx:expr, $name:ident) => {
         $as_ctx.as_ref().names.$name
+    };
+);
+
+#[macro_export]
+macro_rules! identifier_utf8(
+    ($as_ctx:expr, $name:ident) => {
+        // Safety: All known identifiers are ascii strings.
+        #[allow(clippy::macro_metavars_in_unsafe)]
+        unsafe { $as_ctx.as_ref().names.$name.as_object().downcast_unchecked_ref::<$crate::builtins::PyUtf8Str>() }
     };
 );
 
