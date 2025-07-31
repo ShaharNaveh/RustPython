@@ -123,32 +123,45 @@ impl fmt::Display for CompilerScope {
 }
 
 /// Indicator for a single symbol what the scope of this symbol is.
-/// The scope can be unknown, which is unfortunate, but not impossible.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SymbolScope {
-    Unknown,
-    Local,
-    GlobalExplicit,
-    GlobalImplicit,
-    Free,
-    Cell,
-}
+#[non_exhaustive]
+pub struct SymbolScope;
 
+impl SymbolScope {
+    /// The scope can be unknown, which is unfortunate, but not impossible.
+    pub const UNKNOWN: u16 = 0;
+
+    pub const LOCAL: u16 = 1;
+
+    pub const GLOBAL_EXPLICIT: u16 = 2;
+
+    pub const GLOBAL_IMPLICIT: u16 = 3;
+
+    pub const FREE: u16 = 4;
+
+    pub const CELL: u16 = 5;
+}
 bitflags! {
     #[derive(Copy, Clone, Debug, PartialEq)]
     pub struct SymbolFlags: u16 {
-        const REFERENCED = 0x001;
-        const ASSIGNED = 0x002;
-        const PARAMETER = 0x004;
-        const ANNOTATED = 0x008;
-        const IMPORTED = 0x010;
-        const NONLOCAL = 0x020;
-        // indicates if the symbol gets a value assigned by a named expression in a comprehension
-        // this is required to correct the scope in the analysis.
-        const ASSIGNED_IN_COMPREHENSION = 0x040;
-        // indicates that the symbol is used a bound iterator variable. We distinguish this case
-        // from normal assignment to detect disallowed re-assignment to iterator variables.
-        const ITER = 0x080;
+        /// global stmt
+        const DEF_GLOBAL = 1;
+
+        /// assignment in code block
+        const DEF_LOCAL = 2;
+
+        /// formal parameter
+        const DEF_PARAM = 2 << 1;
+
+        /// nonlocal stmt
+        const DEF_NONLOCAL = 2 << 2;
+
+        /// name is used
+        const USE = 2 << 3;
+
+        /// name used but not defined in nested block
+        const DEF_FREE = 2 << 4;
+
+        /// free variable from class's method.
         /// indicates that the symbol is a free variable in a class method from the scope that the
         /// class is defined in, e.g.:
         /// ```python
@@ -157,8 +170,24 @@ bitflags! {
         ///         def method(self):
         ///             return x // is_free_class
         /// ```
-        const FREE_CLASS = 0x100;
-        const BOUND = Self::ASSIGNED.bits() | Self::PARAMETER.bits() | Self::IMPORTED.bits() | Self::ITER.bits();
+        const DEF_FREE_CLASS = 2 << 5;
+
+        /// assignment occurred via import
+        const DEF_IMPORT= 2 << 6;
+
+        /// this name is annotated
+        const DEF_ANNOT = 2 << 7;
+
+        /// this name is a comprehension iteration variable
+        const DEF_COMP_ITER = 2 << 8;
+
+        /// this name is a type parameter
+        const DEF_TYPE_PARAM = 2 << 9
+
+        /// this name is a cell in an inlined comprehension
+        const DEF_COMP_CELL = 2 << 10;
+
+        const BOUND = Self::DEF_LOCAL.bits() | Self::DEF_PARAM.bits() | Self::DEF_IMPORT.bits();
     }
 }
 
@@ -176,7 +205,7 @@ impl Symbol {
         Self {
             name: name.to_owned(),
             // table,
-            scope: SymbolScope::Unknown,
+            scope: SymbolScope::UNKNOWN,
             flags: SymbolFlags::empty(),
         }
     }
@@ -184,12 +213,12 @@ impl Symbol {
     pub const fn is_global(&self) -> bool {
         matches!(
             self.scope,
-            SymbolScope::GlobalExplicit | SymbolScope::GlobalImplicit
+            SymbolScope::GLOBAL_EXPLICIT | SymbolScope::GLOBAL_IMPLICIT
         )
     }
 
     pub const fn is_local(&self) -> bool {
-        matches!(self.scope, SymbolScope::Local | SymbolScope::Cell)
+        matches!(self.scope, SymbolScope::LOCAL | SymbolScope::CELL)
     }
 
     pub const fn is_bound(&self) -> bool {
@@ -241,7 +270,7 @@ fn analyze_symbol_table(symbol_table: &mut SymbolTable) -> SymbolTableResult {
 fn drop_class_free(symbol_table: &mut SymbolTable) {
     // Check if __class__ is used as a free variable
     if let Some(class_symbol) = symbol_table.symbols.get("__class__") {
-        if class_symbol.scope == SymbolScope::Free {
+        if class_symbol.scope == SymbolScope::FREE {
             symbol_table.needs_class_closure = true;
             // Note: In CPython, the symbol is removed from the free set,
             // but in RustPython we handle this differently during code generation
@@ -250,7 +279,7 @@ fn drop_class_free(symbol_table: &mut SymbolTable) {
 
     // Check if __classdict__ is used as a free variable
     if let Some(classdict_symbol) = symbol_table.symbols.get("__classdict__") {
-        if classdict_symbol.scope == SymbolScope::Free {
+        if classdict_symbol.scope == SymbolScope::FREE {
             symbol_table.needs_classdict = true;
             // Note: In CPython, the symbol is removed from the free set,
             // but in RustPython we handle this differently during code generation
@@ -371,13 +400,13 @@ impl SymbolTableAnalyzer {
             self.analyze_symbol_comprehension(symbol, 0)?
         } else {
             match symbol.scope {
-                SymbolScope::Free => {
+                SymbolScope::FREE => {
                     if !self.tables.as_ref().is_empty() {
                         let scope_depth = self.tables.as_ref().len();
                         // check if the name is already defined in any outer scope
                         // therefore
                         if scope_depth < 2
-                            || self.found_in_outer_scope(&symbol.name) != Some(SymbolScope::Free)
+                            || self.found_in_outer_scope(&symbol.name) != Some(SymbolScope::FREE)
                         {
                             return Err(SymbolTableError {
                                 error: format!("no binding for nonlocal '{}' found", symbol.name),
@@ -396,25 +425,25 @@ impl SymbolTableAnalyzer {
                         });
                     }
                 }
-                SymbolScope::GlobalExplicit | SymbolScope::GlobalImplicit => {
+                SymbolScope::GLOBAL_EXPLICIT | SymbolScope::GLOBAL_IMPLICIT => {
                     // TODO: add more checks for globals?
                 }
-                SymbolScope::Local | SymbolScope::Cell => {
+                SymbolScope::LOCAL | SymbolScope::CELL => {
                     // all is well
                 }
-                SymbolScope::Unknown => {
+                SymbolScope::UNKNOWN => {
                     // Try hard to figure out what the scope of this symbol is.
                     let scope = if symbol.is_bound() {
                         self.found_in_inner_scope(sub_tables, &symbol.name, st_typ)
-                            .unwrap_or(SymbolScope::Local)
+                            .unwrap_or(SymbolScope::LOCAL)
                     } else if let Some(scope) = self.found_in_outer_scope(&symbol.name) {
                         scope
                     } else if self.tables.is_empty() {
                         // Don't make assumptions when we don't know.
-                        SymbolScope::Unknown
+                        SymbolScope::UNKNOWN
                     } else {
                         // If there are scopes above we assume global.
-                        SymbolScope::GlobalImplicit
+                        SymbolScope::GLOBAL_IMPLICIT
                     };
                     symbol.scope = scope;
                 }
@@ -433,8 +462,8 @@ impl SymbolTableAnalyzer {
             }
             if let Some(sym) = symbols.get(name) {
                 match sym.scope {
-                    SymbolScope::GlobalExplicit => return Some(SymbolScope::GlobalExplicit),
-                    SymbolScope::GlobalImplicit => {}
+                    SymbolScope::GLOBAL_EXPLICIT => return Some(SymbolScope::GLOBAL_EXPLICIT),
+                    SymbolScope::GLOBAL_IMPLICIT => {}
                     _ => {
                         if sym.is_bound() {
                             decl_depth = Some(i);
@@ -455,19 +484,19 @@ impl SymbolTableAnalyzer {
                     } else {
                         let mut symbol = Symbol::new(name);
                         symbol.flags.insert(SymbolFlags::FREE_CLASS);
-                        symbol.scope = SymbolScope::Free;
+                        symbol.scope = SymbolScope::FREE;
                         table.insert(name.to_owned(), symbol);
                     }
                 } else if !table.contains_key(name) {
                     let mut symbol = Symbol::new(name);
-                    symbol.scope = SymbolScope::Free;
+                    symbol.scope = SymbolScope::FREE;
                     // symbol.is_referenced = true;
                     table.insert(name.to_owned(), symbol);
                 }
             }
         }
 
-        decl_depth.map(|_| SymbolScope::Free)
+        decl_depth.map(|_| SymbolScope::FREE)
     }
 
     fn found_in_inner_scope(
@@ -478,16 +507,16 @@ impl SymbolTableAnalyzer {
     ) -> Option<SymbolScope> {
         sub_tables.iter().find_map(|st| {
             let sym = st.symbols.get(name)?;
-            if sym.scope == SymbolScope::Free || sym.flags.contains(SymbolFlags::FREE_CLASS) {
+            if sym.scope == SymbolScope::FREE || sym.flags.contains(SymbolFlags::FREE_CLASS) {
                 if st_typ == CompilerScope::Class && name != "__class__" {
                     None
                 } else {
-                    Some(SymbolScope::Cell)
+                    Some(SymbolScope::CELL)
                 }
-            } else if sym.scope == SymbolScope::GlobalExplicit && self.tables.is_empty() {
+            } else if sym.scope == SymbolScope::GLOBAL_EXPLICIT && self.tables.is_empty() {
                 // the symbol is defined on the module level, and an inner scope declares
                 // a global that points to it
-                Some(SymbolScope::GlobalExplicit)
+                Some(SymbolScope::GLOBAL_EXPLICIT)
             } else {
                 None
             }
@@ -521,7 +550,7 @@ impl SymbolTableAnalyzer {
 
         match table_type {
             CompilerScope::Module => {
-                symbol.scope = SymbolScope::GlobalImplicit;
+                symbol.scope = SymbolScope::GLOBAL_IMPLICIT;
             }
             CompilerScope::Class => {
                 // named expressions are forbidden in comprehensions on class scope
@@ -533,7 +562,7 @@ impl SymbolTableAnalyzer {
             }
             CompilerScope::Function | CompilerScope::AsyncFunction | CompilerScope::Lambda => {
                 if let Some(parent_symbol) = symbols.get_mut(&symbol.name) {
-                    if let SymbolScope::Unknown = parent_symbol.scope {
+                    if let SymbolScope::UNKNOWN = parent_symbol.scope {
                         // this information is new, as the assignment is done in inner scope
                         parent_symbol.flags.insert(SymbolFlags::ASSIGNED);
                     }
@@ -541,11 +570,11 @@ impl SymbolTableAnalyzer {
                     symbol.scope = if parent_symbol.is_global() {
                         parent_symbol.scope
                     } else {
-                        SymbolScope::Free
+                        SymbolScope::FREE
                     };
                 } else {
                     let mut cloned_sym = symbol.clone();
-                    cloned_sym.scope = SymbolScope::Cell;
+                    cloned_sym.scope = SymbolScope::CELL;
                     last.0.insert(cloned_sym.name.to_owned(), cloned_sym);
                 }
             }
@@ -573,7 +602,7 @@ impl SymbolTableAnalyzer {
                         // outside, too, and set it therefore to non-local scope. I.e., we expect to
                         // find a definition on a higher level
                         let mut cloned_sym = symbol.clone();
-                        cloned_sym.scope = SymbolScope::Free;
+                        cloned_sym.scope = SymbolScope::FREE;
                         last.0.insert(cloned_sym.name.to_owned(), cloned_sym);
                     }
                 }
@@ -1663,7 +1692,7 @@ impl SymbolTableBuilder {
         let flags = &mut symbol.flags;
         match role {
             SymbolUsage::Nonlocal => {
-                symbol.scope = SymbolScope::Free;
+                symbol.scope = SymbolScope::FREE;
                 flags.insert(SymbolFlags::NONLOCAL);
             }
             SymbolUsage::Imported => {
@@ -1692,7 +1721,7 @@ impl SymbolTableBuilder {
                 flags.insert(SymbolFlags::ASSIGNED);
                 // Local variables (assigned) are added to varnames if they are local scope
                 // and not already in varnames
-                if symbol.scope == SymbolScope::Local {
+                if symbol.scope == SymbolScope::LOCAL {
                     let name_str = symbol.name.clone();
                     if !self.current_varnames.contains(&name_str) {
                         self.current_varnames.push(name_str);
@@ -1702,7 +1731,7 @@ impl SymbolTableBuilder {
             SymbolUsage::AssignedNamedExprInComprehension => {
                 flags.insert(SymbolFlags::ASSIGNED | SymbolFlags::ASSIGNED_IN_COMPREHENSION);
                 // Named expressions in comprehensions might also be locals
-                if symbol.scope == SymbolScope::Local {
+                if symbol.scope == SymbolScope::LOCAL {
                     let name_str = symbol.name.clone();
                     if !self.current_varnames.contains(&name_str) {
                         self.current_varnames.push(name_str);
@@ -1710,7 +1739,7 @@ impl SymbolTableBuilder {
                 }
             }
             SymbolUsage::Global => {
-                symbol.scope = SymbolScope::GlobalExplicit;
+                symbol.scope = SymbolScope::GLOBAL_EXPLICIT;
             }
             SymbolUsage::Used => {
                 flags.insert(SymbolFlags::REFERENCED);
@@ -1720,7 +1749,7 @@ impl SymbolTableBuilder {
             }
             SymbolUsage::TypeParam => {
                 // Type parameters are always cell variables in their scope
-                symbol.scope = SymbolScope::Cell;
+                symbol.scope = SymbolScope::CELL;
                 flags.insert(SymbolFlags::ASSIGNED);
             }
         }
