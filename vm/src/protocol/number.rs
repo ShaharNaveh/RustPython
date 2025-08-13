@@ -76,7 +76,16 @@ impl PyObject {
                 ))
             })
         } else if let Some(s) = self.downcast_ref::<PyStr>() {
-            try_convert(self, s.as_wtf8().trim().as_bytes(), vm)
+            let val = s.as_wtf8().trim().as_bytes();
+            let max_len = vm.state.int_max_str_digits.load();
+            if max_len > 0 {
+                let sign_len = usize::from(matches!(val.first(), Some(b'+' | b'-')));
+                let val_len = val.len();
+                if val_len > max_len + sign_len {
+                    return Err(vm.new_value_error(format!("Exceeds the limit ({max_len} digits) for integer string conversion: value has {val_len} digits; use sys.set_int_max_str_digits() to increase the limit")));
+                }
+            }
+            try_convert(self, val, vm)
         } else if let Some(bytes) = self.downcast_ref::<PyBytes>() {
             try_convert(self, bytes, vm)
         } else if let Some(bytearray) = self.downcast_ref::<PyByteArray>() {
