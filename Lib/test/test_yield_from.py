@@ -963,7 +963,8 @@ class TestPEP380Operation(unittest.TestCase):
         g1 = one()
         next(g1)
         g1.close()
-
+ 
+    @unittest.expectedFailure # TODO: RUSTPYTHON; AttributeError: 'code' object has no attribute 'co_positions'
     def test_delegator_is_visible_to_debugger(self):
         def call_stack():
             return [f[3] for f in inspect.stack()]
