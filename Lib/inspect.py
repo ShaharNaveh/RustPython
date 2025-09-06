@@ -556,8 +556,10 @@ def isabstract(object):
     """Return true if the object is an abstract base class (ABC)."""
     if not isinstance(object, type):
         return False
-    if object.__flags__ & TPFLAGS_IS_ABSTRACT:
-        return True
+    # TODO: RUSTPYTHON
+    # TPFLAGS_IS_ABSTRACT is not being set for abstract classes, so this implementation differs from CPython
+    # if object.__flags__ & TPFLAGS_IS_ABSTRACT:
+    #     return True
     if not issubclass(type(object), abc.ABCMeta):
         return False
     if hasattr(object, '__abstractmethods__'):
