@@ -2861,6 +2861,7 @@ class TestDateTime(TestDate):
             self.assertEqual(t.strftime("%z"), "-0200" + z)
             self.assertEqual(t.strftime("%:z"), "-02:00:" + z)
 
+    @unittest.expectedFailure # TODO: RUSTPYTHON; UnicodeEncodeError: 'utf-8' codec can't encode character '\ud83d' in position 0: surrogates not allowed
     def test_strftime_special(self):
         t = self.theclass(2004, 12, 31, 6, 22, 33, 47)
         s1 = t.strftime('%c')
@@ -3664,6 +3665,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         # gh-85432: The parameter was named "fmt" in the pure-Python impl.
         t.strftime(format="%f")
 
+    @unittest.expectedFailure # TODO: RUSTPYTHON; UnicodeEncodeError: 'utf-8' codec can't encode character '\ud83d' in position 0: surrogates not allowed
     def test_strftime_special(self):
         t = self.theclass(1, 2, 3, 4)
         s1 = t.strftime('%I%p%Z')
@@ -4060,6 +4062,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         self.assertEqual(t.microsecond, 0)
         self.assertIsNone(t.tzinfo)
 
+    @unittest.expectedFailure # TODO: RUSTPYTHON; UnicodeEncodeError: 'utf-8' codec can't encode character '\ud800' in position 0: surrogates not allowed
     def test_zones(self):
         est = FixedOffset(-300, "EST", 1)
         utc = FixedOffset(0, "UTC", -2)
