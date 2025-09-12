@@ -2778,14 +2778,14 @@ class CommandLineTest(unittest.TestCase):
         self.assertEqual(out, b'')
         self.assertNotEqual(err.strip(), b'')
 
-    @unittest.expectedFailureIf(sys.platform != 'darwin', 'TODO: RUSTPYTHON')
+    @unittest.expectedFailureIf(sys.platform == 'linux', 'TODO: RUSTPYTHON')
     def test_test_command(self):
         for tar_name in testtarnames:
             for opt in '-t', '--test':
                 out = self.tarfilecmd(opt, tar_name)
                 self.assertEqual(out, b'')
 
-    @unittest.expectedFailureIf(sys.platform != 'darwin', 'TODO: RUSTPYTHON')
+    @unittest.expectedFailureIf(sys.platform == 'linux', 'TODO: RUSTPYTHON')
     def test_test_command_verbose(self):
         for tar_name in testtarnames:
             for opt in '-v', '--verbose':
