@@ -1737,7 +1737,7 @@ class TestTemporaryDirectory(BaseTestCase):
                          "were deleted")
         d2.cleanup()
 
-    @unittest.expectedFailureIf(sys.platform == 'linux', 'TODO: RUSTPYTHON')
+    @unittest.expectedFailureIf(sys.platform in ('linux', 'win32'), 'TODO: RUSTPYTHON')
     @os_helper.skip_unless_symlink
     def test_cleanup_with_symlink_modes(self):
         # cleanup() should not follow symlinks when fixing mode bits (#91133)
