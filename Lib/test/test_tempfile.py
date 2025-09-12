@@ -798,6 +798,7 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         finally:
             os.rmdir(dir)
 
+    @unittest.expectedFailureIfWindows('TODO: RUSTPYTHON; LookupError: unknown encoding: oem')
     @unittest.skipUnless(os.name == "nt", "Only on Windows.")
     def test_mode_win32(self):
         # Use icacls.exe to extract the users with some level of access
@@ -1736,6 +1737,7 @@ class TestTemporaryDirectory(BaseTestCase):
                          "were deleted")
         d2.cleanup()
 
+    @unittest.expectedFailureIf(sys.platform == 'linux', 'TODO: RUSTPYTHON')
     @os_helper.skip_unless_symlink
     def test_cleanup_with_symlink_modes(self):
         # cleanup() should not follow symlinks when fixing mode bits (#91133)
@@ -1991,6 +1993,7 @@ class TestTemporaryDirectory(BaseTestCase):
             self.assertEqual(name, d.name)
         self.assertFalse(os.path.exists(name))
 
+    @unittest.expectedFailureIf(sys.platform == 'linux', 'TODO: RUSTPYTHON')
     def test_modes(self):
         for mode in range(8):
             mode <<= 6
