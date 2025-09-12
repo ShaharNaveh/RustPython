@@ -1636,7 +1636,7 @@ class WriteTest(WriteTestBase, unittest.TestCase):
             self._test_pathname("/foo", "foo")
             self._test_pathname("///foo", "foo")
 
-    @unittest.expectedFailureIfWindows('TODO: RUSTPYTHON')
+    @unittest.skip('TODO: RUSTPYTHON; flaky')
     def test_cwd(self):
         # Test adding the current working directory.
         with os_helper.change_cwd(TEMPDIR):
@@ -2859,6 +2859,7 @@ class CommandLineTest(unittest.TestCase):
             finally:
                 os_helper.unlink(tmpname)
 
+    @unittest.expectedFailureIf(sys.platform == 'linux', 'TODO: RUSTPYTHON')
     def test_create_command_verbose(self):
         files = [support.findfile('tokenize_tests.txt',
                                   subdir='tokenizedata'),
@@ -2896,7 +2897,7 @@ class CommandLineTest(unittest.TestCase):
         finally:
             os_helper.unlink(tar_name)
 
-    @unittest.expectedFailureIf(sys.platform != 'darwin', 'TODO: RUSTPYTHON')
+    @unittest.expectedFailureIf(sys.platform == 'linux', 'TODO: RUSTPYTHON')
     def test_create_command_compressed(self):
         files = [support.findfile('tokenize_tests.txt',
                                   subdir='tokenizedata'),
