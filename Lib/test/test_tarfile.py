@@ -1636,6 +1636,7 @@ class WriteTest(WriteTestBase, unittest.TestCase):
             self._test_pathname("/foo", "foo")
             self._test_pathname("///foo", "foo")
 
+    @unittest.expectedFailureIfWindows('TODO: RUSTPYTHON')
     def test_cwd(self):
         # Test adding the current working directory.
         with os_helper.change_cwd(TEMPDIR):
@@ -1680,17 +1681,11 @@ class WriteTest(WriteTestBase, unittest.TestCase):
 
 
 class GzipWriteTest(GzipTest, WriteTest):
-
-    @unittest.expectedFailureIf(sys.platform != 'darwin', 'TODO: RUSTPYTHON')
-    def test_cwd(self):
-        return super().test_cwd()
+    pass
 
 
 class Bz2WriteTest(Bz2Test, WriteTest):
-
-    @unittest.expectedFailureIf(sys.platform != 'darwin', 'TODO: RUSTPYTHON')
-    def test_cwd(self):
-        return super().test_cwd()
+    pass
 
 
 class LzmaWriteTest(LzmaTest, WriteTest):
