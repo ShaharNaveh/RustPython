@@ -2778,14 +2778,12 @@ class CommandLineTest(unittest.TestCase):
         self.assertEqual(out, b'')
         self.assertNotEqual(err.strip(), b'')
 
-    @unittest.skip('TODO: RUSTPYTHON; flaky')
     def test_test_command(self):
         for tar_name in testtarnames:
             for opt in '-t', '--test':
                 out = self.tarfilecmd(opt, tar_name)
                 self.assertEqual(out, b'')
 
-    @unittest.skip('TODO: RUSTPYTHON; flaky')
     def test_test_command_verbose(self):
         for tar_name in testtarnames:
             for opt in '-v', '--verbose':
@@ -2859,7 +2857,6 @@ class CommandLineTest(unittest.TestCase):
             finally:
                 os_helper.unlink(tmpname)
 
-    @unittest.skip('TODO: RUSTPYTHON; flaky')
     def test_create_command_verbose(self):
         files = [support.findfile('tokenize_tests.txt',
                                   subdir='tokenizedata'),
@@ -2897,7 +2894,6 @@ class CommandLineTest(unittest.TestCase):
         finally:
             os_helper.unlink(tar_name)
 
-    @unittest.skip('TODO: RUSTPYTHON; flaky')
     def test_create_command_compressed(self):
         files = [support.findfile('tokenize_tests.txt',
                                   subdir='tokenizedata'),
