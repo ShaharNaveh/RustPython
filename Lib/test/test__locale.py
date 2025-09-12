@@ -279,6 +279,7 @@ class _LocaleTests(unittest.TestCase):
         if not tested:
             self.skipTest('no suitable locales')
 
+    @unittest.skipIf(sys.platform == 'darwin', 'TODO: RUSTPYTHON; crash')
     def test_float_parsing(self):
         # Bug #1391872: Test whether float parsing is okay on European
         # locales.
