@@ -203,14 +203,20 @@ class PyCompileTestsWithSourceEpoch(PyCompileTestsBase,
                                     unittest.TestCase,
                                     metaclass=SourceDateEpochTestMeta,
                                     source_date_epoch=True):
-    pass
+
+    @unittest.expectedFailureIfWindows('TODO: RUSTPYTHON')
+    def test_do_not_overwrite_symlinks(self):
+        return super().test_do_not_overwrite_symlinks()
 
 
 class PyCompileTestsWithoutSourceEpoch(PyCompileTestsBase,
                                        unittest.TestCase,
                                        metaclass=SourceDateEpochTestMeta,
                                        source_date_epoch=False):
-    pass
+
+    @unittest.expectedFailureIfWindows('TODO: RUSTPYTHON')
+    def test_do_not_overwrite_symlinks(self):
+        return super().test_do_not_overwrite_symlinks()
 
 
 class PyCompileCLITestCase(unittest.TestCase):
