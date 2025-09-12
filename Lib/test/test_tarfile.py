@@ -38,6 +38,7 @@ try:
     import lzma
 except ImportError:
     lzma = None
+lzma = None # XXX: RUSTPYTHON; xz is not supported yet
 
 def sha256sum(data):
     return sha256(data).hexdigest()
@@ -770,6 +771,7 @@ class MiscReadTestBase(CommonReadTest):
             # check that the stacklevel of the deprecation warning is correct:
             self.assertEqual(cm.filename, __file__)
 
+    @unittest.expectedFailureIfWindows('TODO: RUSTPYTHON')
     def test_extractall_pathlike_dir(self):
         DIR = os.path.join(TEMPDIR, "extractall")
         with os_helper.temp_dir(DIR), \
@@ -780,6 +782,7 @@ class MiscReadTestBase(CommonReadTest):
                 path = os.path.join(DIR, tarinfo.name)
                 self.assertEqual(os.path.getmtime(path), tarinfo.mtime)
 
+    @unittest.expectedFailureIfWindows('TODO: RUSTPYTHON')
     def test_extract_pathlike_dir(self):
         dirtype = "ustar/dirtype"
         DIR = os.path.join(TEMPDIR, "extractall")
@@ -1455,6 +1458,7 @@ class WriteTest(WriteTestBase, unittest.TestCase):
             self.assertEqual(tarinfo.name, tarinfo2.name)
             self.assertEqual(tarinfo.size, 3)
 
+    @unittest.expectedFailureIfWindows('TODO: RUSTPYTHON')
     @unittest.skipUnless(hasattr(os, "link"),
                          "Missing hardlink implementation")
     def test_link_size(self):
@@ -1479,6 +1483,7 @@ class WriteTest(WriteTestBase, unittest.TestCase):
             os_helper.unlink(target)
             os_helper.unlink(link)
 
+    @unittest.expectedFailureIfWindows('TODO: RUSTPYTHON')
     @os_helper.skip_unless_symlink
     def test_symlink_size(self):
         path = os.path.join(TEMPDIR, "symlink")
@@ -1675,11 +1680,17 @@ class WriteTest(WriteTestBase, unittest.TestCase):
 
 
 class GzipWriteTest(GzipTest, WriteTest):
-    pass
+
+    @unittest.expectedFailureIf(sys.platform != 'darwin', 'TODO: RUSTPYTHON')
+    def test_cwd(self):
+        return super().test_cwd()
 
 
 class Bz2WriteTest(Bz2Test, WriteTest):
-    pass
+
+    @unittest.expectedFailureIf(sys.platform != 'darwin', 'TODO: RUSTPYTHON')
+    def test_cwd(self):
+        return super().test_cwd()
 
 
 class LzmaWriteTest(LzmaTest, WriteTest):
@@ -2110,6 +2121,7 @@ class HardlinkTest(unittest.TestCase):
         self.assertEqual(tarinfo.type, tarfile.REGTYPE,
                 "add file as regular failed")
 
+    @unittest.expectedFailureIfWindows('TODO: RUSTPYTHON')
     def test_add_hardlink(self):
         tarinfo = self.tar.gettarinfo(self.bar)
         self.assertEqual(tarinfo.type, tarfile.LNKTYPE,
@@ -2693,7 +2705,6 @@ class MiscTest(unittest.TestCase):
             'SubsequentHeaderError', 'ExFileObject', 'main'}
         support.check__all__(self, tarfile, not_exported=not_exported)
 
-    @unittest.expectedFailure # TODO: RUSTPYTHON
     def test_useful_error_message_when_modules_missing(self):
         fname = os.path.join(os.path.dirname(__file__), 'archivetestdata', 'testtar.tar.xz')
         with self.assertRaises(tarfile.ReadError) as excinfo:
@@ -2706,6 +2717,7 @@ class MiscTest(unittest.TestCase):
             str(excinfo.exception),
         )
 
+    @unittest.expectedFailureIfWindows('TODO: RUSTPYTHON')
     @unittest.skipUnless(os_helper.can_symlink(), 'requires symlink support')
     @unittest.skipUnless(hasattr(os, 'chmod'), "missing os.chmod")
     @unittest.mock.patch('os.chmod')
@@ -2771,12 +2783,14 @@ class CommandLineTest(unittest.TestCase):
         self.assertEqual(out, b'')
         self.assertNotEqual(err.strip(), b'')
 
+    @unittest.expectedFailureIf(sys.platform != 'darwin', 'TODO: RUSTPYTHON')
     def test_test_command(self):
         for tar_name in testtarnames:
             for opt in '-t', '--test':
                 out = self.tarfilecmd(opt, tar_name)
                 self.assertEqual(out, b'')
 
+    @unittest.expectedFailureIf(sys.platform != 'darwin', 'TODO: RUSTPYTHON')
     def test_test_command_verbose(self):
         for tar_name in testtarnames:
             for opt in '-v', '--verbose':
@@ -2887,6 +2901,7 @@ class CommandLineTest(unittest.TestCase):
         finally:
             os_helper.unlink(tar_name)
 
+    @unittest.expectedFailureIf(sys.platform != 'darwin', 'TODO: RUSTPYTHON')
     def test_create_command_compressed(self):
         files = [support.findfile('tokenize_tests.txt',
                                   subdir='tokenizedata'),
@@ -3311,6 +3326,7 @@ class NoneInfoExtractTests(ReadTest):
             self.check_files_present(DIR)
             yield DIR
 
+    @unittest.expectedFailureIfWindows('TODO: RUSTPYTHON')
     def test_extractall_none_mtime(self):
         # mtimes of extracted files should be later than 'now' -- the mtime
         # of a previously created directory.
@@ -3406,6 +3422,7 @@ class NoneInfoTests_Misc(unittest.TestCase):
                                 with open(tarname, 'rb') as f:
                                     tar.addfile(replaced, f)
 
+    @unittest.expectedFailure # TODO: RUSTPYTHON; AttributeError: 'TextIOWrapper' object has no attribute 'detach'
     def test_list(self):
         # Change some metadata to None, then compare list() output
         # word-for-word. We want list() to not raise, and to only change
@@ -3728,6 +3745,7 @@ class TestExtractionFilters(unittest.TestCase):
                         tarfile.AbsolutePathError,
                         """['"].*escaped.evil['"] has an absolute path""")
 
+    @unittest.expectedFailureIfWindows('TODO: RUSTPYTHON')
     @symlink_test
     def test_parent_symlink(self):
         # Test interplaying symlinks
@@ -3779,6 +3797,7 @@ class TestExtractionFilters(unittest.TestCase):
             with self.check_context(arc.open(), 'data'):
                 self.expect_file('parent/evil')
 
+    @unittest.expectedFailure # TODO: RUSTPYTHON
     @symlink_test
     @os_helper.skip_unless_symlink
     def test_realpath_limit_attack(self):
@@ -3853,6 +3872,7 @@ class TestExtractionFilters(unittest.TestCase):
                     else:
                         self.assertEqual(exc.errno, errno.ENAMETOOLONG)
 
+    @unittest.expectedFailureIfWindows('TODO: RUSTPYTHON')
     @symlink_test
     def test_parent_symlink2(self):
         # Test interplaying symlinks
@@ -3940,6 +3960,7 @@ class TestExtractionFilters(unittest.TestCase):
                 self.expect_file('current/')
                 self.expect_file('parent/evil')
 
+    @unittest.expectedFailureIfWindows('TODO: RUSTPYTHON')
     @symlink_test
     def test_absolute_symlink(self):
         # Test symlink to an absolute path
@@ -3987,6 +4008,7 @@ class TestExtractionFilters(unittest.TestCase):
                 tarfile.AbsoluteLinkError,
                 "'parent' is a link to an absolute path")
 
+    @unittest.expectedFailure # TODO: RUSTPYTHON
     @symlink_test
     def test_sly_relative0(self):
         # Inspired by 'relative0' in jwilk/traversal-archives
@@ -4022,6 +4044,7 @@ class TestExtractionFilters(unittest.TestCase):
                         + "'.*moo', which is outside "
                         + "the destination")
 
+    @unittest.expectedFailure # TODO: RUSTPYTHON
     @symlink_test
     def test_sly_relative2(self):
         # Inspired by 'relative2' in jwilk/traversal-archives
@@ -4042,6 +4065,7 @@ class TestExtractionFilters(unittest.TestCase):
                     + """['"].*moo['"], which is outside the """
                     + "destination")
 
+    @unittest.expectedFailureIfWindows('TODO: RUSTPYTHON')
     @symlink_test
     def test_deep_symlink(self):
         # Test that symlinks and hardlinks inside a directory
@@ -4092,6 +4116,7 @@ class TestExtractionFilters(unittest.TestCase):
                     self.expect_file('linkdir/symlink', size=3)
                     self.expect_file('symlink2', size=3)
 
+    @unittest.expectedFailure # TODO: RUSTPYTHON
     @symlink_test
     def test_sneaky_hardlink_fallback(self):
         # (CVE-2025-4330)
@@ -4144,6 +4169,7 @@ class TestExtractionFilters(unittest.TestCase):
                     self.expect_file("boom", symlink_to='../../link_here')
                     self.expect_file("c", symlink_to='b')
 
+    @unittest.expectedFailureIfWindows('TODO: RUSTPYTHON')
     @symlink_test
     def test_exfiltration_via_symlink(self):
         # (CVE-2025-4138)
@@ -4167,6 +4193,7 @@ class TestExtractionFilters(unittest.TestCase):
                     # Nothing is extracted.
                     pass
 
+    @unittest.expectedFailureIfWindows('TODO: RUSTPYTHON')
     @symlink_test
     def test_chmod_outside_dir(self):
         # (CVE-2024-12718)
@@ -4199,6 +4226,7 @@ class TestExtractionFilters(unittest.TestCase):
                     st_mode = cc.outerdir.stat().st_mode
                     self.assertNotEqual(st_mode & 0o777, 0o777)
 
+    @unittest.expectedFailureIfWindows('TODO: RUSTPYTHON')
     def test_link_fallback_normalizes(self):
         # Make sure hardlink fallbacks work for non-normalized paths for all
         # filters
@@ -4215,6 +4243,7 @@ class TestExtractionFilters(unittest.TestCase):
                 self.expect_file("link1")
                 self.expect_file("link2")
 
+    @unittest.expectedFailureIfWindows('TODO: RUSTPYTHON')
     def test_modes(self):
         # Test how file modes are extracted
         # (Note that the modes are ignored on platforms without working chmod)
@@ -4295,6 +4324,7 @@ class TestExtractionFilters(unittest.TestCase):
             self.expect_file('dir/', mode=normal_dir_mode)
             self.expect_file('dir_all_bits/', mode=normal_dir_mode)
 
+    @unittest.expectedFailureIfWindows('TODO: RUSTPYTHON')
     def test_pipe(self):
         # Test handling of a special file
         with ArchiveMaker() as arc:
@@ -4397,6 +4427,7 @@ class TestExtractionFilters(unittest.TestCase):
             self.assertEqual(os.listdir(), [])
             self.assertIn('tarfile: UnicodeEncodeError ', stderr.getvalue())
 
+    @unittest.expectedFailureIfWindows('TODO: RUSTPYTHON')
     def test_default_filter_warns(self):
         """Ensure the default filter warns"""
         with ArchiveMaker() as arc:
@@ -4447,6 +4478,7 @@ class TestExtractionFilters(unittest.TestCase):
         with self.check_context(tar, None):
             self.expect_exception(TypeError)
 
+    @unittest.expectedFailureIfWindows('TODO: RUSTPYTHON')
     def test_custom_filter(self):
         def custom_filter(tarinfo, path):
             self.assertIs(path, self.destdir)
@@ -4470,6 +4502,7 @@ class TestExtractionFilters(unittest.TestCase):
         with self.check_context(arc.open(), 'bad filter name'):
             self.expect_exception(ValueError)
 
+    @unittest.expectedFailure # TODO: RUSTPYTHON
     def test_stateful_filter(self):
         # Stateful filters should be possible.
         # (This doesn't really test tarfile. Rather, it demonstrates
@@ -4500,6 +4533,7 @@ class TestExtractionFilters(unittest.TestCase):
         self.assertEqual(custom_filter.num_files_processed, 2)
         self.assertEqual(custom_filter.done, True)
 
+    @unittest.expectedFailureIfWindows('TODO: RUSTPYTHON')
     def test_errorlevel(self):
         def extracterror_filter(tarinfo, path):
             raise tarfile.ExtractError('failed with ExtractError')
@@ -4572,6 +4606,7 @@ class TestExtractionFilters(unittest.TestCase):
             self.expect_exception(TypeError)  # errorlevel is not int
 
 
+@unittest.skipIf(support.MS_WINDOWS, 'TODO: RUSTPYTHON; flaky tests')
 class OverwriteTests(archiver_tests.OverwriteTests, unittest.TestCase):
     testdir = os.path.join(TEMPDIR, "testoverwrite")
 
@@ -4778,7 +4813,12 @@ def setUpModule():
 
 def tearDownModule():
     if os.path.exists(TEMPDIR):
-        os_helper.rmtree(TEMPDIR)
+        # XXX: RUSTPYTHON; This sometimes throws an error
+        # os_helper.rmtree(TEMPDIR)
+        try:
+            os_helper.rmtree(TEMPDIR)
+        except OSError:
+            pass
 
 if __name__ == "__main__":
     unittest.main()

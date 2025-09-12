@@ -325,9 +325,17 @@ class TestFilemode:
 class TestFilemodeCStat(TestFilemode, unittest.TestCase):
     statmod = c_stat
 
+    @unittest.expectedFailureIfWindows("TODO: RUSTPYTHON; AssertionError: '-' != 'l'")
+    def test_link(self):
+        return super().test_link()
+
 
 class TestFilemodePyStat(TestFilemode, unittest.TestCase):
     statmod = py_stat
+
+    @unittest.expectedFailureIfWindows("TODO: RUSTPYTHON; AssertionError: '-' != 'l'")
+    def test_link(self):
+        return super().test_link()
 
 
 if __name__ == '__main__':

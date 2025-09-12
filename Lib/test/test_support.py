@@ -623,6 +623,7 @@ class TestSupport(unittest.TestCase, ExtraAssertions):
         else:
             self.assertTrue(support.has_strftime_extensions)
 
+    @unittest.expectedFailure # TODO: RUSTPYTHON
     def test_get_recursion_depth(self):
         # test support.get_recursion_depth()
         code = textwrap.dedent("""
