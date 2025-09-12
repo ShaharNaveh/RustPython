@@ -101,8 +101,9 @@ mod _locale {
 
     unsafe fn pystr_from_raw_cstr(vm: &VirtualMachine, raw_ptr: *const libc::c_char) -> PyResult {
         let slice = unsafe { CStr::from_ptr(raw_ptr) };
-        let string = slice.to_str()?;
-        //.expect("localeconv always return decodable string");
+        let string = slice
+            .to_str()
+            .expect("localeconv always return decodable string");
         Ok(vm.new_pyobj(string))
     }
 
