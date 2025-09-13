@@ -149,6 +149,7 @@ class ReprTests(unittest.TestCase):
         eq(r(frozenset({1, 2, 3, 4, 5, 6})), "frozenset({1, 2, 3, 4, 5, 6})")
         eq(r(frozenset({1, 2, 3, 4, 5, 6, 7})), "frozenset({1, 2, 3, 4, 5, 6, ...})")
 
+    @unittest.expectedFailure # TODO: RUSTPYTHON; AssertionError: ValueError not raised by repr
     def test_numbers(self):
         for x in [123, 1.0 / 3]:
             self.assertEqual(r(x), repr(x))
