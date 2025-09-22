@@ -1,0 +1,25 @@
+# This action will only install dependencies when the current operating system is Linux. It will do nothing on any other OS (macOS, Windows).
+
+name: Install Linux dependencies
+description: Installs the dependencies necessary to build RustPython on Linux.
+inputs:
+  gcc-multilib:
+    description: Install gcc-multilib
+    required: false
+    default: "false"
+  musl-tools:
+    description: Install musl-tools
+    required: false
+    default: "false"
+runs:
+  using: composite
+  steps:
+    - name: Install Linux dependencies
+      shell: bash
+      if: ${{ runner.os == 'Linux' }}
+      run: >
+        sudo apt-get update
+
+        sudo apt-get install --no-install-recommends
+        ${{ fromJSON(inputs.gcc-multilib) && 'gcc-multilib' || '' }}
+        ${{ fromJSON(inputs.musl-tools) && 'musl-tools' || '' }}

@@ -1,0 +1,13 @@
+# This action will only install dependencies when the current operating system is Windows. It will do nothing on any other OS (Linux, macOS).
+
+name: Install Windows dependencies
+description: Installs the dependencies necessary to build RustPython on Windows.
+runs:
+  using: composite
+  steps:
+    - name: Install Windows dependencies
+      shell: bash
+      if: ${{ runner.os == 'Windows' }}
+      run: >
+        git config --system core.longpaths true
+        cargo install cargo-vcpkg
