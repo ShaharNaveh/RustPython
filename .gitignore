@@ -12,6 +12,7 @@ wasm-pack.log
 .envrc
 .python-version
 
+Cargo.lock
 flame-graph.html
 flame.txt
 flamescope.json
