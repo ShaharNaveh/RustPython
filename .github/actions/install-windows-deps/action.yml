@@ -11,4 +11,4 @@ runs:
       run: >
         git config --system core.longpaths true
 
-        cargo install --locked cargo-vcpkg
+        cargo install cargo-vcpkg
