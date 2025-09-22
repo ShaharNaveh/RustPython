@@ -51,7 +51,8 @@ jobs:
       - name: Checkout RustPython main branch
         uses: actions/checkout@v5.0.0
         with:
-          repository: RustPython/RustPython
+          repository: ShaharNaveh/RustPython # TODO: REMOVE BEFORE MERGE
+          # repository: RustPython/RustPython
           ref: main
 
       - name: Setup Rust
