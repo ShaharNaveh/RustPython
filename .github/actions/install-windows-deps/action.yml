@@ -9,6 +9,6 @@ runs:
       shell: bash
       if: ${{ runner.os == 'Windows' }}
       run: >
-        git config --global --system core.longpaths true
+        git config --system core.longpaths true
 
         cargo install --locked cargo-vcpkg
