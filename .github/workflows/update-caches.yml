@@ -90,12 +90,12 @@ jobs:
       # Build RustPython for the dev profile, used by check, doc, ...
       - name: Build dev cache
         if: steps.cache.outputs.cache-hit != 'true'
-        run: cargo build --profile dev --package rustpython
+        run: cargo ${{ runner.os == 'Windows' && 'vcpkg' || '' }} build --profile dev --package rustpython
 
       # Build RustPython for the test profile, used by test
       - name: Build test cache
         if: steps.cache.outputs.cache-hit != 'true'
-        run: cargo build --profile test --package rustpython
+        run: cargo ${{ runner.os == 'Windows' && 'vcpkg' || '' }} build --profile test --package rustpython
 
       - name: Save cache
         if: steps.cache.outputs.cache-hit != 'true'
