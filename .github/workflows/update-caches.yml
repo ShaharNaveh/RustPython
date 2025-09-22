@@ -87,15 +87,18 @@ jobs:
             target/
           key: ${{ runner.os }}-${{ matrix.toolchain }}-${{ matrix.target }}-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}-${{ steps.get-date.outputs.date }}
 
+      - run: cargo vcpkg build
+        if: runner.os == 'Windows'
+
       # Build RustPython for the dev profile, used by check, doc, ...
       - name: Build dev cache
         if: steps.cache.outputs.cache-hit != 'true'
-        run: cargo ${{ runner.os == 'Windows' && 'vcpkg' || '' }} build --profile dev --package rustpython
+        run: cargo build --profile dev --package rustpython
 
       # Build RustPython for the test profile, used by test
       - name: Build test cache
         if: steps.cache.outputs.cache-hit != 'true'
-        run: cargo ${{ runner.os == 'Windows' && 'vcpkg' || '' }} build --profile test --package rustpython
+        run: cargo build --profile test --package rustpython
 
       - name: Save cache
         if: steps.cache.outputs.cache-hit != 'true'
