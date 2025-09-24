@@ -500,20 +500,18 @@ pub mod module {
         follow_symlinks: FollowSymlinks,
         vm: &VirtualMachine,
     ) -> PyResult<()> {
-        let uid = if uid >= 0 {
-            Some(nix::unistd::Uid::from_raw(uid as u32))
-        } else if uid == -1 {
-            None
-        } else {
-            return Err(vm.new_os_error("Specified uid is not valid."));
+        use std::cmp::Ordering;
+
+        let uid = match uid.cmp(&-1) {
+            Ordering::Greater => Some(nix::unistd::Uid::from_raw(uid as u32)),
+            Ordering::Equal => None,
+            Ordering::Less => return Err(vm.new_os_error("Specified uid is not valid.")),
         };
 
-        let gid = if gid >= 0 {
-            Some(nix::unistd::Gid::from_raw(gid as u32))
-        } else if gid == -1 {
-            None
-        } else {
-            return Err(vm.new_os_error("Specified gid is not valid."));
+        let gid = match gid.cmp(&-1) {
+            Ordering::Greater => Some(nix::unistd::Gid::from_raw(gid as u32)),
+            Ordering::Equal => None,
+            Ordering::Less => return Err(vm.new_os_error("Specified gid is not valid.")),
         };
 
         let flag = if follow_symlinks.0 {
