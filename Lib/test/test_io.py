@@ -1287,7 +1287,6 @@ class CommonBufferedTests:
         # a ValueError.
         self.assertRaises(ValueError, _with)
 
-    @unittest.expectedFailure # TODO: RUSTPYTHON
     def test_error_through_destructor(self):
         # Test that the exception state is not modified by a destructor,
         # even if close() fails.
@@ -1851,6 +1850,10 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
     def test_pickling_subclass(self):
         return super().test_pickling_subclass()
 
+    @unittest.expectedFailure # TODO: RUSTPYTHON; AttributeError: 'NoneType' object has no attribute 'exc_type'
+    def test_error_through_destructor(self):
+        return super().test_error_through_destructor()
+
 
 class PyBufferedReaderTest(BufferedReaderTest):
     tp = pyio.BufferedReader
@@ -2200,6 +2203,10 @@ class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
     @unittest.expectedFailure # TODO: RUSTPYTHON
     def test_pickling_subclass(self):
         return super().test_pickling_subclass()
+
+    @unittest.expectedFailure # TODO: RUSTPYTHON; AttributeError: 'NoneType' object has no attribute 'exc_type'
+    def test_error_through_destructor(self):
+        return super().test_error_through_destructor()
 
 class PyBufferedWriterTest(BufferedWriterTest):
     tp = pyio.BufferedWriter
@@ -2707,6 +2714,10 @@ class CBufferedRandomTest(BufferedRandomTest, SizeofTest):
     def test_pickling_subclass(self):
         return super().test_pickling_subclass()
 
+    @unittest.expectedFailure # TODO: RUSTPYTHON; AttributeError: 'NoneType' object has no attribute 'exc_type'
+    def test_error_through_destructor(self):
+        return super().test_error_through_destructor()
+
 
 class PyBufferedRandomTest(BufferedRandomTest):
     tp = pyio.BufferedRandom
@@ -3201,7 +3212,6 @@ class TextIOWrapperTest(unittest.TestCase):
         support.gc_collect()
         self.assertEqual(record, [1, 2, 3])
 
-    @unittest.expectedFailure # TODO: RUSTPYTHON
     def test_error_through_destructor(self):
         # Test that the exception state is not modified by a destructor,
         # even if close() fails.
@@ -4289,6 +4299,10 @@ class CTextIOWrapperTest(TextIOWrapperTest):
     def test_pickling_subclass(self):
         return super().test_pickling_subclass()
 
+    @unittest.expectedFailure # TODO: RUSTPYTHON; AttributeError: 'NoneType' object has no attribute 'exc_type'
+    def test_error_through_destructor(self):
+        return super().test_error_through_destructor()
+
 
 class PyTextIOWrapperTest(TextIOWrapperTest):
     io = pyio
@@ -4597,7 +4611,6 @@ class MiscIOTest(unittest.TestCase):
             support.gc_collect()
         self.assertIn(r, str(cm.warning.args[0]))
 
-    @unittest.expectedFailure # TODO: RUSTPYTHON
     def test_warn_on_dealloc(self):
         self._check_warn_on_dealloc(os_helper.TESTFN, "wb", buffering=0)
         self._check_warn_on_dealloc(os_helper.TESTFN, "wb")
@@ -4622,7 +4635,6 @@ class MiscIOTest(unittest.TestCase):
         with warnings_helper.check_no_resource_warning(self):
             self.open(r, *args, closefd=False, **kwargs)
 
-    @unittest.expectedFailure # TODO: RUSTPYTHON
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_warn_on_dealloc_fd(self):
         self._check_warn_on_dealloc_fd("rb", buffering=0)
@@ -4886,6 +4898,14 @@ class CMiscIOTest(MiscIOTest):
     @unittest.expectedFailure # TODO: RUSTPYTHON; AssertionError: 22 != 10 : _PythonRunResult(rc=22, out=b'', err=b'')
     def test_check_encoding_errors(self):
         return super().test_check_encoding_errors()
+
+    @unittest.expectedFailure # TODO: RUSTPYTHON; AssertionError: ResourceWarning not triggered
+    def test_warn_on_dealloc(self):
+        return super().test_warn_on_dealloc()
+
+    @unittest.expectedFailure # TODO: RUSTPYTHON; AssertionError: ResourceWarning not triggered
+    def test_warn_on_dealloc_fd(self):
+        return super().test_warn_on_dealloc_fd()
 
 
 class PyMiscIOTest(MiscIOTest):
