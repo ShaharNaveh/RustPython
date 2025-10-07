@@ -1,0 +1,4837 @@
+warning: unused import: `BackwardsTokenizer`
+  --> stdlib/src/tokenize.rs:27:30
+   |
+27 |     use ruff_python_trivia::{BackwardsTokenizer, SimpleToken, SimpleTokenizer};
+   |                              ^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: unused imports: `LineIndex` and `OneIndexed`
+  --> stdlib/src/tokenize.rs:28:28
+   |
+28 |     use ruff_source_file::{LineIndex, OneIndexed};
+   |                            ^^^^^^^^^  ^^^^^^^^^^
+
+warning: unused import: `TextSize`
+  --> stdlib/src/tokenize.rs:33:9
+   |
+33 |         TextSize,
+   |         ^^^^^^^^
+
+warning: unused import: `ops::Deref`
+  --> stdlib/src/tokenize.rs:35:20
+   |
+35 |     use std::{fmt, ops::Deref};
+   |                    ^^^^^^^^^^
+
+warning: `rustpython-stdlib` (lib) generated 4 warnings (run `cargo fix --lib -p rustpython-stdlib` to apply 4 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.67s
+     Running `target/debug/rustpython grrr.py`
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}
+[stdlib/src/tokenize.rs:114:13] &token = SimpleToken {
+    kind: Newline,
+    range: 0..1,
+}

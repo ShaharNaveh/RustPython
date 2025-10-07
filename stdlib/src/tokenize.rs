@@ -18,13 +18,14 @@ mod _tokenize {
                 // PyStrRef,
                 PyTypeRef,
             },
+            convert::ToPyObject,
             function::ArgCallable,
             protocol::PyIterReturn,
             types::{Constructor, IterNext, Iterable, SelfIter},
         },
     };
-    use ruff_python_trivia::{BackwardsTokenizer, SimpleTokenizer};
-    use ruff_source_file::OneIndexed;
+    use ruff_python_trivia::{BackwardsTokenizer, SimpleToken, SimpleTokenKind, SimpleTokenizer};
+    use ruff_source_file::{LineIndex, OneIndexed};
     use ruff_text_size::{
         // Ranged,
         // TextLen,
@@ -40,7 +41,7 @@ mod _tokenize {
         readline: ArgCallable,
         extra_tokens: bool,
         encoding: String,
-        state: PyRwLock<Option<PyTokenizerIterState>>,
+        state: PyRwLock<PyTokenizerIterState>,
     }
 
     impl fmt::Debug for PyTokenizerIter {
@@ -49,7 +50,6 @@ mod _tokenize {
                 .field("readline", &self.readline)
                 .field("extra_tokens", &self.extra_tokens)
                 .field("encoding", &self.encoding)
-                //.field("state", &self.state)
                 .finish()
         }
     }
@@ -58,7 +58,7 @@ mod _tokenize {
     impl PyTokenizerIter {}
 
     impl PyTokenizerIter {
-        fn advance_readline(&self, vm: &VirtualMachine) -> PyResult<String> {
+        fn advance_readline(&self, vm: &VirtualMachine, _encoding: &str) -> PyResult<String> {
             let raw_line = &self
                 .readline
                 .invoke((), vm)?
@@ -81,7 +81,7 @@ mod _tokenize {
                 readline,
                 extra_tokens,
                 encoding,
-                state: PyRwLock::new(None),
+                state: PyRwLock::new(PyTokenizerIterState::default()),
             }
             .into_ref_with_type(vm, cls)
             .map(Into::into)
@@ -92,7 +92,50 @@ mod _tokenize {
 
     impl IterNext for PyTokenizerIter {
         fn next(zelf: &Py<Self>, vm: &VirtualMachine) -> PyResult<PyIterReturn> {
-            println!("Hello from next!");
+            let mut state = {
+                let guard = zelf.state.read();
+                guard.clone()
+            };
+
+            /*
+                          Potentially have something like
+
+                       let mut current_line = state.text[-1]
+                        match <> {
+            None => {
+            current_line = <advance>
+            }
+                        }
+                        */
+            let token = match state.next() {
+                Some(v) => v,
+                None => {
+                    let next_line = &zelf.advance_readline(vm, &zelf.encoding)?;
+                    if next_line.is_empty() {
+                        return Ok(PyIterReturn::StopIteration(None));
+                    }
+                    let text = &state.text;
+                    let nstate = state.with_text(format!("{text}\n"));
+                    *zelf.state.write() = nstate.clone();
+                    let ntoken = nstate.next_token().unwrap();
+
+                    ntoken
+                }
+            };
+
+            dbg!(&token);
+
+            return Ok(PyIterReturn::Return(1.to_pyobject(vm)));
+            /*
+                        // NOTE: in future if we read EOL then set `last_line` to None
+                        return Ok(PyIterReturn::StopIteration(None));
+            */
+            // #########
+            // #########
+            // #########
+            // #########
+            // #########
+
             /*
                         let state = match &zelf.state {
                             Some(inner) => inner,
@@ -103,17 +146,6 @@ mod _tokenize {
                             )),
                         };
             */
-
-            let state_lock = {
-                let guard = zelf.state.read();
-                guard.clone()
-            };
-
-            let state = match state_lock {
-                Some(s) => s,
-                None => PyTokenizerIterState::new(zelf.advance_readline(vm)?, TextSize::default()),
-            };
-            dbg!(state);
 
             /*
             let last_line = match &state.last_line {
@@ -162,9 +194,6 @@ mod _tokenize {
                 println!("{:#?}", tok);
             }
             */
-
-            // NOTE: in future if we read EOL then set `last_line` to None
-            return Ok(PyIterReturn::StopIteration(None));
         }
     }
 
@@ -178,38 +207,41 @@ mod _tokenize {
         encoding: String,
     }
 
-    #[derive(Clone, Debug, Default)]
+    #[derive(Clone, Debug)]
     pub struct PyTokenizerIterState {
-        source: String,
-        offset: TextSize,
+        text: String,
+        token: SimpleToken,
     }
 
     impl PyTokenizerIterState {
         #[must_use]
-        pub const fn new(source: String, offset: TextSize) -> Self {
-            Self { source, offset }
+        pub fn with_text(&self, text: String) -> Self {
+            Self {
+                text,
+                token: self.token.clone(),
+            }
+        }
+
+        #[must_use]
+        pub fn next(&mut self) -> Option<SimpleToken> {
+            let mut tokenizer = SimpleTokenizer::starts_at(self.token.range.end(), &self.text);
+            let token = tokenizer.next();
+            if let Some(tok) = &token {
+                self.token = &tok.clone();
+            };
+            token
         }
     }
 
-    /*
-        #[derive(Default)]
-        pub struct PyTokenizerIterState {
-            offset: Option<TextRange>,
-            last_line: Option<LastLine>,
-            // last_end_lineno: u32,
-            // byte_col_offset_diff: Option<u32>,
-        }
-    */
-    /*
-    #[derive(Clone, Debug)]
-    struct LineIndex(ruff_source_file::LineIndex);
-
-    impl Deref for LineIndex {
-        type Target = ruff_source_file::LineIndex;
-
-        fn deref(&self) -> &Self::Target {
-            &self.0
+    impl Default for PyTokenizerIterState {
+        fn default() -> Self {
+            Self {
+                text: String::default(),
+                token: SimpleToken {
+                    kind: SimpleTokenKind::EndOfFile,
+                    range: TextRange::default(),
+                },
+            }
         }
     }
-    */
 }
