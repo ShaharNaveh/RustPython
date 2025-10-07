@@ -23,15 +23,15 @@ mod _tokenize {
             types::{Constructor, IterNext, Iterable, SelfIter},
         },
     };
-    use ruff_python_trivia::SimpleTokenizer;
-    // use ruff_source_file::OneIndexed;
+    use ruff_python_trivia::{BackwardsTokenizer, SimpleTokenizer};
+    use ruff_source_file::OneIndexed;
     use ruff_text_size::{
         // Ranged,
         // TextLen,
         TextRange,
         TextSize,
     };
-    use std::fmt;
+    use std::{fmt, ops::Deref};
 
     #[pyattr]
     #[pyclass(name = "TokenizerIter")]
@@ -40,7 +40,7 @@ mod _tokenize {
         readline: ArgCallable,
         extra_tokens: bool,
         encoding: String,
-        state: PyRwLock<PyTokenizerIterState>,
+        state: PyRwLock<Option<PyTokenizerIterState>>,
     }
 
     impl fmt::Debug for PyTokenizerIter {
@@ -81,7 +81,7 @@ mod _tokenize {
                 readline,
                 extra_tokens,
                 encoding,
-                state: PyRwLock::new(PyTokenizerIterState::default()),
+                state: PyRwLock::new(None),
             }
             .into_ref_with_type(vm, cls)
             .map(Into::into)
@@ -92,25 +92,51 @@ mod _tokenize {
 
     impl IterNext for PyTokenizerIter {
         fn next(zelf: &Py<Self>, vm: &VirtualMachine) -> PyResult<PyIterReturn> {
-            let state = &zelf.state.read();
+            println!("Hello from next!");
+            /*
+                        let state = match &zelf.state {
+                            Some(inner) => inner,
+                            None => &PyRwLock::new(
+                            PyTokenizerIterState::new(
+                                zelf.advance_readline(vm)?,
+                                TextSize::default(),
+                            )),
+                        };
+            */
 
-            let line = match &state.last_line {
-                Some(line) => line.clone(),
-                None => zelf.advance_readline(vm)?,
+            let state_lock = {
+                let guard = zelf.state.read();
+                guard.clone()
             };
 
-            println!("line={:#?}", &line);
-            let offset = &state
-                .offset
-                .unwrap_or_else(|| TextRange::up_to(TextSize::of(&line)));
-            println!("offset={:#?}", &offset);
+            let state = match state_lock {
+                Some(s) => s,
+                None => PyTokenizerIterState::new(zelf.advance_readline(vm)?, TextSize::default()),
+            };
+            dbg!(state);
 
-            let mut tokenizer = SimpleTokenizer::new(&line, *offset);
+            /*
+            let last_line = match &state.last_line {
+                Some(v) => v,
+                None => &LastLine::new(zelf.advance_readline(vm)?, OneIndexed::MIN),
+            };
+            */
 
-            for token in tokenizer {
-                println!("token={:#?}", &token);
-            }
+            //   dbg!(&last_line);
 
+            /*
+                        println!("line={:#?}", &line);
+                        let offset = &state
+                            .offset
+                            .unwrap_or_else(|| TextRange::up_to(TextSize::of(&line)));
+                        println!("offset={:#?}", &offset);
+
+                        let mut tokenizer = SimpleTokenizer::new(&line, *offset);
+
+                        for token in tokenizer {
+                            println!("token={:#?}", &token);
+                        }
+            */
             /*
             let token = tokenizer.next().unwrap();
             println!("token={:#?}", &token);
@@ -146,20 +172,44 @@ mod _tokenize {
     pub struct PyTokenizerIterArgs {
         #[pyarg(positional)]
         readline: ArgCallable,
-
         #[pyarg(named)]
         extra_tokens: bool,
-
         #[pyarg(named, default = String::from("utf-8"))]
         encoding: String,
     }
 
-    #[derive(Default)]
+    #[derive(Clone, Debug, Default)]
     pub struct PyTokenizerIterState {
-        offset: Option<TextRange>,
-        last_line: Option<String>,
-        // last_lineno: Option<OneIndexed>,
-        // last_end_lineno: u32,
-        // byte_col_offset_diff: Option<u32>,
+        source: String,
+        offset: TextSize,
     }
+
+    impl PyTokenizerIterState {
+        #[must_use]
+        pub const fn new(source: String, offset: TextSize) -> Self {
+            Self { source, offset }
+        }
+    }
+
+    /*
+        #[derive(Default)]
+        pub struct PyTokenizerIterState {
+            offset: Option<TextRange>,
+            last_line: Option<LastLine>,
+            // last_end_lineno: u32,
+            // byte_col_offset_diff: Option<u32>,
+        }
+    */
+    /*
+    #[derive(Clone, Debug)]
+    struct LineIndex(ruff_source_file::LineIndex);
+
+    impl Deref for LineIndex {
+        type Target = ruff_source_file::LineIndex;
+
+        fn deref(&self) -> &Self::Target {
+            &self.0
+        }
+    }
+    */
 }
