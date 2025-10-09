@@ -1,13 +1,111 @@
 //! Implement python as a virtual machine with bytecode.
 //! This module implements bytecode structure.
 
-use crate::{OneIndexed, SourceLocation};
+use crate::{OneIndexed, SourceLocation, opcode::RealOpcode};
 use bitflags::bitflags;
 use itertools::Itertools;
 use malachite_bigint::BigInt;
 use num_complex::Complex64;
 use rustpython_wtf8::{Wtf8, Wtf8Buf};
-use std::{collections::BTreeSet, fmt, hash, marker::PhantomData, mem};
+use std::{
+    collections::BTreeSet, fmt, hash, marker::PhantomData, mem, num::NonZeroUsize, ops::Deref,
+};
+
+/// A raw argument byte for a Python bytecode instruction.
+///
+/// This represents the unprocessed single-byte argument directly as it appears
+/// in bytecode. Larger arguments may be formed when this byte is extended by
+/// a preceding [`RealOpcode::ExtendedArg`].
+///
+/// In other words, this is the raw form of an instruction argument before any
+/// decoding or argument extension takes place.
+#[derive(Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct OpargByte(pub u8);
+
+impl OpargByte {
+    pub const NULL: Self = Self(0);
+}
+
+impl fmt::Debug for OpargByte {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+/// A single Python bytecode instruction.
+///
+/// This pairs an opcode with an argument, whose type depends on the decoding
+/// stage. The generic parameter `T` represents the argument type and allows the
+/// same structure to model both raw and decoded instructions.
+///
+#[derive(Copy, Clone, Debug)]
+pub struct Instruction<T: OpargType> {
+    opcode: RealOpcode,
+    arg: T,
+}
+
+impl Instruction {
+    #[must_use]
+    pub fn new(opcode: RealOpcode, arg: Oparg) -> Result<Self, crate::marshal::MarshalError> {
+        match opcode {
+            RealOpcode::Resume => ResumeOpArg::try_from(arg)?,
+        };
+    }
+}
+
+/// A single bytecode unit as stored in compiled Python bytecode.
+///
+/// A `CodeUnit` contains one [`Instruction`] with a single-byte argument ([`OpargByte`])
+#[derive(Copy, Clone, Debug)]
+#[repr(C)]
+pub struct CodeUnit(Instruction<OpargByte>);
+
+const _: () = assert!(mem::size_of::<CodeUnit>() == 2);
+
+impl Deref for CodeUnit {
+    type Target = Instruction;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+/// A full 32-bit argument for a Python bytecode instruction.
+///
+/// This represents the decoded argument value after processing any preceding
+/// [`RealOpcode::ExtendedArg`] instructions. Each `EXTENDED_ARG` shifts and
+/// combines additional bytes to form a single, full 32-bit argument.
+///
+/// In raw bytecode, arguments are stored as one-byte [`OpargByte`] values.
+/// After decoding and extension, they are represented as an [`Oparg`] to allow
+/// the full range of possible argument values.
+#[derive(Copy, Clone, Debug)]
+#[repr(transparent)]
+pub struct Oparg(pub u32);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
+#[repr(transparent)]
+pub struct Label(pub u32);
+
+impl Deref for Label {
+    type Target = u32;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+pub trait OpargType: Copy + TryFrom<Oparg> + TryInto<Oparg> {}
+
+/*
+ * ##########
+ * ##########
+ * ##########
+ * ##########
+ * ##########
+ * ##########
+*/
 
 pub trait Constant: Sized {
     type Name: AsRef<str>;
@@ -152,26 +250,6 @@ bitflags! {
         const NO_MONITORING_EVENTS = 0x2000000;
     }
 }
-
-/// Opcode argument that may be extended by a prior ExtendedArg.
-#[derive(Copy, Clone, PartialEq, Eq)]
-#[repr(transparent)]
-pub struct OpArgByte(pub u8);
-
-impl OpArgByte {
-    pub const NULL: Self = Self(0);
-}
-
-impl fmt::Debug for OpArgByte {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
-    }
-}
-
-/// Full 32-bit op_arg, including any possible ExtendedArg extension.
-#[derive(Copy, Clone, Debug)]
-#[repr(transparent)]
-pub struct OpArg(pub u32);
 
 impl OpArg {
     pub const NULL: Self = Self(0);
@@ -354,6 +432,7 @@ impl<T: OpArgType> fmt::Debug for Arg<T> {
     }
 }
 
+/*
 impl OpArgType for ConversionFlag {
     #[inline]
     fn from_op_arg(x: u32) -> Option<Self> {
@@ -371,6 +450,7 @@ impl OpArgType for ConversionFlag {
         self as i8 as u8 as u32
     }
 }
+*/
 
 op_arg_enum!(
     /// The kind of Raise that occurred.
@@ -390,32 +470,7 @@ pub struct Instruction<T: OpArgType> {
     oparg: T,
 }
 
-impl TryFrom<u8> for Instruction {
-    type Error = crate::marshal::MarshalError;
-
-    #[inline]
-    fn try_from(raw: u8) -> Result<Self, Self::Error> {
-        Opcode::try_from(raw).map_err(|_| Self::Error::InvalidBytecode)
-    }
-}
-
-impl TryFrom<u16> for Instruction {
-    type Error = crate::marshal::MarshalError;
-
-    #[inline]
-    fn try_from(raw: u16) -> Result<Self, Self::Error> {
-        Opcode::try_from(raw).map_err(|_| Self::Error::InvalidBytecode)
-    }
-}
-
-#[derive(Copy, Clone, Debug)]
-#[repr(C)]
-pub struct CodeUnit {
-    opcode: RealOpcode,
-    arg: OpArgByte,
-}
-
-const _: () = assert!(mem::size_of::<CodeUnit>() == 2);
+impl<T: OpArgType> Instruction<T> {}
 
 impl CodeUnit {
     #[must_use]
@@ -700,16 +755,20 @@ impl<C: Constant> CodeObject<C> {
     }
 
     /// Return the labels targeted by the instructions of this CodeObject
-    pub fn label_targets(&self) -> BTreeSet<Label> {
-        let mut label_targets = BTreeSet::new();
-        let mut arg_state = OpArgState::default();
-        for instruction in &*self.instructions {
-            let (instruction, arg) = arg_state.get(*instruction);
-            if let Some(l) = instruction.label_arg() {
-                label_targets.insert(l.get(arg));
+    //    pub fn label_targets(&self) -> BTreeSet<Label> {
+    pub fn label_targets(&self) -> BTreeSet<u32> {
+        /*
+            let mut label_targets = BTreeSet::new();
+            let mut arg_state = OpArgState::default();
+            for instruction in &*self.instructions {
+                let (instruction, arg) = arg_state.get(*instruction);
+                if let Some(l) = instruction.label_arg() {
+                    label_targets.insert(l.get(arg));
+                }
             }
-        }
-        label_targets
+            label_targets
+        */
+        todo!()
     }
 
     fn display_inner(
@@ -746,11 +805,14 @@ impl<C: Constant> CodeObject<C> {
             }
 
             // arrow and offset
+            /*
             let arrow = if label_targets.contains(&Label(offset as u32)) {
                 ">>"
             } else {
                 "  "
             };
+            */
+            let arrow = " ";
             write!(f, "{arrow} {offset:offset_digits$} ")?;
 
             // instruction

@@ -1,4 +1,9 @@
-use crate::{OneIndexed, SourceLocation, bytecode::*};
+use crate::{
+    RealOpcode, SourceLocation,
+    bytecode::{
+        BorrowedConstant, CodeFlags, CodeObject, CodeUnit, Constant, ConstantBag, OneIndexed,
+    },
+};
 use malachite_bigint::{BigInt, Sign};
 use num_complex::Complex64;
 use rustpython_wtf8::Wtf8;
@@ -187,7 +192,7 @@ pub fn deserialize_code<R: Read, Bag: ConstantBag>(
     let instructions = rdr.read_slice(len * 2)?;
     let instructions = instructions
         .chunks_exact(2)
-        .map(|cu| CodeUnit::new(RealOpcode::try_from(cu[0])?, cu[1]))
+        .map(|cu| Ok(CodeUnit::new(RealOpcode::try_from(cu[0])?, cu[1])))
         .collect::<Result<Box<[CodeUnit]>>>()?;
 
     let len = rdr.read_u32()?;
@@ -656,7 +661,7 @@ pub fn serialize_code<W: Write, C: Constant>(buf: &mut W, code: &CodeObject<C>) 
         buf.write_u32(loc.column.to_zero_indexed() as _);
     }
 
-    buf.write_u16(code.flags.bits());
+    buf.write_u32(code.flags.bits());
 
     buf.write_u32(code.posonlyarg_count);
     buf.write_u32(code.arg_count);

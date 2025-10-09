@@ -1,9 +1,10 @@
+use crate::bytecode::OpArgByte;
 use bitflags::bitflags;
 
 /// Values used in the oparg for `RealOpcode::Resume`.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 #[repr(u8)]
-pub enum ResumeKind {
+pub enum ResumeOpArg {
     // https://github.com/python/cpython/blob/a15ae614deb58f78f9f4aa11ed18a0afc6a9df7d/Include/internal/pycore_opcode_utils.h#L61-L65
     AtFuncStart = 0,
     AfterYield = 1,
@@ -95,7 +96,7 @@ bitflags! {
 // https://github.com/python/cpython/blob/a15ae614deb58f78f9f4aa11ed18a0afc6a9df7d/Include/internal/pycore_opcode_utils.h#L67-L68
 bitflags! {
     #[derive(Clone, Copy, Debug, PartialEq)]
-    pub struct ResumeOpargMask: u8 {
+    pub struct ResumeOpArgMask: u8 {
         const LOCATION = 0x03;
         const DEPTH1 = 0x04;
     }
@@ -141,7 +142,7 @@ pub enum IntrinsicFunction2 {
 // https://github.com/python/cpython/blob/a15ae614deb58f78f9f4aa11ed18a0afc6a9df7d/Include/opcode.h#L10-L35
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(u8)]
-pub enum BinaryOperator {
+pub enum BinaryOperatorOpArg {
     Add = 0,
     And = 1,
     FloorDivide = 2,
@@ -174,15 +175,15 @@ pub enum BinaryOperator {
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 bitflags! {
     pub struct FormatValueConversion: u8 {
-        MASK = 0x03,
+        // const MASK = 0x03;
         /// No conversion
-        NONE = 0x00,
+        const NONE = 0x00;
         /// Converts by calling `str(<value>)`.
-        STR = 0x01,
+        const STR = 0x01;
         /// Converts by calling `repr(<value>)`.
-        REPR = 0x02,
+        const REPR = 0x02;
         /// Converts by calling `ascii(<value>)`.
-        ASCII = 0x03,
+        const ASCII = 0x03;
     }
 }
 
@@ -190,7 +191,24 @@ bitflags! {
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 bitflags! {
     pub struct FormatValueSpec: u8 {
-        MASK = 0x04,
-        HAVE_SPEC = 0x04
+        const MASK = 0x04;
+        const HAVE_SPEC = 0x04;
+    }
+}
+
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[repr(u8)]
+pub enum OpArgKind {
+    Resume(ResumeOpArg),
+    IntrinsicFunction1(IntrinsicFunction1OpArg),
+    IntrinsicFunction2(IntrinsicFunction2OpArg),
+    BinaryOperator(BinaryOperatorOpArg),
+    Raw(OpArgByte),
+}
+
+impl OpArgKind {
+    #[must_use]
+    pub const fn new(opcode: RealOpcode, oparg_byte: OpArgByte) -> crate::marshal::MarshalError {
+        // TODO:
     }
 }

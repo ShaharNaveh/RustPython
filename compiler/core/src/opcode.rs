@@ -5,8 +5,8 @@ macro_rules! gen_has_attr_fn {
         #[inline]
         pub const fn $attr(&self) -> bool {
             match self {
-                Real(val) => val.$attr(),
-                Pseudo(val) => val.$attr(),
+                Self::Real(val) => val.$attr(),
+                Self::Pseudo(val) => val.$attr(),
             }
         }
     };
@@ -22,15 +22,15 @@ impl Opcode {
     #[inline]
     pub const fn real(self) -> Option<RealOpcode> {
         match self {
-            Real(val) => Some(val),
+            Self::Real(val) => Some(val),
             _ => None,
         }
     }
 
     #[inline]
-    pub const fn pseudo(self) -> Option<RealOpcode> {
+    pub const fn pseudo(self) -> Option<PseudoOpcode> {
         match self {
-            Pseudo(val) => Some(val),
+            Self::Pseudo(val) => Some(val),
             _ => None,
         }
     }
@@ -50,15 +50,15 @@ impl Opcode {
         self.has_jump() || self.is_block_push()
     }
 
-    #[inline]
     /// Opcodes that must be last in the basicblock.
+    #[inline]
     pub const fn is_terminator(&self) -> bool {
         // https://github.com/python/cpython/blob/a15ae614deb58f78f9f4aa11ed18a0afc6a9df7d/Include/internal/pycore_opcode_utils.h#L27-L29
         self.has_jump() || self.is_scope_exit()
     }
 
-    #[inline]
     /// Opcodes which are not emitted in codegen stage, only by the assembler.
+    #[inline]
     pub const fn is_assembler(&self) -> bool {
         // https://github.com/python/cpython/blob/a15ae614deb58f78f9f4aa11ed18a0afc6a9df7d/Include/internal/pycore_opcode_utils.h#L31-L35
         matches!(
