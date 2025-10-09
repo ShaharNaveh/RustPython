@@ -187,11 +187,7 @@ pub fn deserialize_code<R: Read, Bag: ConstantBag>(
     let instructions = rdr.read_slice(len * 2)?;
     let instructions = instructions
         .chunks_exact(2)
-        .map(|cu| {
-            let op = Instruction::try_from(cu[0])?;
-            let arg = OpArgByte(cu[1]);
-            Ok(CodeUnit { op, arg })
-        })
+        .map(|cu| CodeUnit::new(RealOpcode::try_from(cu[0])?, cu[1]))
         .collect::<Result<Box<[CodeUnit]>>>()?;
 
     let len = rdr.read_u32()?;
