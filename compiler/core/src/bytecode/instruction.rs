@@ -1,15 +1,26 @@
 //! Implement python as a virtual machine with bytecode.
 //! This module implements bytecode structure.
 
-use crate::{OneIndexed, SourceLocation, opcode::RealOpcode};
+use crate::{OneIndexed, SourceLocation, marshal::MarshalError, opcode::RealOpcode};
 use bitflags::bitflags;
 use itertools::Itertools;
+use kind::{
+    BinaryOperatorOparg, IntrinsicFunction1Oparg, IntrinsicFunction2Oparg, OpargFamily, ResumeOparg,
+};
 use malachite_bigint::BigInt;
 use num_complex::Complex64;
 use rustpython_wtf8::{Wtf8, Wtf8Buf};
 use std::{
-    collections::BTreeSet, fmt, hash, marker::PhantomData, mem, num::NonZeroUsize, ops::Deref,
+    collections::BTreeSet,
+    fmt,
+    hash,
+    // marker::PhantomData,
+    mem,
+    // num::NonZeroUsize,
+    ops::Deref,
 };
+
+pub trait OpargType: Copy {}
 
 /// A raw argument byte for a Python bytecode instruction.
 ///
@@ -27,30 +38,27 @@ impl OpargByte {
     pub const NULL: Self = Self(0);
 }
 
+impl OpargType for OpargByte {}
+
 impl fmt::Debug for OpargByte {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)
     }
 }
 
-/// A single Python bytecode instruction.
-///
-/// This pairs an opcode with an argument, whose type depends on the decoding
-/// stage. The generic parameter `T` represents the argument type and allows the
-/// same structure to model both raw and decoded instructions.
-///
-#[derive(Copy, Clone, Debug)]
-pub struct Instruction<T: OpargType> {
-    opcode: RealOpcode,
-    arg: T,
+impl From<u32> for OpargByte {
+    type Error = TryFromIntError;
+
+    fn try_from(raw: u32) -> Result<Self, Self::Error> {
+        Ok(Self(u8::try_from(raw)?))
+    }
 }
 
-impl Instruction {
-    #[must_use]
-    pub fn new(opcode: RealOpcode, arg: Oparg) -> Result<Self, crate::marshal::MarshalError> {
-        match opcode {
-            RealOpcode::Resume => ResumeOpArg::try_from(arg)?,
-        };
+impl From<Oparg> for OpargByte {
+    type Error = TryFromIntError;
+
+    fn try_from(oparg: Oparg) -> Result<Self, Self::Error> {
+        Ok(Self::try_from(u32::from(oparg))?)
     }
 }
 
@@ -59,17 +67,18 @@ impl Instruction {
 /// A `CodeUnit` contains one [`Instruction`] with a single-byte argument ([`OpargByte`])
 #[derive(Copy, Clone, Debug)]
 #[repr(C)]
-pub struct CodeUnit(Instruction<OpargByte>);
+pub struct CodeUnit {
+    opcode: RealOpcode,
+    oparg_byte: OpargByte,
+}
 
-const _: () = assert!(mem::size_of::<CodeUnit>() == 2);
-
-impl Deref for CodeUnit {
-    type Target = Instruction;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
+impl CodeUnit {
+    #[must_use]
+    pub const fn new(opcode: RealOpcode, oparg_byte: u8) -> Self {
+        Self { opcode, oparg_byte }
     }
 }
+const _: () = assert!(mem::size_of::<CodeUnit>() == 2);
 
 /// A full 32-bit argument for a Python bytecode instruction.
 ///
@@ -84,6 +93,45 @@ impl Deref for CodeUnit {
 #[repr(transparent)]
 pub struct Oparg(pub u32);
 
+impl From<OpargByte> for Oparg {
+    fn from(oparg_byte: OpargByte) -> Self {
+        Self(u32::from(oparg_byte))
+    }
+}
+
+/// A single Python bytecode instruction.
+///
+/// This pairs an opcode with an argument, whose type depends on the decoding
+/// stage. The generic parameter `T` represents the argument type and allows the
+/// same structure to model both raw and decoded instructions.
+#[derive(Copy, Clone, Debug)]
+pub struct Instruction {
+    /// Instruction opcode.
+    opcode: RealOpcode,
+    /// Instruction oparg.
+    oparg_family: OpargFamily,
+}
+
+impl<T: OpargType> Instruction {
+    #[must_use]
+    pub fn new(opcode: RealOpcode, oparg: T) -> Result<Self, crate::marshal::MarshalError> {
+        let arg = match opcode {
+            RealOpcode::Resume => ResumeOparg::try_from(oparg)?,
+            _ => oparg,
+        };
+        Self { opcode, arg }
+    }
+}
+
+impl TryFrom<CodeUnit> for Instruction {
+    type Error = marshal::MarshalError;
+
+    fn try_from(code_unit: CodeUnit) -> Result<Self, Self::Error> {
+        Instruction::new(code_unit.opcode, code_unit.oparg_byte)
+    }
+}
+
+/*
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
 #[repr(transparent)]
 pub struct Label(pub u32);
@@ -95,8 +143,7 @@ impl Deref for Label {
         &self.0
     }
 }
-
-pub trait OpargType: Copy + TryFrom<Oparg> + TryInto<Oparg> {}
+*/
 
 /*
  * ##########
@@ -248,234 +295,6 @@ bitflags! {
         const FUTURE_GENERATOR_STOP = 0x800000;
         const FUTURE_ANNOTATIONS = 0x1000000;
         const NO_MONITORING_EVENTS = 0x2000000;
-    }
-}
-
-impl OpArg {
-    pub const NULL: Self = Self(0);
-
-    /// Returns how many CodeUnits a instruction with this op_arg will be encoded as
-    #[inline]
-    pub const fn instr_size(self) -> NonZeroUsize {
-        // SAFETY: We are always adding 1 to the result.
-        unsafe {
-            NonZeroUsize::new_unchecked(
-                (self.0 > 0xff) as usize
-                    + (self.0 > 0xff_ff) as usize
-                    + (self.0 > 0xff_ff_ff) as usize
-                    + 1,
-            )
-        }
-    }
-
-    /// returns the arg split into any necessary ExtendedArg components (in big-endian order) and
-    /// the arg for the real opcode itself
-    #[inline(always)]
-    pub fn split(self) -> (impl ExactSizeIterator<Item = OpArgByte>, OpArgByte) {
-        let mut it = self
-            .0
-            .to_le_bytes()
-            .map(OpArgByte)
-            .into_iter()
-            .take(self.instr_size().get());
-        let lo = it.next().unwrap();
-        (it.rev(), lo)
-    }
-}
-
-impl From<u32> for OpArg {
-    fn from(raw: u32) -> Self {
-        Self(raw)
-    }
-}
-
-#[derive(Default, Copy, Clone)]
-#[repr(transparent)]
-pub struct OpArgState {
-    state: u32,
-}
-
-impl OpArgState {
-    #[inline(always)]
-    pub fn get(&mut self, ins: CodeUnit) -> (Instruction, OpArg) {
-        let arg = self.extend(ins.arg);
-        if ins.op != Instruction::ExtendedArg {
-            self.reset();
-        }
-        (ins.op, arg)
-    }
-
-    #[inline(always)]
-    pub fn extend(&mut self, arg: OpArgByte) -> OpArg {
-        self.state = (self.state << 8) | u32::from(arg.0);
-        OpArg(self.state)
-    }
-
-    #[inline(always)]
-    pub const fn reset(&mut self) {
-        self.state = 0
-    }
-}
-
-pub trait OpArgType: Copy {
-    fn from_op_arg(x: u32) -> Option<Self>;
-
-    fn to_op_arg(self) -> u32;
-}
-
-impl OpArgType for u32 {
-    #[inline(always)]
-    fn from_op_arg(x: u32) -> Option<Self> {
-        Some(x)
-    }
-
-    #[inline(always)]
-    fn to_op_arg(self) -> u32 {
-        self
-    }
-}
-
-impl OpArgType for bool {
-    #[inline(always)]
-    fn from_op_arg(x: u32) -> Option<Self> {
-        Some(x != 0)
-    }
-
-    #[inline(always)]
-    fn to_op_arg(self) -> u32 {
-        self as u32
-    }
-}
-
-macro_rules! op_arg_enum_impl {
-    (enum $name:ident { $($(#[$var_attr:meta])* $var:ident = $value:literal,)* }) => {
-        impl OpArgType for $name {
-            fn to_op_arg(self) -> u32 {
-                self as u32
-            }
-
-            fn from_op_arg(x: u32) -> Option<Self> {
-                Some(match u8::try_from(x).ok()? {
-                    $($value => Self::$var,)*
-                    _ => return None,
-                })
-            }
-        }
-    };
-}
-
-macro_rules! op_arg_enum {
-    ($(#[$attr:meta])* $vis:vis enum $name:ident { $($(#[$var_attr:meta])* $var:ident = $value:literal,)* }) => {
-        $(#[$attr])*
-        $vis enum $name {
-            $($(#[$var_attr])* $var = $value,)*
-        }
-
-        op_arg_enum_impl!(enum $name {
-            $($(#[$var_attr])* $var = $value,)*
-        });
-    };
-}
-
-#[derive(Copy, Clone)]
-pub struct Arg<T: OpArgType>(PhantomData<T>);
-
-impl<T: OpArgType> Arg<T> {
-    #[inline]
-    pub const fn marker() -> Self {
-        Self(PhantomData)
-    }
-
-    #[inline]
-    pub fn new(arg: T) -> (Self, OpArg) {
-        (Self(PhantomData), OpArg(arg.to_op_arg()))
-    }
-
-    #[inline]
-    pub fn new_single(arg: T) -> (Self, OpArgByte)
-    where
-        T: Into<u8>,
-    {
-        (Self(PhantomData), OpArgByte(arg.into()))
-    }
-
-    #[inline(always)]
-    pub fn get(self, arg: OpArg) -> T {
-        self.try_get(arg).unwrap()
-    }
-
-    #[inline(always)]
-    pub fn try_get(self, arg: OpArg) -> Option<T> {
-        T::from_op_arg(arg.0)
-    }
-
-    /// # Safety
-    /// T::from_op_arg(self) must succeed
-    #[inline(always)]
-    pub unsafe fn get_unchecked(self, arg: OpArg) -> T {
-        // SAFETY: requirements forwarded from caller
-        unsafe { T::from_op_arg(arg.0).unwrap_unchecked() }
-    }
-}
-
-impl<T: OpArgType> PartialEq for Arg<T> {
-    fn eq(&self, _: &Self) -> bool {
-        true
-    }
-}
-
-impl<T: OpArgType> Eq for Arg<T> {}
-
-impl<T: OpArgType> fmt::Debug for Arg<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Arg<{}>", std::any::type_name::<T>())
-    }
-}
-
-/*
-impl OpArgType for ConversionFlag {
-    #[inline]
-    fn from_op_arg(x: u32) -> Option<Self> {
-        match x as u8 {
-            b's' => Some(Self::Str),
-            b'a' => Some(Self::Ascii),
-            b'r' => Some(Self::Repr),
-            std::u8::MAX => Some(Self::None),
-            _ => None,
-        }
-    }
-
-    #[inline]
-    fn to_op_arg(self) -> u32 {
-        self as i8 as u8 as u32
-    }
-}
-*/
-
-op_arg_enum!(
-    /// The kind of Raise that occurred.
-    #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-    #[repr(u8)]
-    pub enum RaiseKind {
-        Reraise = 0,
-        Raise = 1,
-        RaiseCause = 2,
-    }
-);
-
-/// A Single bytecode instruction.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Instruction<T: OpArgType> {
-    opcode: RealOpcode,
-    oparg: T,
-}
-
-impl<T: OpArgType> Instruction<T> {}
-
-impl CodeUnit {
-    #[must_use]
-    pub const fn new(op: Instruction, arg: OpArgByte) -> Self {
-        Self { op, arg }
     }
 }
 
@@ -634,6 +453,7 @@ impl<C: Constant> BorrowedConstant<'_, C> {
     }
 }
 
+/*
 op_arg_enum!(
     /// The possible comparison operators
     #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -662,13 +482,14 @@ op_arg_enum!(
         ExceptionMatch = 4,
     }
 );
-
+*/
 #[derive(Copy, Clone)]
 pub struct UnpackExArgs {
     pub before: u8,
     pub after: u8,
 }
 
+/*
 impl OpArgType for UnpackExArgs {
     #[inline(always)]
     fn from_op_arg(x: u32) -> Option<Self> {
@@ -681,7 +502,7 @@ impl OpArgType for UnpackExArgs {
         u32::from_le_bytes([self.before, self.after, 0, 0])
     }
 }
-
+*/
 impl fmt::Display for UnpackExArgs {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "before: {}, after: {}", self.before, self.after)
@@ -771,56 +592,58 @@ impl<C: Constant> CodeObject<C> {
         todo!()
     }
 
-    fn display_inner(
-        &self,
-        f: &mut fmt::Formatter<'_>,
-        expand_code_objects: bool,
-        level: usize,
-    ) -> fmt::Result {
-        let label_targets = self.label_targets();
-        let line_digits = (3).max(self.locations.last().unwrap().row.to_string().len());
-        let offset_digits = (4).max(self.instructions.len().to_string().len());
-        let mut last_line = OneIndexed::MAX;
-        let mut arg_state = OpArgState::default();
-        for (offset, &instruction) in self.instructions.iter().enumerate() {
-            let (instruction, arg) = arg_state.get(instruction);
-            // optional line number
-            let line = self.locations[offset].row;
-            if line != last_line {
-                if last_line != OneIndexed::MAX {
-                    writeln!(f)?;
+    /*
+        fn display_inner(
+            &self,
+            f: &mut fmt::Formatter<'_>,
+            expand_code_objects: bool,
+            level: usize,
+        ) -> fmt::Result {
+            let label_targets = self.label_targets();
+            let line_digits = (3).max(self.locations.last().unwrap().row.to_string().len());
+            let offset_digits = (4).max(self.instructions.len().to_string().len());
+            let mut last_line = OneIndexed::MAX;
+            let mut arg_state = OpArgState::default();
+            for (offset, &instruction) in self.instructions.iter().enumerate() {
+                let (instruction, arg) = arg_state.get(instruction);
+                // optional line number
+                let line = self.locations[offset].row;
+                if line != last_line {
+                    if last_line != OneIndexed::MAX {
+                        writeln!(f)?;
+                    }
+                    last_line = line;
+                    write!(f, "{line:line_digits$}")?;
+                } else {
+                    for _ in 0..line_digits {
+                        write!(f, " ")?;
+                    }
                 }
-                last_line = line;
-                write!(f, "{line:line_digits$}")?;
-            } else {
-                for _ in 0..line_digits {
-                    write!(f, " ")?;
+                write!(f, " ")?;
+
+                // level indent
+                for _ in 0..level {
+                    write!(f, "    ")?;
                 }
+
+                // arrow and offset
+                /*
+                let arrow = if label_targets.contains(&Label(offset as u32)) {
+                    ">>"
+                } else {
+                    "  "
+                };
+                */
+                let arrow = " ";
+                write!(f, "{arrow} {offset:offset_digits$} ")?;
+
+                // instruction
+                instruction.fmt_dis(arg, f, self, expand_code_objects, 21, level)?;
+                writeln!(f)?;
             }
-            write!(f, " ")?;
-
-            // level indent
-            for _ in 0..level {
-                write!(f, "    ")?;
-            }
-
-            // arrow and offset
-            /*
-            let arrow = if label_targets.contains(&Label(offset as u32)) {
-                ">>"
-            } else {
-                "  "
-            };
-            */
-            let arrow = " ";
-            write!(f, "{arrow} {offset:offset_digits$} ")?;
-
-            // instruction
-            instruction.fmt_dis(arg, f, self, expand_code_objects, 21, level)?;
-            writeln!(f)?;
+            Ok(())
         }
-        Ok(())
-    }
+    */
 
     /// Recursively display this CodeObject
     pub fn display_expand_code_objects(&self) -> impl fmt::Display + '_ {
@@ -967,5 +790,74 @@ impl<C: Constant> fmt::Debug for CodeObject<C> {
             self.source_path.as_ref(),
             self.first_line_number.map_or(-1, |x| x.get() as i32)
         )
+    }
+}
+
+/// CPython 3.11+ linetable location info codes
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[repr(u8)]
+pub enum PyCodeLocationInfoKind {
+    // Short forms are 0 to 9
+    Short0 = 0,
+    Short1 = 1,
+    Short2 = 2,
+    Short3 = 3,
+    Short4 = 4,
+    Short5 = 5,
+    Short6 = 6,
+    Short7 = 7,
+    Short8 = 8,
+    Short9 = 9,
+    // One line forms are 10 to 12
+    OneLine0 = 10,
+    OneLine1 = 11,
+    OneLine2 = 12,
+    NoColumns = 13,
+    Long = 14,
+    None = 15,
+}
+
+impl PyCodeLocationInfoKind {
+    pub fn from_code(code: u8) -> Option<Self> {
+        match code {
+            0 => Some(Self::Short0),
+            1 => Some(Self::Short1),
+            2 => Some(Self::Short2),
+            3 => Some(Self::Short3),
+            4 => Some(Self::Short4),
+            5 => Some(Self::Short5),
+            6 => Some(Self::Short6),
+            7 => Some(Self::Short7),
+            8 => Some(Self::Short8),
+            9 => Some(Self::Short9),
+            10 => Some(Self::OneLine0),
+            11 => Some(Self::OneLine1),
+            12 => Some(Self::OneLine2),
+            13 => Some(Self::NoColumns),
+            14 => Some(Self::Long),
+            15 => Some(Self::None),
+            _ => Option::None,
+        }
+    }
+
+    pub fn is_short(&self) -> bool {
+        (*self as u8) <= 9
+    }
+
+    pub fn short_column_group(&self) -> Option<u8> {
+        if self.is_short() {
+            Some(*self as u8)
+        } else {
+            Option::None
+        }
+    }
+
+    pub fn one_line_delta(&self) -> Option<i32> {
+        match self {
+            Self::OneLine0 => Some(0),
+            Self::OneLine1 => Some(1),
+            Self::OneLine2 => Some(2),
+            _ => Option::None,
+        }
     }
 }

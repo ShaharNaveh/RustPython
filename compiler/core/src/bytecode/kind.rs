@@ -1,85 +1,127 @@
-use crate::bytecode::OpArgByte;
 use bitflags::bitflags;
+use instruction::Oparg;
 
-/// Values used in the oparg for `RealOpcode::Resume`.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-#[repr(u8)]
-pub enum ResumeOpArg {
-    // https://github.com/python/cpython/blob/a15ae614deb58f78f9f4aa11ed18a0afc6a9df7d/Include/internal/pycore_opcode_utils.h#L61-L65
-    AtFuncStart = 0,
-    AfterYield = 1,
-    AfterYieldFrom = 2,
-    AfterAwait = 3,
+/// Internal helper for [`oparg_enum!`].
+///
+/// Creates the following implementations for a given enum:
+/// - `TryFrom<u8>`
+/// - `TryFrom<OpargByte>`
+/// - `TryFrom<Oparg>`
+/// - `Into<Oparg>`
+/// - [`OpargType`](crate::bytecode::OpargType)
+///
+/// Should not be used directly outside of macro expansion.
+///
+/// # Safety
+///
+/// The generated conversion performs strict range checking and
+/// returns [`MarshalError::InvalidBytecode`](crate::marshal::MarshalError::InvalidBytecode)
+/// for any unmapped operand value.
+macro_rules! oparg_enum_impl {
+    (enum $name:ident { $($(#[$var_attr:meta])* $var:ident = $value:literal,)* }) => {
+        impl $crate::bytecode::OpargType for $name {
+            fn try_from_u8(raw: u8) -> Result<Self, $crate::marshal::MarshalError> {
+                Ok(match raw {
+                    $($value => Self::$var,)*
+                    _ => return Err($crate::marshal::MarshalError::InvalidBytecode)
+                })
+            }
+        }
+
+
+        /*
+        impl TryFrom<$crate::bytecode::OpargByte> for $name {
+            type Error = $crate::marshal::MarshalError;
+
+            fn try_from(oparg: $crate::bytecode::OpargByte) -> Result<Self, Self::Err> {
+                Self::try_from(u8::from(oparg))
+            }
+        }
+
+        impl TryFrom<$crate::bytecode::Oparg> for $name {
+            type Error = $crate::marshal::MarshalError;
+
+            fn try_from(oparg: $crate::bytecode::Oparg) -> Result<Self, Self::Err> {
+                Self::try_from(u8::try_from(oparg).map_err(|_| Self::Error::InvalidBytecode)?)
+            }
+        }
+        */
+
+/*
+        impl From<$name> for u8 {
+            fn from(oparg: $name) -> Self {
+                oparg as u8
+            }
+        }
+*/
+        /*
+        impl From<$name> for u32 {
+            fn from(oparg: $name) -> Self {
+                u8::from(oparg) as u32
+            }
+        }
+        */
+
+        impl From<$name> for $crate::bytecode::Oparg {
+            fn from(oparg: $name) -> Self {
+                Self::from(oparg as u8)
+            }
+        }
+    };
 }
 
-/// CPython 3.11+ linetable location info codes
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-#[repr(u8)]
-pub enum PyCodeLocationInfoKind {
-    // Short forms are 0 to 9
-    Short0 = 0,
-    Short1 = 1,
-    Short2 = 2,
-    Short3 = 3,
-    Short4 = 4,
-    Short5 = 5,
-    Short6 = 6,
-    Short7 = 7,
-    Short8 = 8,
-    Short9 = 9,
-    // One line forms are 10 to 12
-    OneLine0 = 10,
-    OneLine1 = 11,
-    OneLine2 = 12,
-    NoColumns = 13,
-    Long = 14,
-    None = 15,
+/// Defines an enum representing a valid set of opcode argument (`oparg`) values,
+/// and automatically implements conversions from raw bytecode operands.
+///
+/// This macro generates both the enum declaration **and** the necessary
+/// `TryFrom` implementations for safely converting from:
+/// - `u8` (a raw bytecode argument byte)
+/// - [`Oparg`](crate::bytecode::Oparg) (a full 32-bit operand wrapper)
+///
+/// # Examples
+///
+/// ```rust
+/// use crate::bytecode::Oparg;
+///
+/// oparg_enum! {
+///     /// Example operation argument variants.
+///     #[derive(Copy, Clone, Debug, Eq, PartialEq)]
+///		#[repr(u8)]
+///     pub enum MyOparg {
+///         Foo = 0,
+///         Bar = 1,
+///     }
+/// }
+///
+/// assert_eq!(MyOparg::try_from(0u8), Ok(MyOparg::Add));
+/// assert_eq!(MyOparg::try_from(Oparg(1)), Ok(MyOparg::Sub));
+/// assert!(MyOparg::try_from(255u8).is_err());
+/// ```
+macro_rules! oparg_enum {
+    ($(#[$attr:meta])* $vis:vis enum $name:ident { $($(#[$var_attr:meta])* $var:ident = $value:literal,)* }) => {
+        $(#[$attr])*
+        $vis enum $name {
+            $($(#[$var_attr])* $var = $value,)*
+        }
+
+        oparg_enum_impl!(enum $name {
+            $($(#[$var_attr])* $var = $value,)*
+        });
+    };
 }
 
-impl PyCodeLocationInfoKind {
-    pub fn from_code(code: u8) -> Option<Self> {
-        match code {
-            0 => Some(Self::Short0),
-            1 => Some(Self::Short1),
-            2 => Some(Self::Short2),
-            3 => Some(Self::Short3),
-            4 => Some(Self::Short4),
-            5 => Some(Self::Short5),
-            6 => Some(Self::Short6),
-            7 => Some(Self::Short7),
-            8 => Some(Self::Short8),
-            9 => Some(Self::Short9),
-            10 => Some(Self::OneLine0),
-            11 => Some(Self::OneLine1),
-            12 => Some(Self::OneLine2),
-            13 => Some(Self::NoColumns),
-            14 => Some(Self::Long),
-            15 => Some(Self::None),
-            _ => Option::None,
-        }
+// https://github.com/python/cpython/blob/a15ae614deb58f78f9f4aa11ed18a0afc6a9df7d/Include/internal/pycore_opcode_utils.h#L61-L65
+oparg_enum!(
+    /// Values used in the oparg for `RealOpcode::Resume`.
+    #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+    #[repr(u8)]
+    pub enum ResumeOparg {
+        AtFuncStart = 0,
+        AfterYield = 1,
+        AfterYieldFrom = 2,
+        AfterAwait = 3,
     }
-
-    pub fn is_short(&self) -> bool {
-        (*self as u8) <= 9
-    }
-
-    pub fn short_column_group(&self) -> Option<u8> {
-        if self.is_short() {
-            Some(*self as u8)
-        } else {
-            Option::None
-        }
-    }
-
-    pub fn one_line_delta(&self) -> Option<i32> {
-        match self {
-            Self::OneLine0 => Some(0),
-            Self::OneLine1 => Some(1),
-            Self::OneLine2 => Some(2),
-            _ => Option::None,
-        }
-    }
-}
+);
 
 // https://github.com/python/cpython/blob/a15ae614deb58f78f9f4aa11ed18a0afc6a9df7d/Include/internal/pycore_opcode_utils.h#L55-L59
 bitflags! {
@@ -96,80 +138,86 @@ bitflags! {
 // https://github.com/python/cpython/blob/a15ae614deb58f78f9f4aa11ed18a0afc6a9df7d/Include/internal/pycore_opcode_utils.h#L67-L68
 bitflags! {
     #[derive(Clone, Copy, Debug, PartialEq)]
-    pub struct ResumeOpArgMask: u8 {
+    pub struct ResumeOpargMask: u8 {
         const LOCATION = 0x03;
         const DEPTH1 = 0x04;
     }
 }
 
 // https://github.com/python/cpython/blob/a15ae614deb58f78f9f4aa11ed18a0afc6a9df7d/Include/internal/pycore_intrinsics.h#L8-L20
-/// Intrinsic function for `RealOpcde::CallIntrinsic1`.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-#[repr(u8)]
-pub enum IntrinsicFunction1 {
-    Invalid = 0,
-    Print = 1,
-    /// Import * operation.
-    ImportStar = 2,
-    StopIterationError = 3,
-    AsyncGenWrap = 4,
-    UnaryPositive = 5,
-    /// Convert List to Tuple.
-    ListToTuple = 6,
-    /// Type parameter related.
-    TypeVar = 7,
-    ParamSpec = 8,
-    TypeVarTuple = 9,
-    /// Generic subscript for PEP 695.
-    SubscriptGeneric = 10,
-    TypeAlias = 11,
-}
+oparg_enum!(
+    /// Intrinsic function for `RealOpcde::CallIntrinsic1`.
+    #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+    #[repr(u8)]
+    pub enum IntrinsicFunction1Oparg {
+        Invalid = 0,
+        Print = 1,
+        /// Import * operation.
+        ImportStar = 2,
+        StopIterationError = 3,
+        AsyncGenWrap = 4,
+        UnaryPositive = 5,
+        /// Convert List to Tuple.
+        ListToTuple = 6,
+        /// Type parameter related.
+        TypeVar = 7,
+        ParamSpec = 8,
+        TypeVarTuple = 9,
+        /// Generic subscript for PEP 695.
+        SubscriptGeneric = 10,
+        TypeAlias = 11,
+    }
+);
 
 // https://github.com/python/cpython/blob/a15ae614deb58f78f9f4aa11ed18a0afc6a9df7d/Include/internal/pycore_intrinsics.h#L25-L31
-/// Intrinsic function for `RealOpcode::CallIntrinsic2`
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-#[repr(u8)]
-pub enum IntrinsicFunction2 {
-    Invalid = 0,
-    PrepReraiseStar = 1,
-    TypeVarWithBound = 2,
-    TypeVarWithConstraint = 3,
-    SetFunctionTypeParams = 4,
-    /// Set default value for type parameter (PEP 695).
-    SetTypeparamDefault = 5,
-}
+oparg_enum!(
+    /// Intrinsic function for `RealOpcode::CallIntrinsic2`
+    #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+    #[repr(u8)]
+    pub enum IntrinsicFunction2Oparg {
+        Invalid = 0,
+        PrepReraiseStar = 1,
+        TypeVarWithBound = 2,
+        TypeVarWithConstraint = 3,
+        SetFunctionTypeParams = 4,
+        /// Set default value for type parameter (PEP 695).
+        SetTypeparamDefault = 5,
+    }
+);
 
 // https://github.com/python/cpython/blob/a15ae614deb58f78f9f4aa11ed18a0afc6a9df7d/Include/opcode.h#L10-L35
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(u8)]
-pub enum BinaryOperatorOpArg {
-    Add = 0,
-    And = 1,
-    FloorDivide = 2,
-    Lshift = 3,
-    MatrixMultiply = 4,
-    Multiply = 5,
-    Remainder = 6,
-    Or = 7,
-    Power = 8,
-    Rshift = 9,
-    Subtract = 10,
-    TrueDivide = 11,
-    Xor = 12,
-    InplaceAdd = 13,
-    InplaceAnd = 14,
-    InplaceFloorDivide = 15,
-    InplaceLshift = 16,
-    InplaceMatrixMultiply = 17,
-    InplaceMultiply = 18,
-    InplaceRemainder = 19,
-    InplaceOr = 20,
-    InplacePower = 21,
-    InplaceRshift = 22,
-    InplaceSubtract = 23,
-    InplaceTrueDivide = 24,
-    InplaceXor = 25,
-}
+oparg_enum!(
+    #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+    #[repr(u8)]
+    pub enum BinaryOperatorOparg {
+        Add = 0,
+        And = 1,
+        FloorDivide = 2,
+        Lshift = 3,
+        MatrixMultiply = 4,
+        Multiply = 5,
+        Remainder = 6,
+        Or = 7,
+        Power = 8,
+        Rshift = 9,
+        Subtract = 10,
+        TrueDivide = 11,
+        Xor = 12,
+        InplaceAdd = 13,
+        InplaceAnd = 14,
+        InplaceFloorDivide = 15,
+        InplaceLshift = 16,
+        InplaceMatrixMultiply = 17,
+        InplaceMultiply = 18,
+        InplaceRemainder = 19,
+        InplaceOr = 20,
+        InplacePower = 21,
+        InplaceRshift = 22,
+        InplaceSubtract = 23,
+        InplaceTrueDivide = 24,
+        InplaceXor = 25,
+    }
+);
 
 // https://github.com/python/cpython/blob/a15ae614deb58f78f9f4aa11ed18a0afc6a9df7d/Include/ceval.h#L127-L134
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
@@ -197,18 +245,8 @@ bitflags! {
 }
 
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-#[repr(u8)]
-pub enum OpArgKind {
-    Resume(ResumeOpArg),
-    IntrinsicFunction1(IntrinsicFunction1OpArg),
-    IntrinsicFunction2(IntrinsicFunction2OpArg),
-    BinaryOperator(BinaryOperatorOpArg),
-    Raw(OpArgByte),
-}
-
-impl OpArgKind {
-    #[must_use]
-    pub const fn new(opcode: RealOpcode, oparg_byte: OpArgByte) -> crate::marshal::MarshalError {
-        // TODO:
-    }
+pub enum OpargFamily<T: Into<Oparg>> {
+    Resume(ResumeOparg),
+    BinaryOperatorOparg(BinaryOperator),
+    Raw(T),
 }
