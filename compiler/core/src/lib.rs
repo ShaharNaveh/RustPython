@@ -5,10 +5,7 @@ pub mod bytecode;
 pub mod frozen;
 pub mod marshal;
 mod mode;
-pub mod opcode;
-mod opcodes;
 
 pub use mode::Mode;
-pub use opcode::{Opcode, PseudoOpcode, RealOpcode};
 
 pub use ruff_source_file::{LineIndex, OneIndexed, SourceFile, SourceFileBuilder, SourceLocation};
