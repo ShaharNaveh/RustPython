@@ -1,12 +1,17 @@
 //! Implement python as a virtual machine with bytecode.
 //! This module implements bytecode structure.
 
-use crate::{OneIndexed, SourceLocation, marshal::MarshalError, opcode::RealOpcode};
+use crate::{
+    OneIndexed, SourceLocation,
+    bytecode::{
+        BinaryOperatorOparg, IntrinsicFunction1Oparg, IntrinsicFunction2Oparg, OpargFamily,
+        ResumeOparg,
+    },
+    marshal::MarshalError,
+    opcode::RealOpcode,
+};
 use bitflags::bitflags;
 use itertools::Itertools;
-use kind::{
-    BinaryOperatorOparg, IntrinsicFunction1Oparg, IntrinsicFunction2Oparg, OpargFamily, ResumeOparg,
-};
 use malachite_bigint::BigInt;
 use num_complex::Complex64;
 use rustpython_wtf8::{Wtf8, Wtf8Buf};
@@ -16,11 +21,12 @@ use std::{
     hash,
     // marker::PhantomData,
     mem,
-    // num::NonZeroUsize,
+    num::{
+        TryFromIntError,
+        //   NonZeroUsize,
+    },
     ops::Deref,
 };
-
-pub trait OpargType: Copy {}
 
 /// A raw argument byte for a Python bytecode instruction.
 ///
@@ -38,7 +44,11 @@ impl OpargByte {
     pub const NULL: Self = Self(0);
 }
 
-impl OpargType for OpargByte {}
+impl From<u8> for OpargByte {
+    fn from(raw: u8) -> Self {
+        Self(raw)
+    }
+}
 
 impl fmt::Debug for OpargByte {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -46,7 +56,7 @@ impl fmt::Debug for OpargByte {
     }
 }
 
-impl From<u32> for OpargByte {
+impl TryFrom<u32> for OpargByte {
     type Error = TryFromIntError;
 
     fn try_from(raw: u32) -> Result<Self, Self::Error> {
@@ -54,7 +64,7 @@ impl From<u32> for OpargByte {
     }
 }
 
-impl From<Oparg> for OpargByte {
+impl TryFrom<Oparg> for OpargByte {
     type Error = TryFromIntError;
 
     fn try_from(oparg: Oparg) -> Result<Self, Self::Error> {
@@ -74,7 +84,7 @@ pub struct CodeUnit {
 
 impl CodeUnit {
     #[must_use]
-    pub const fn new(opcode: RealOpcode, oparg_byte: u8) -> Self {
+    pub const fn new(opcode: RealOpcode, oparg_byte: OpargByte) -> Self {
         Self { opcode, oparg_byte }
     }
 }
@@ -93,9 +103,35 @@ const _: () = assert!(mem::size_of::<CodeUnit>() == 2);
 #[repr(transparent)]
 pub struct Oparg(pub u32);
 
+impl From<u8> for Oparg {
+    fn from(raw: u8) -> Self {
+        Self(u32::from(raw))
+    }
+}
+
 impl From<OpargByte> for Oparg {
     fn from(oparg_byte: OpargByte) -> Self {
         Self(u32::from(oparg_byte))
+    }
+}
+
+impl From<OpargByte> for u32 {
+    fn from(oparg_byte: OpargByte) -> Self {
+        oparg_byte.0 as u32
+    }
+}
+
+impl From<Oparg> for u32 {
+    fn from(oparg: Oparg) -> Self {
+        oparg.0
+    }
+}
+
+impl Deref for Oparg {
+    type Target = u32;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
@@ -112,22 +148,22 @@ pub struct Instruction {
     oparg_family: OpargFamily,
 }
 
-impl<T: OpargType> Instruction {
+impl Instruction {
     #[must_use]
-    pub fn new(opcode: RealOpcode, oparg: T) -> Result<Self, crate::marshal::MarshalError> {
-        let arg = match opcode {
-            RealOpcode::Resume => ResumeOparg::try_from(oparg)?,
-            _ => oparg,
-        };
-        Self { opcode, arg }
+    pub fn new(opcode: RealOpcode, oparg: Oparg) -> Result<Self, crate::marshal::MarshalError> {
+        let oparg_family = OpargFamily::new(opcode, oparg)?;
+        Ok(Self {
+            opcode,
+            oparg_family,
+        })
     }
 }
 
 impl TryFrom<CodeUnit> for Instruction {
-    type Error = marshal::MarshalError;
+    type Error = MarshalError;
 
     fn try_from(code_unit: CodeUnit) -> Result<Self, Self::Error> {
-        Instruction::new(code_unit.opcode, code_unit.oparg_byte)
+        Instruction::new(code_unit.opcode, code_unit.oparg_byte.into())
     }
 }
 
@@ -553,14 +589,14 @@ impl<C: Constant> CodeObject<C> {
         let args = &self.varnames[..nargs];
         let kwonlyargs = &self.varnames[nargs..varargs_pos];
 
-        let vararg = if self.flags.contains(CodeFlags::HAS_VARARGS) {
+        let vararg = if self.flags.contains(CodeFlags::VAR_ARGS) {
             let vararg = &self.varnames[varargs_pos];
             varargs_pos += 1;
             Some(vararg)
         } else {
             None
         };
-        let varkwarg = if self.flags.contains(CodeFlags::HAS_VARKEYWORDS) {
+        let varkwarg = if self.flags.contains(CodeFlags::VAR_KEYWORDS) {
             Some(&self.varnames[varargs_pos])
         } else {
             None
@@ -648,9 +684,11 @@ impl<C: Constant> CodeObject<C> {
     /// Recursively display this CodeObject
     pub fn display_expand_code_objects(&self) -> impl fmt::Display + '_ {
         struct Display<'a, C: Constant>(&'a CodeObject<C>);
+
         impl<C: Constant> fmt::Display for Display<'_, C> {
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                self.0.display_inner(f, true, 1)
+            fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                // self.0.display_inner(f, true, 1)
+                Ok(())
             }
         }
         Display(self)
@@ -728,7 +766,8 @@ impl<C: Constant> CodeObject<C> {
 }
 
 impl<C: Constant> fmt::Display for CodeObject<C> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        /*
         self.display_inner(f, false, 1)?;
         for constant in &*self.constants {
             if let BorrowedConstant::Code { code } = constant.borrow_constant() {
@@ -736,6 +775,7 @@ impl<C: Constant> fmt::Display for CodeObject<C> {
                 code.fmt(f)?;
             }
         }
+        */
         Ok(())
     }
 }

@@ -1,5 +1,9 @@
+use crate::byecode::Oparg;
 use bitflags::bitflags;
-use instruction::Oparg;
+
+pub trait OpargFamilyMember: Copy {
+    fn try_from_u8(raw: u8) -> Result<Self, crate::marshal::MarshalError>;
+}
 
 /// Internal helper for [`oparg_enum!`].
 ///
@@ -19,7 +23,7 @@ use instruction::Oparg;
 /// for any unmapped operand value.
 macro_rules! oparg_enum_impl {
     (enum $name:ident { $($(#[$var_attr:meta])* $var:ident = $value:literal,)* }) => {
-        impl $crate::bytecode::OpargType for $name {
+        impl OpargFamilyMember for $name {
             fn try_from_u8(raw: u8) -> Result<Self, $crate::marshal::MarshalError> {
                 Ok(match raw {
                     $($value => Self::$var,)*
@@ -28,7 +32,13 @@ macro_rules! oparg_enum_impl {
             }
         }
 
-
+        /*
+        impl From<$name> for $crate::bytecode::Oparg {
+            fn from(oparg: $name) -> Self {
+                Self::from(oparg as u8)
+            }
+        }
+*/
         /*
         impl TryFrom<$crate::bytecode::OpargByte> for $name {
             type Error = $crate::marshal::MarshalError;
@@ -62,11 +72,6 @@ macro_rules! oparg_enum_impl {
         }
         */
 
-        impl From<$name> for $crate::bytecode::Oparg {
-            fn from(oparg: $name) -> Self {
-                Self::from(oparg as u8)
-            }
-        }
     };
 }
 
@@ -126,7 +131,7 @@ oparg_enum!(
 // https://github.com/python/cpython/blob/a15ae614deb58f78f9f4aa11ed18a0afc6a9df7d/Include/internal/pycore_opcode_utils.h#L55-L59
 bitflags! {
     /// Flags used in the oparg for `RealOpcde::MakeFunction`.
-    #[derive(Clone, Copy, Debug, PartialEq)]
+    #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
     pub struct MakeFunctionFlags: u8 {
         const DEFAULTS = 0x01;
         const KW_DEFAULTS = 0x02;
@@ -137,7 +142,7 @@ bitflags! {
 
 // https://github.com/python/cpython/blob/a15ae614deb58f78f9f4aa11ed18a0afc6a9df7d/Include/internal/pycore_opcode_utils.h#L67-L68
 bitflags! {
-    #[derive(Clone, Copy, Debug, PartialEq)]
+    #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
     pub struct ResumeOpargMask: u8 {
         const LOCATION = 0x03;
         const DEPTH1 = 0x04;
@@ -147,7 +152,7 @@ bitflags! {
 // https://github.com/python/cpython/blob/a15ae614deb58f78f9f4aa11ed18a0afc6a9df7d/Include/internal/pycore_intrinsics.h#L8-L20
 oparg_enum!(
     /// Intrinsic function for `RealOpcde::CallIntrinsic1`.
-    #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+    #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
     #[repr(u8)]
     pub enum IntrinsicFunction1Oparg {
         Invalid = 0,
@@ -172,7 +177,7 @@ oparg_enum!(
 // https://github.com/python/cpython/blob/a15ae614deb58f78f9f4aa11ed18a0afc6a9df7d/Include/internal/pycore_intrinsics.h#L25-L31
 oparg_enum!(
     /// Intrinsic function for `RealOpcode::CallIntrinsic2`
-    #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+    #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
     #[repr(u8)]
     pub enum IntrinsicFunction2Oparg {
         Invalid = 0,
@@ -187,7 +192,7 @@ oparg_enum!(
 
 // https://github.com/python/cpython/blob/a15ae614deb58f78f9f4aa11ed18a0afc6a9df7d/Include/opcode.h#L10-L35
 oparg_enum!(
-    #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+    #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
     #[repr(u8)]
     pub enum BinaryOperatorOparg {
         Add = 0,
@@ -222,6 +227,7 @@ oparg_enum!(
 // https://github.com/python/cpython/blob/a15ae614deb58f78f9f4aa11ed18a0afc6a9df7d/Include/ceval.h#L127-L134
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 bitflags! {
+    #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
     pub struct FormatValueConversion: u8 {
         // const MASK = 0x03;
         /// No conversion
@@ -247,6 +253,8 @@ bitflags! {
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum OpargFamily<T: Into<Oparg>> {
     Resume(ResumeOparg),
-    BinaryOperatorOparg(BinaryOperator),
-    Raw(T),
+    BinaryOperator(BinaryOperatorOparg),
+    IntrinsicFunction2(IntrinsicFunction2Oparg),
+    IntrinsicFunction1(IntrinsicFunction1Oparg),
+    None(T),
 }
