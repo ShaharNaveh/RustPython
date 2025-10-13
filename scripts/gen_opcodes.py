@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import abc
 import collections
+import enum
 import itertools
 import pathlib
 import re
@@ -24,12 +25,30 @@ from generators_common import DEFAULT_INPUT
 from stack import StackOffset, get_stack_effect
 
 ROOT = pathlib.Path(__file__).parents[1]
-OUT_PATH = ROOT / "compiler" / "core" / "src" / "opcodes.rs"
+OUT_PATH = ROOT / "compiler" / "core" / "src" / "instructions.rs"
 
 DERIVE = "#[derive(Clone, Copy, Debug, Eq, PartialEq)]"
-TYPES = tuple(
-    f"{a}{b}" for a, b in itertools.product(("i", "u"), (8, 16, 32, 64, 128, "size"))
-)
+
+ARG = "crate::bytecode::Arg"
+
+@enum.unique
+class Oparg(enum.StrEnum):
+    NameIdx = "namei"
+    Const = "consti"
+    Delta = "delta"
+    Resume = "context"
+    Compare = "opname"
+    None = ""
+
+
+OPARG_TYPES = {
+    "jumps": Oparg.Label,
+    "uses_co_consts":Oparg.Const ,
+    "uses_co_name": Oparg.NameIdx,
+    "has_free": "???",
+    "uses_locals": "???",
+}
+OPARG_OVERRIDE = {"RESUME": Oparg.Resume}
 
 
 def _var_size(var):
@@ -107,9 +126,42 @@ def fmt_ranges(ids: "Iterable[range]", *, min_length: int = 3) -> str:
         for r in ids
     )
 
+class Inst:
+    def __init__(self,inst: "analyzer.Instruction | analyzer.PseudoInstruction]") -> None:
+        self._inner = inst
 
-def enum_variant_name(name: str) -> str:
-    return name.title().replace("_", "")
+
+    @property
+    def name(self) -> str:
+        return self._inner.name.title().replace("_", "")
+
+    @property
+    def oparg(self) -> Oparg:
+        pass
+
+
+def enum_variant_arm(
+    inst: "analyzer.Instruction | analyzer.PseudoInstruction]",
+    oparg_name: str | None = None,
+) -> str:
+    name = inst.name
+    if not inst.properties.oparg:
+        return name
+    
+    oparg = None
+    if oparg_name is not None:
+        pass
+    oparg = OPARG_OVERRIDE.get(name)
+    if oparg is None:
+        for attr, typ in OPARG_TYPES.items():
+            if not getattr(inst.properties, attr, False):
+                continue
+            oparg = typ
+            break
+    if oparg is None:
+        print(f"Could't find oparg type for {name}")
+
+    oparg = f"({ARG}<{oparg}>)"
 
 
 class InstructionsMeta(metaclass=abc.ABCMeta):
@@ -125,7 +177,7 @@ class InstructionsMeta(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def typ(self) -> str:
         """
-        Opcode ID type (u8/u16/u32/etc)
+        Instructions's opcode ID type (u8/u16/u32/etc)
         """
         ...
 
@@ -135,9 +187,28 @@ class InstructionsMeta(metaclass=abc.ABCMeta):
 
     @property
     def rust_code(self) -> str:
-        enum_variant_defs = ",\n".join(
-            f"{inst.name} = {self._analysis.opmap[inst.name]}" for inst in self
-        )
+        enum_variants = []
+
+        for inst in self:
+            name = inst.name
+            opcode = self._analysis.opmap[name]
+            if not inst.properties.oparg:
+                enum_variants.append(f"{name} = {opcode}")
+                continue
+            oparg = OPARG_OVERRIDE.get(name)
+            if oparg is None:
+                for attr, typ in OPARG_TYPES.items():
+                    if not getattr(inst.properties, attr, False):
+                        continue
+                    oparg = typ
+                    break
+            if oparg is None:
+                print(f"Could't find oparg type for {name}")
+
+            oparg = f"({ARG}<{oparg}>)"
+            enum_variants.append(f"{name}{oparg} = {opcode}")
+
+        enum_variant_defs = ",\n".join(enum_variants)
         funcs = "\n\n".join(
             getattr(self, attr).strip()
             for attr in sorted(dir(self))
@@ -208,30 +279,30 @@ pub const fn has_{fn_attr}(&self) -> bool {{
 }}
         """
 
-    fn_has_arg = property(
+    Afn_has_arg = property(
         lambda self: self.build_has_attr_fn("arg", "oparg", "HAS_ARG_FLAG")
     )
-    fn_has_const = property(
+    Afn_has_const = property(
         lambda self: self.build_has_attr_fn("const", "uses_co_consts", "HAS_CONST_FLAG")
     )
-    fn_has_name = property(
+    Afn_has_name = property(
         lambda self: self.build_has_attr_fn("name", "uses_co_names", "HAS_NAME_FLAG")
     )
-    fn_has_jump = property(
+    Afn_has_jump = property(
         lambda self: self.build_has_attr_fn("jump", "jumps", "HAS_JUMP_FLAG")
     )
-    fn_has_free = property(
+    Afn_has_free = property(
         lambda self: self.build_has_attr_fn("free", "has_free", "HAS_FREE_FLAG")
     )
-    fn_has_local = property(
+    Afn_has_local = property(
         lambda self: self.build_has_attr_fn("local", "uses_locals", "HAS_LOCAL_FLAG")
     )
-    fn_has_exc = property(
+    Afn_has_exc = property(
         lambda self: self.build_has_attr_fn("exc", "pure", "HAS_PURE_FLAG")
     )
 
     @property
-    def impl_try_from_nums(self) -> str:
+    def Aimpl_try_from_nums(self) -> str:
         def fn_prefix(typ: str):
             """
             Generate the TryFrom prefix based on type compatibility.
@@ -288,7 +359,7 @@ impl TryFrom<{typ}> for {self.enum_name} {{
 
 
 class RealInstructions(InstructionsMeta):
-    enum_name = "RealOpcode"
+    enum_name = "RealInstruction"
     typ = "u8"
 
     def __iter__(self) -> "Iterator[analyzer.Instruction | analyzer.PseudoInstruction]":
@@ -329,15 +400,15 @@ pub const fn num_{direction}(&self, oparg: i32) -> i32 {{
 """
 
     @property
-    def fn_num_popped(self) -> str:
+    def Afn_num_popped(self) -> str:
         return self._generate_stack_effect("popped")
 
     @property
-    def fn_num_pushed(self) -> str:
+    def Afn_num_pushed(self) -> str:
         return self._generate_stack_effect("pushed")
 
     @property
-    def fn_deopt(self) -> str:
+    def Afn_deopt(self) -> str:
         def format_deopt_variants(lst: list[str]) -> str:
             return "|".join(f"Self::{v}" for v in lst)
 
@@ -367,7 +438,7 @@ _ => return None,
 
 
 class PseudoInstructions(InstructionsMeta):
-    enum_name = "PseudoOpcode"
+    enum_name = "PseudoInstruction"
     typ = "u16"
 
     def __iter__(self) -> "Iterator[analyzer.PseudoInstruction]":
@@ -376,11 +447,6 @@ class PseudoInstructions(InstructionsMeta):
 
 def main():
     analysis = analyzer.analyze_files([DEFAULT_INPUT])
-    # import tier1_generator
-
-    for name, inst in sorted(analysis.instructions.items()):
-        print(f"{name} = {getattr(inst.family, 'name', None)}")
-    exit()
     real_instructions = RealInstructions(analysis)
     pseudo_instructions = PseudoInstructions(analysis)
 
@@ -395,7 +461,7 @@ def main():
 
 {pseudo_instructions.rust_code}
 
-const _: () = assert!(std::mem::size_of::<RealOpcode>() == 1);
+const _: () = assert!(std::mem::size_of::<RealInstruction>() == 1);
     """.strip()
 
     replacements = {name: enum_variant_name(name) for name in analysis.opmap}
