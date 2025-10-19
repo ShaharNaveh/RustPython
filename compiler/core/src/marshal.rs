@@ -1,4 +1,19 @@
-use crate::{OneIndexed, SourceLocation, bytecode::*};
+use crate::{
+    OneIndexed, SourceLocation,
+    bytecode::{
+        // AsBag,
+        Bag,
+        BorrowedConstant,
+        CodeFlags,
+        CodeObject,
+        CodeUnit,
+        Constant,
+        ConstantBag,
+        Instruction,
+        // Oparg,
+        OpargByte,
+    },
+};
 use malachite_bigint::{BigInt, Sign};
 use num_complex::Complex64;
 use rustpython_wtf8::Wtf8;
@@ -189,7 +204,7 @@ pub fn deserialize_code<R: Read, Bag: ConstantBag>(
         .chunks_exact(2)
         .map(|cu| {
             let op = Instruction::try_from(cu[0])?;
-            let arg = OpArgByte(cu[1]);
+            let arg = OpargByte(cu[1]);
             Ok(CodeUnit { op, arg })
         })
         .collect::<Result<Box<[CodeUnit]>>>()?;

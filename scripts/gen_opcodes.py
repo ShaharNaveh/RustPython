@@ -4,7 +4,6 @@ import collections
 import enum
 import itertools
 import pathlib
-import re
 import subprocess  # for `cargo fmt`
 import sys
 import typing
@@ -25,30 +24,9 @@ from generators_common import DEFAULT_INPUT
 from stack import StackOffset, get_stack_effect
 
 ROOT = pathlib.Path(__file__).parents[1]
-OUT_PATH = ROOT / "compiler" / "core" / "src" / "instructions.rs"
+OUT_PATH = ROOT / "compiler" / "core" / "src" / "bytecode" / "instructions.rs"
 
 DERIVE = "#[derive(Clone, Copy, Debug, Eq, PartialEq)]"
-
-ARG = "crate::bytecode::Arg"
-
-@enum.unique
-class Oparg(enum.StrEnum):
-    NameIdx = "namei"
-    Const = "consti"
-    Delta = "delta"
-    Resume = "context"
-    Compare = "opname"
-    None = ""
-
-
-OPARG_TYPES = {
-    "jumps": Oparg.Label,
-    "uses_co_consts":Oparg.Const ,
-    "uses_co_name": Oparg.NameIdx,
-    "has_free": "???",
-    "uses_locals": "???",
-}
-OPARG_OVERRIDE = {"RESUME": Oparg.Resume}
 
 
 def _var_size(var):
@@ -72,96 +50,87 @@ StackOffset.pop = lambda self, item: self.popped.append(_var_size(item))
 StackOffset.push = lambda self, item: self.pushed.append(_var_size(item))
 
 
-def group_ranges(it: "Iterable[int]") -> "Iterator[range]":
-    """
-    Group consecutive numbers into ranges.
+@enum.unique
+class Oparg(enum.StrEnum):
+    NameIdx = enum.auto()
+    ConstIdx = enum.auto()
+    Delta = enum.auto()
+    Raw = enum.auto()  # Alias for Oparg
+    # Opcode specific
+    Resume = enum.auto()
+    Compare = enum.auto()
+    BinaryOperator = enum.auto()
+    RaiseVarArgs = enum.auto()
+    CallIntrinsic1 = enum.auto()
+    CallIntrinsic2 = enum.auto()
+    UnpackEx = enum.auto()
 
-    Parameters
-    ----------
-    it : Iterable[int]
-        Numbers to group into ranges.
+    @classmethod
+    def try_from_instruction(
+        cls, inst: "analyzer.Instruction | analyzer.PseudoInstruction]"
+    ) -> typing.Self | None:
+        prop = inst.properties
+        if not prop.oparg:
+            return
 
-    Notes
-    -----
-    Numbers in `it` must be sorted in ascending order.
+        # Override oparg type for some opcodes
+        match inst.name:
+            case "BINARY_OP":
+                return cls.BinaryOperator
+            case "RESUME":
+                return cls.Resume
+            case "RAISE_VARARGS":
+                return cls.RaiseVarArgs
+            case "CALL_INTRINSIC_1":
+                return cls.CallIntrinsic1
+            case "CALL_INTRINSIC_2":
+                return cls.CallIntrinsic2
+            case "UNPACK_EX":
+                return cls.UnpackEx
 
-    Examples
-    --------
-    >>> nums = [0, 1, 2, 3, 17, 18, 42, 50, 51]
-    >>> list(group_ranges(nums))
-    [range(0, 4), range(17, 19), range(42, 43), range(50, 52)]
-    """
-    nums = list(it)
-    start = prev = nums[0]
-    for num in nums[1:] + [None]:
-        if num is None or num != prev + 1:
-            yield range(start, prev + 1)
-            start = num
-        prev = num
+        # Should we have a different oparg when `prop.has_free or `prop.uses_locals`?
+        if prop.jumps:
+            return cls.Delta
+        elif prop.uses_co_consts:
+            return cls.ConstIdx
+        elif prop.uses_co_names:
+            return cls.NameIdx
+        else:
+            return cls.Raw
 
+    def __format__(self, spec) -> str:
+        if self.name == "Raw":
+            return "Oparg"
+        return f"{self.name}Oparg"
 
-def fmt_ranges(ids: "Iterable[range]", *, min_length: int = 3) -> str:
-    """
-    Get valid opcode ranges in Rust's `match` syntax.
-
-    Parameters
-    ----------
-    ids : Iterable[range]
-        Ranges to be formatted.
-    min_length : int, default 3
-        Minimum range length, if a range is less than this it will be expanded.
-
-    Examples
-    --------
-    >>> ids = [range(10, 11), range(20, 22), range(30, 33)]
-
-    >>> fmt_ranges(ids)
-    10 | 20 | 21 | 30..=32
-
-    >>> fmt_ranges(ids, min_length=2)
-    10 | 20..=21 | 30..=32
-    """
-    return " | ".join(
-        " | ".join(r) if len(r) < min_length else f"{r.start}..={r.stop - 1}"
-        for r in ids
-    )
 
 class Inst:
-    def __init__(self,inst: "analyzer.Instruction | analyzer.PseudoInstruction]") -> None:
+    def __init__(
+        self, inst: "analyzer.Instruction | analyzer.PseudoInstruction]"
+    ) -> None:
         self._inner = inst
-
 
     @property
     def name(self) -> str:
         return self._inner.name.title().replace("_", "")
 
     @property
-    def oparg(self) -> Oparg:
-        pass
+    def oparg(self) -> Oparg | None:
+        return Oparg.try_from_instruction(self._inner)
 
+    @property
+    def properties(self):
+        return self._inner.properties
 
-def enum_variant_arm(
-    inst: "analyzer.Instruction | analyzer.PseudoInstruction]",
-    oparg_name: str | None = None,
-) -> str:
-    name = inst.name
-    if not inst.properties.oparg:
-        return name
-    
-    oparg = None
-    if oparg_name is not None:
-        pass
-    oparg = OPARG_OVERRIDE.get(name)
-    if oparg is None:
-        for attr, typ in OPARG_TYPES.items():
-            if not getattr(inst.properties, attr, False):
-                continue
-            oparg = typ
-            break
-    if oparg is None:
-        print(f"Could't find oparg type for {name}")
+    @property
+    def family(self):
+        return self._inner.family
 
-    oparg = f"({ARG}<{oparg}>)"
+    def as_match_arm(self, value: str = "_") -> str:
+        out = self.name
+        if self.properties.oparg:
+            out += f"({value})"
+        return f"Self::{out}"
 
 
 class InstructionsMeta(metaclass=abc.ABCMeta):
@@ -169,15 +138,13 @@ class InstructionsMeta(metaclass=abc.ABCMeta):
         self._analysis = analysis
 
     @abc.abstractmethod
-    def __iter__(
-        self,
-    ) -> "Iterator[analyzer.Instruction | analyzer.PseudoInstruction]": ...
+    def __iter__(self) -> "Iterator[Inst]": ...
 
     @property
     @abc.abstractmethod
-    def typ(self) -> str:
+    def opcode_size(self) -> str:
         """
-        Instructions's opcode ID type (u8/u16/u32/etc)
+        Opcode numeric type (u8/u16/u32/etc)
         """
         ...
 
@@ -191,22 +158,12 @@ class InstructionsMeta(metaclass=abc.ABCMeta):
 
         for inst in self:
             name = inst.name
-            opcode = self._analysis.opmap[name]
-            if not inst.properties.oparg:
+            opcode = self._analysis.opmap[inst._inner.name]
+            oparg = inst.oparg
+            if oparg is None:
                 enum_variants.append(f"{name} = {opcode}")
-                continue
-            oparg = OPARG_OVERRIDE.get(name)
-            if oparg is None:
-                for attr, typ in OPARG_TYPES.items():
-                    if not getattr(inst.properties, attr, False):
-                        continue
-                    oparg = typ
-                    break
-            if oparg is None:
-                print(f"Could't find oparg type for {name}")
-
-            oparg = f"({ARG}<{oparg}>)"
-            enum_variants.append(f"{name}{oparg} = {opcode}")
+            else:
+                enum_variants.append(f"{name}(Arg<{oparg}>) = {opcode}")
 
         enum_variant_defs = ",\n".join(enum_variants)
         funcs = "\n\n".join(
@@ -222,7 +179,7 @@ class InstructionsMeta(metaclass=abc.ABCMeta):
 
         return f"""
 {DERIVE}
-#[repr({self.typ})]
+#[repr({self.opcode_size})]
 pub enum {self.enum_name} {{
 {enum_variant_defs}
 }}
@@ -234,40 +191,12 @@ impl {self.enum_name} {{
 {impls}
         """.strip()
 
-    @property
-    def fn_new_unchecked(self) -> str:
-        return f"""
-/// Creates a new `{self.enum_name}` without checking the value is a valid opcode ID.
-///
-/// # Safety
-///
-/// The caller must ensure that `id` satisfies `{self.enum_name}::is_valid(id)`.
-#[must_use]
-pub const unsafe fn new_unchecked(id: {self.typ}) -> Self {{
-    // SAFETY: caller responsibility
-    unsafe {{ std::mem::transmute::<{self.typ}, Self>(id) }}
-}}
-"""
-
-    @property
-    def fn_is_valid(self) -> str:
-        valid_ranges = fmt_ranges(
-            group_ranges(sorted(self._analysis.opmap[inst.name] for inst in self))
-        )
-        return f"""
-/// Whether the given ID matches one of the opcode IDs.
-#[must_use]
-pub const fn is_valid(id: {self.typ}) -> bool {{
-    matches!(id, {valid_ranges})
-}}
-        """
-
     def build_has_attr_fn(self, fn_attr: str, prop_attr: str, doc_flag: str):
-        matches = "|".join(
-            f"Self::{inst.name}" for inst in self if getattr(inst.properties, prop_attr)
+        arms = "|".join(
+            inst.as_match_arm() for inst in self if getattr(inst.properties, prop_attr)
         )
-        if matches:
-            inner = f"matches!(*self, {matches})"
+        if arms:
+            inner = f"matches!(*self, {arms})"
         else:
             inner = "false"
 
@@ -279,96 +208,43 @@ pub const fn has_{fn_attr}(&self) -> bool {{
 }}
         """
 
-    Afn_has_arg = property(
+    fn_has_arg = property(
         lambda self: self.build_has_attr_fn("arg", "oparg", "HAS_ARG_FLAG")
     )
-    Afn_has_const = property(
+    fn_has_const = property(
         lambda self: self.build_has_attr_fn("const", "uses_co_consts", "HAS_CONST_FLAG")
     )
-    Afn_has_name = property(
+    fn_has_name = property(
         lambda self: self.build_has_attr_fn("name", "uses_co_names", "HAS_NAME_FLAG")
     )
-    Afn_has_jump = property(
+    fn_has_jump = property(
         lambda self: self.build_has_attr_fn("jump", "jumps", "HAS_JUMP_FLAG")
     )
-    Afn_has_free = property(
+    fn_has_free = property(
         lambda self: self.build_has_attr_fn("free", "has_free", "HAS_FREE_FLAG")
     )
-    Afn_has_local = property(
+    fn_has_local = property(
         lambda self: self.build_has_attr_fn("local", "uses_locals", "HAS_LOCAL_FLAG")
     )
-    Afn_has_exc = property(
+    fn_has_exc = property(
         lambda self: self.build_has_attr_fn("exc", "pure", "HAS_PURE_FLAG")
     )
-
-    @property
-    def Aimpl_try_from_nums(self) -> str:
-        def fn_prefix(typ: str):
-            """
-            Generate the TryFrom prefix based on type compatibility.
-
-            Cases:
-            1. Sign mismatch (u8 vs i8): requires try_into
-            2. Widening (u8 to u16): requires try_into for safety
-            3. Exact match (u8 to u8): use directly
-            4. Narrowing (u16 to u8): use into (infallible)
-            """
-            s_val = int(
-                self.typ[1:]
-            )  # Will not work if `self.typ` is either isize or usize
-            try:
-                o_val = int(typ[1:])
-            except ValueError:
-                o_val = float("inf")
-
-            if self.typ[0] != typ[0]:
-                arg = f"raw: {typ}"
-                id_def = "let id = raw.try_into().map_err(|_| ())?;"
-            elif o_val > s_val:
-                arg = f"raw: {typ}"
-                id_def = "let id = raw.try_into().map_err(|_| ())?;"
-            elif o_val == s_val:
-                arg = f"id: {typ}"
-                id_def = ""
-            else:
-                arg = f"raw: {typ}"
-                id_def = "let id = raw.into();"
-
-            return f"""
-fn try_from({arg}) -> Result<Self, Self::Error> {{
-{id_def}
-        """.strip()
-
-        return "\n\n".join(
-            f"""
-impl TryFrom<{typ}> for {self.enum_name} {{
-    type Error = ();
-
-    {fn_prefix(typ)}
-        if Self::is_valid(id) {{
-            // SAFETY: We just validated that we have a valid opcode id.
-            Ok(unsafe {{ Self::new_unchecked(id) }})
-        }} else {{
-            Err(())
-        }}
-    }}
-}}
-"""
-            for typ in TYPES
-        )
 
 
 class RealInstructions(InstructionsMeta):
     enum_name = "RealInstruction"
-    typ = "u8"
+    opcode_size = "u8"
 
     def __iter__(self) -> "Iterator[analyzer.Instruction | analyzer.PseudoInstruction]":
-        yield from sorted(
-            itertools.chain(
-                self._analysis.instructions.values(),
-                [analyzer.Instruction("INSTRUMENTED_LINE", [], None)],
+        yield from map(
+            Inst,
+            sorted(
+                itertools.chain(
+                    self._analysis.instructions.values(),
+                    [analyzer.Instruction("INSTRUMENTED_LINE", [], None)],
+                ),
+                key=lambda inst: inst.name,
             ),
-            key=lambda inst: inst.name,
         )
 
     def _generate_stack_effect(self, direction: str) -> str:
@@ -392,7 +268,7 @@ class RealInstructions(InstructionsMeta):
         doc = "from" if direction == "popped" else "on"
         return f"""
 /// How many items should be {direction} {doc} the stack.
-pub const fn num_{direction}(&self, oparg: i32) -> i32 {{
+pub const fn num_{direction}<T: OpArgType>(&self, oparg: T) -> u32 {{
     match *self {{
 {branches}
     }}
@@ -423,14 +299,14 @@ pub const fn num_{direction}(&self, oparg: i32) -> i32 {{
                 continue
             deopts[deopt].append(inst.name)
 
-        branches = ",\n".join(
+        arms = ",\n".join(
             f"{format_deopt_variants(deopt)} => Self::{name}"
             for name, deopt in sorted(deopts.items())
         )
         return f"""
 pub const fn deopt(&self) -> Option<Self> {{
     Some(match *self {{
-{branches},
+{arms},
 _ => return None,
     }})
 }}
@@ -439,10 +315,12 @@ _ => return None,
 
 class PseudoInstructions(InstructionsMeta):
     enum_name = "PseudoInstruction"
-    typ = "u16"
+    opcode_size = "u16"
 
     def __iter__(self) -> "Iterator[analyzer.PseudoInstruction]":
-        yield from sorted(self._analysis.pseudos.values(), key=lambda inst: inst.name)
+        yield from map(
+            Inst, sorted(self._analysis.pseudos.values(), key=lambda inst: inst.name)
+        )
 
 
 def main():
@@ -452,10 +330,24 @@ def main():
 
     script_path = pathlib.Path(__file__).absolute().relative_to(ROOT).as_posix()
     out = f"""
-//! Python opcode implementation. Currently aligned with cpython 3.13.8
+//! Python opcode implementation. Currently aligned with cpython 3.13.9
 
 // This file is generated by {script_path}
 // Do not edit!
+
+use super::oparg::{{
+    Arg,
+    BinaryOperatorOparg,
+    CallIntrinsic1Oparg,
+    CallIntrinsic2Oparg,
+    ConstIdxOparg,
+    DeltaOparg,
+    NameIdxOparg,
+    Oparg,
+    RaiseVarArgsOparg,
+    ResumeOparg,
+    UnpackExOparg,
+}};
 
 {real_instructions.rust_code}
 
@@ -464,10 +356,6 @@ def main():
 const _: () = assert!(std::mem::size_of::<RealInstruction>() == 1);
     """.strip()
 
-    replacements = {name: enum_variant_name(name) for name in analysis.opmap}
-    inner_pattern = "|".join(replacements)
-    pattern = re.compile(rf"\b({inner_pattern})\b")
-    out = pattern.sub(lambda m: replacements[m.group(0)], out)
     OUT_PATH.write_text(out)
     print("Running `cargo fmt`")
     subprocess.run(["cargo", "fmt"], cwd=ROOT)
