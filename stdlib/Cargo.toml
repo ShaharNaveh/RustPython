@@ -48,6 +48,14 @@ dyn-clone = "1.0.10"
 pymath = { workspace = true }
 xml = "1.0"
 
+# tokenize
+ruff_python_trivia = { workspace = true }
+ruff_text_size = { workspace = true }
+ruff_source_file = { workspace = true }
+#ruff_python_trivia = { git = "https://github.com/astral-sh/ruff.git", tag = "0.12.4" }
+#ruff_text_size = { git = "https://github.com/astral-sh/ruff.git", tag = "0.12.4" }
+#ruff_source_file = { git = "https://github.com/astral-sh/ruff.git", tag = "0.12.4" }
+
 # random
 rand_core = { workspace = true }
 mt19937 = "3.1"
