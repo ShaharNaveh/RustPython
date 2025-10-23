@@ -24,14 +24,9 @@ mod _tokenize {
             types::{Constructor, IterNext, Iterable, SelfIter},
         },
     };
-    use ruff_python_trivia::{BackwardsTokenizer, SimpleToken, SimpleTokenKind, SimpleTokenizer};
+    use ruff_python_trivia::{SimpleToken, SimpleTokenKind, first_non_trivia_token};
     use ruff_source_file::{LineIndex, OneIndexed};
-    use ruff_text_size::{
-        // Ranged,
-        // TextLen,
-        TextRange,
-        TextSize,
-    };
+    use ruff_text_size::{Ranged, TextLen, TextRange, TextSize};
     use std::{fmt, ops::Deref};
 
     #[pyattr]
@@ -97,16 +92,6 @@ mod _tokenize {
                 guard.clone()
             };
 
-            /*
-                          Potentially have something like
-
-                       let mut current_line = state.text[-1]
-                        match <> {
-            None => {
-            current_line = <advance>
-            }
-                        }
-                        */
             let token = match state.next() {
                 Some(v) => v,
                 None => {
@@ -114,86 +99,46 @@ mod _tokenize {
                     if next_line.is_empty() {
                         return Ok(PyIterReturn::StopIteration(None));
                     }
-                    let text = &state.text;
-                    let nstate = state.with_text(format!("{text}\n"));
-                    *zelf.state.write() = nstate.clone();
-                    let ntoken = nstate.next_token().unwrap();
-
-                    ntoken
+                    state.push(next_line);
+                    state.push("\n");
+                    state.next().unwrap()
                 }
             };
 
-            dbg!(&token);
+            *zelf.state.write() = state.clone();
 
-            return Ok(PyIterReturn::Return(1.to_pyobject(vm)));
-            /*
-                        // NOTE: in future if we read EOL then set `last_line` to None
-                        return Ok(PyIterReturn::StopIteration(None));
-            */
-            // #########
-            // #########
-            // #########
-            // #########
-            // #########
+            let line_index = LineIndex::from_source_text(&state.buffer);
+            let token_range = token.range();
 
-            /*
-                        let state = match &zelf.state {
-                            Some(inner) => inner,
-                            None => &PyRwLock::new(
-                            PyTokenizerIterState::new(
-                                zelf.advance_readline(vm)?,
-                                TextSize::default(),
-                            )),
-                        };
-            */
+            let line_column_start = line_index.line_column(token_range.start(), &state.buffer);
+            let line_column_end = line_index.line_column(token_range.end(), &state.buffer);
 
-            /*
-            let last_line = match &state.last_line {
-                Some(v) => v,
-                None => &LastLine::new(zelf.advance_readline(vm)?, OneIndexed::MIN),
-            };
-            */
+            let current_line = state.buffer.rsplit_once("\n").unwrap().1;
+            let out = vm
+                .ctx
+                .new_tuple(vec![
+                    state.token_numeric_value().to_pyobject(vm),
+                    vm.ctx.new_str(state.token_name()).into(),
+                    vm.ctx
+                        .new_tuple(vec![
+                            line_column_start.line.get().to_pyobject(vm),
+                            line_column_start.column.to_zero_indexed().to_pyobject(vm),
+                        ])
+                        .into(),
+                    vm.ctx
+                        .new_tuple(vec![
+                            line_column_end.line.get().to_pyobject(vm),
+                            line_column_end.column.to_zero_indexed().to_pyobject(vm),
+                        ])
+                        .into(),
+                    vm.ctx.new_str(current_line).into(),
+                ])
+                .into();
 
-            //   dbg!(&last_line);
-
-            /*
-                        println!("line={:#?}", &line);
-                        let offset = &state
-                            .offset
-                            .unwrap_or_else(|| TextRange::up_to(TextSize::of(&line)));
-                        println!("offset={:#?}", &offset);
-
-                        let mut tokenizer = SimpleTokenizer::new(&line, *offset);
-
-                        for token in tokenizer {
-                            println!("token={:#?}", &token);
-                        }
-            */
-            /*
-            let token = tokenizer.next().unwrap();
-            println!("token={:#?}", &token);
-
-            let token = tokenizer.next().unwrap();
-            println!("token={:#?}", &token);
-
-            let token = tokenizer.next().unwrap();
-            println!("token={:#?}", &token);
-            */
-
-            /*
-            let mut tokenizer: &mut SimpleTokenizer<'_> = match &mut state.tokenizer {
-                Some(tokenizer) => tokenizer,
-                None => &SimpleTokenizer::new(&line, TextRange::up_to(TextSize::of(&line))),
-            };
-
-            let idk = tokenizer.next().unwrap();
-            println!("{:#?}", idk);
-            */
-            /*
-            for tok in tokenizer. {
-                println!("{:#?}", tok);
-            }
-            */
+            println!("");
+            println!("");
+            println!("");
+            return Ok(PyIterReturn::Return(out));
         }
     }
 
@@ -207,41 +152,119 @@ mod _tokenize {
         encoding: String,
     }
 
-    #[derive(Clone, Debug)]
+    #[derive(Clone, Debug, Default)]
     pub struct PyTokenizerIterState {
-        text: String,
-        token: SimpleToken,
+        buffer: String,
+        token: Option<SimpleTokenWrapper>,
     }
 
     impl PyTokenizerIterState {
-        #[must_use]
-        pub fn with_text(&self, text: String) -> Self {
-            Self {
-                text,
-                token: self.token.clone(),
-            }
+        pub fn push(&mut self, s: &str) {
+            self.buffer += s;
         }
 
         #[must_use]
-        pub fn next(&mut self) -> Option<SimpleToken> {
-            let mut tokenizer = SimpleTokenizer::starts_at(self.token.range.end(), &self.text);
-            let token = tokenizer.next();
-            if let Some(tok) = &token {
-                self.token = &tok.clone();
+        pub fn next(&mut self) -> Option<SimpleTokenWrapper> {
+            let offset = self
+                .token
+                .clone()
+                .map_or(TextSize::default(), |t| t.range.end());
+            let mut tokenizer = SimpleTokenizer::starts_at(offset, &self.buffer);
+            self.token = tokenizer.next().map(SimpleTokenWrapper);
+            self.token.clone()
+        }
+
+        /// Get current token name repr.
+        ///
+        /// # Panics
+        ///
+        /// If token is None.
+        #[must_use]
+        pub fn token_name(&self) -> String {
+            let token = &self.token.clone().unwrap();
+            dbg!(&token.kind());
+            match &token.kind() {
+                SimpleTokenKind::Name | SimpleTokenKind::Other => {
+                    self.buffer[token.range()].to_owned()
+                }
+                _ => format!("{token}"),
+            }
+        }
+
+        /// Get current token numeric value.
+        ///
+        /// # Panics
+        ///
+        /// If token is None.
+        #[must_use]
+        pub fn token_numeric_value(&self) -> u8 {
+            // TODO: Maybe we need to write our own tokenizer :/
+            // Ruff doesnt have Indent & Dedent & String :(
+
+            let token = self.token.clone().unwrap();
+            if matches!(token.kind(), SimpleTokenKind::Name) {
+                let token_name = &self.token_name();
+                if token_name.contains('"') || token_name.contains('\'') {
+                    return 3; // token.STRING
+                } else if token_name.parse::<f32>().is_ok() {
+                    return 2; // token.NUMBER
+                };
             };
-            token
+            u8::from(token)
         }
     }
 
-    impl Default for PyTokenizerIterState {
-        fn default() -> Self {
-            Self {
-                text: String::default(),
-                token: SimpleToken {
-                    kind: SimpleTokenKind::EndOfFile,
-                    range: TextRange::default(),
-                },
+    /// Simple wrapper to have some extra functionlity for `SimpleTokenKind`.
+    #[derive(Clone, Debug)]
+    pub(crate) struct SimpleTokenWrapper(SimpleToken);
+
+    impl From<SimpleToken> for SimpleTokenWrapper {
+        fn from(raw: SimpleToken) -> Self {
+            Self(raw)
+        }
+    }
+
+    impl From<SimpleTokenWrapper> for u8 {
+        fn from(raw: SimpleTokenWrapper) -> Self {
+            match raw.kind() {
+                SimpleTokenKind::Pass
+                | SimpleTokenKind::For
+                | SimpleTokenKind::Name
+                | SimpleTokenKind::In => 1,
+                SimpleTokenKind::LParen => 7,
+                SimpleTokenKind::RParen => 8,
+                SimpleTokenKind::Colon => 11,
+                SimpleTokenKind::Equals => 22,
+                SimpleTokenKind::Newline => 63,
+                SimpleTokenKind::Other => Self::MAX,
+                other => unimplemented!("for {other:?}"),
             }
+        }
+    }
+
+    impl fmt::Display for SimpleTokenWrapper {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            match self.kind() {
+                SimpleTokenKind::LParen => write!(f, "("),
+                SimpleTokenKind::RParen => write!(f, ")"),
+                SimpleTokenKind::LBrace => write!(f, "{{"),
+                SimpleTokenKind::RBrace => write!(f, "}}"),
+                SimpleTokenKind::LBracket => write!(f, "["),
+                SimpleTokenKind::RBracket => write!(f, "["),
+                SimpleTokenKind::Comma => write!(f, ","),
+                SimpleTokenKind::Colon => write!(f, ":"),
+                SimpleTokenKind::Semi => write!(f, ";"),
+                SimpleTokenKind::Slash => write!(f, "/"),
+                other => write!(f, "{}", format!("{:?}", other).to_lowercase()),
+            }
+        }
+    }
+
+    impl Deref for SimpleTokenWrapper {
+        type Target = SimpleToken;
+
+        fn deref(&self) -> &Self::Target {
+            &self.0
         }
     }
 }

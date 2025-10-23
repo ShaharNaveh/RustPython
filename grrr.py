@@ -10,6 +10,7 @@ def meep():
 '''
 b = io.StringIO(
     """
+x = "foo"
 for i in range(10):
 
 
@@ -21,6 +22,7 @@ for i in range(10):
 
 b = io.StringIO(
     """
+x = "foo"
 for i in range(10):
 
 
@@ -32,7 +34,7 @@ for i in range(10):
 
 # b = io.StringIO(None)
 
-it = _tokenize.TokenizerIter(b.readline, extra_tokens=False)
+it = _tokenize.TokenizerIter(b.readline, extra_tokens=True)
 # it = _tokenize.TokenizerIter(meep, extra_tokens=False)
 for i in it:
     print(i)
