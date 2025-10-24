@@ -24,9 +24,14 @@ mod _tokenize {
             types::{Constructor, IterNext, Iterable, SelfIter},
         },
     };
-    use ruff_python_trivia::{SimpleToken, SimpleTokenKind, first_non_trivia_token};
-    use ruff_source_file::{LineIndex, OneIndexed};
-    use ruff_text_size::{Ranged, TextLen, TextRange, TextSize};
+    use ruff_python_trivia::{
+        SimpleToken,
+        SimpleTokenKind,
+        SimpleTokenizer,
+        // first_non_trivia_token,
+    };
+    use ruff_source_file::LineIndex;
+    use ruff_text_size::{Ranged, TextLen, TextSize};
     use std::{fmt, ops::Deref};
 
     #[pyattr]
@@ -92,20 +97,22 @@ mod _tokenize {
                 guard.clone()
             };
 
-            let token = match state.next() {
-                Some(v) => v,
-                None => {
-                    let next_line = &zelf.advance_readline(vm, &zelf.encoding)?;
-                    if next_line.is_empty() {
-                        return Ok(PyIterReturn::StopIteration(None));
+            let token = loop {
+                match state.next() {
+                    Some(v) => break v,
+                    None => {
+                        let next_line = &zelf.advance_readline(vm, &zelf.encoding)?;
+                        if next_line.is_empty() {
+                            return Ok(PyIterReturn::StopIteration(None));
+                        }
+                        state.push(next_line);
                     }
-                    state.push(next_line);
-                    state.push("\n");
-                    state.next().unwrap()
                 }
             };
 
             *zelf.state.write() = state.clone();
+
+            // dbg!(&state);
 
             let line_index = LineIndex::from_source_text(&state.buffer);
             let token_range = token.range();
@@ -113,7 +120,11 @@ mod _tokenize {
             let line_column_start = line_index.line_column(token_range.start(), &state.buffer);
             let line_column_end = line_index.line_column(token_range.end(), &state.buffer);
 
-            let current_line = state.buffer.rsplit_once("\n").unwrap().1;
+            let current_line = match &state.buffer.trim_end().rsplit_once('\n') {
+                Some(tup) => tup.1.to_owned() + "\n",
+                None => state.buffer.clone(),
+            };
+
             let out = vm
                 .ctx
                 .new_tuple(vec![
@@ -135,9 +146,6 @@ mod _tokenize {
                 ])
                 .into();
 
-            println!("");
-            println!("");
-            println!("");
             return Ok(PyIterReturn::Return(out));
         }
     }
@@ -156,6 +164,7 @@ mod _tokenize {
     pub struct PyTokenizerIterState {
         buffer: String,
         token: Option<SimpleTokenWrapper>,
+        offset: TextSize,
     }
 
     impl PyTokenizerIterState {
@@ -165,12 +174,19 @@ mod _tokenize {
 
         #[must_use]
         pub fn next(&mut self) -> Option<SimpleTokenWrapper> {
-            let offset = self
-                .token
-                .clone()
-                .map_or(TextSize::default(), |t| t.range.end());
-            let mut tokenizer = SimpleTokenizer::starts_at(offset, &self.buffer);
-            self.token = tokenizer.next().map(SimpleTokenWrapper);
+            self.token = SimpleTokenizer::starts_at(self.offset, &self.buffer)
+                .skip_while(|token| {
+                    matches!(
+                        token.kind(),
+                        SimpleTokenKind::Whitespace | SimpleTokenKind::Bogus
+                    )
+                })
+                .next()
+                .map(SimpleTokenWrapper);
+            self.offset = match &self.token {
+                Some(tok) => tok.range.end(),
+                None => self.offset, // We want to preserve our offset if we reached a bogus token
+            };
             self.token.clone()
         }
 
@@ -182,7 +198,6 @@ mod _tokenize {
         #[must_use]
         pub fn token_name(&self) -> String {
             let token = &self.token.clone().unwrap();
-            dbg!(&token.kind());
             match &token.kind() {
                 SimpleTokenKind::Name | SimpleTokenKind::Other => {
                     self.buffer[token.range()].to_owned()
@@ -199,14 +214,18 @@ mod _tokenize {
         #[must_use]
         pub fn token_numeric_value(&self) -> u8 {
             // TODO: Maybe we need to write our own tokenizer :/
-            // Ruff doesnt have Indent & Dedent & String :(
+            // Ruff doesnt have:
+            // - Indent
+            // - Dedent
+            // - String
+            // - Number
 
             let token = self.token.clone().unwrap();
             if matches!(token.kind(), SimpleTokenKind::Name) {
                 let token_name = &self.token_name();
                 if token_name.contains('"') || token_name.contains('\'') {
                     return 3; // token.STRING
-                } else if token_name.parse::<f32>().is_ok() {
+                } else if token_name.parse::<u8>().is_ok() {
                     return 2; // token.NUMBER
                 };
             };
@@ -231,11 +250,12 @@ mod _tokenize {
                 | SimpleTokenKind::For
                 | SimpleTokenKind::Name
                 | SimpleTokenKind::In => 1,
+                SimpleTokenKind::Newline => 4,
                 SimpleTokenKind::LParen => 7,
                 SimpleTokenKind::RParen => 8,
                 SimpleTokenKind::Colon => 11,
+                SimpleTokenKind::Plus => 14,
                 SimpleTokenKind::Equals => 22,
-                SimpleTokenKind::Newline => 63,
                 SimpleTokenKind::Other => Self::MAX,
                 other => unimplemented!("for {other:?}"),
             }
@@ -244,19 +264,23 @@ mod _tokenize {
 
     impl fmt::Display for SimpleTokenWrapper {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            match self.kind() {
-                SimpleTokenKind::LParen => write!(f, "("),
-                SimpleTokenKind::RParen => write!(f, ")"),
-                SimpleTokenKind::LBrace => write!(f, "{{"),
-                SimpleTokenKind::RBrace => write!(f, "}}"),
-                SimpleTokenKind::LBracket => write!(f, "["),
-                SimpleTokenKind::RBracket => write!(f, "["),
-                SimpleTokenKind::Comma => write!(f, ","),
-                SimpleTokenKind::Colon => write!(f, ":"),
-                SimpleTokenKind::Semi => write!(f, ";"),
-                SimpleTokenKind::Slash => write!(f, "/"),
-                other => write!(f, "{}", format!("{:?}", other).to_lowercase()),
-            }
+            let out = match self.kind() {
+                SimpleTokenKind::LParen => "(",
+                SimpleTokenKind::RParen => ")",
+                SimpleTokenKind::LBrace => "{",
+                SimpleTokenKind::RBrace => "}",
+                SimpleTokenKind::LBracket => "[",
+                SimpleTokenKind::RBracket => "[",
+                SimpleTokenKind::Comma => ",",
+                SimpleTokenKind::Colon => ":",
+                SimpleTokenKind::Semi => ";",
+                SimpleTokenKind::Slash => "/",
+                SimpleTokenKind::Plus => "+",
+                SimpleTokenKind::Newline => "",
+                other => &format!("{other:?}").to_lowercase(),
+            };
+
+            write!(f, "{out}")
         }
     }
 
