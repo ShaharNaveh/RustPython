@@ -31,7 +31,11 @@ mod _tokenize {
         // first_non_trivia_token,
     };
     use ruff_source_file::LineIndex;
-    use ruff_text_size::{Ranged, TextLen, TextSize};
+    use ruff_text_size::{
+        Ranged,
+        //TextLen,
+        TextSize,
+    };
     use std::{fmt, ops::Deref};
 
     #[pyattr]
@@ -112,8 +116,6 @@ mod _tokenize {
 
             *zelf.state.write() = state.clone();
 
-            // dbg!(&state);
-
             let line_index = LineIndex::from_source_text(&state.buffer);
             let token_range = token.range();
 
@@ -165,6 +167,7 @@ mod _tokenize {
         buffer: String,
         token: Option<SimpleTokenWrapper>,
         offset: TextSize,
+        done: bool,
     }
 
     impl PyTokenizerIterState {
@@ -221,7 +224,8 @@ mod _tokenize {
             // - Number
 
             let token = self.token.clone().unwrap();
-            if matches!(token.kind(), SimpleTokenKind::Name) {
+            /*
+            if matches!(token.kind(), SimpleTokenKind::Other) {
                 let token_name = &self.token_name();
                 if token_name.contains('"') || token_name.contains('\'') {
                     return 3; // token.STRING
@@ -229,6 +233,7 @@ mod _tokenize {
                     return 2; // token.NUMBER
                 };
             };
+            */
             u8::from(token)
         }
     }
@@ -275,6 +280,7 @@ mod _tokenize {
                 SimpleTokenKind::Colon => ":",
                 SimpleTokenKind::Semi => ";",
                 SimpleTokenKind::Slash => "/",
+                SimpleTokenKind::Equals => "=",
                 SimpleTokenKind::Plus => "+",
                 SimpleTokenKind::Newline => "",
                 other => &format!("{other:?}").to_lowercase(),
