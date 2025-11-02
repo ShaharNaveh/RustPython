@@ -131,7 +131,7 @@ members = [
     "stdlib",
     "derive-impl",
     "wtf8",
-    "wasm/lib",
+    "wasm/lib", "crates/rustpython_doc_db",
 ]
 
 [workspace.package]
