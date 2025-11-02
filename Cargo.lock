@@ -2481,18 +2481,10 @@ dependencies = [
  "proc-macro2",
  "quote",
  "rustpython-compiler-core",
- "rustpython-doc",
+ "rustpython_doc_db",
  "syn",
  "syn-ext",
  "textwrap",
-]
-
-[[package]]
-name = "rustpython-doc"
-version = "0.3.0"
-source = "git+https://github.com/RustPython/__doc__?tag=0.3.0#8b62ce5d796d68a091969c9fa5406276cb483f79"
-dependencies = [
- "once_cell",
 ]
 
 [[package]]
@@ -2711,6 +2703,7 @@ dependencies = [
 name = "rustpython_doc_db"
 version = "0.4.0"
 dependencies = [
+ "ahash",
  "once_cell",
 ]
 

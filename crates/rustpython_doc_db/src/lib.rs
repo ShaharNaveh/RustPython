@@ -1,34 +1,25 @@
+use ahash::AHashMap;
 use once_cell::sync::Lazy;
-use std::collections::HashMap;
-
-#[cfg(windows)]
-mod win32;
-
-#[cfg(any(target_os = "linux", target_os = "android"))]
-mod linux;
-
-#[cfg(any(target_os = "macos", target_os = "ios"))]
-mod darwin;
 
 pub type Result<'a> = std::result::Result<Option<&'a str>, ()>;
 
 pub struct Database<'a> {
-    inner: HashMap<&'a str, Option<&'a str>>,
+    inner: AHashMap<&'a str, Option<&'a str>>,
 }
 
 impl<'a> Database<'a> {
     pub fn shared() -> &'static Self {
         static DATABASE: Lazy<Database<'_>> = Lazy::new(|| {
             #[cfg(windows)]
-            let data = win32::DATA;
+            let data = include!("./win32.inc.rs");
 
             #[cfg(any(target_os = "linux", target_os = "android"))]
-            let data = linux::DATA;
+            let data = include!("./linux.inc.rs");
 
             #[cfg(any(target_os = "macos", target_os = "ios"))]
-            let data = darwin::DATA;
+            let data = include!("./darwin.inc.rs");
 
-            let mut map = HashMap::with_capacity(data.len());
+            let mut map = AHashMap::with_capacity(data.len());
             for (item, doc) in data {
                 map.insert(item, doc);
             }
@@ -37,11 +28,11 @@ impl<'a> Database<'a> {
         &DATABASE
     }
 
-    pub fn try_path(&self, path: &str) -> Result<'_> {
+    pub fn try_path(&self, path: &str) -> Result<'a> {
         self.inner.get(path).copied().ok_or(())
     }
 
-    pub fn try_module_item(&self, module: &str, item: &str) -> Result<'_> {
+    pub fn try_module_item(&self, module: &str, item: &str) -> Result<'a> {
         self.try_path(&format!("{}.{}", module, item))
     }
 }
