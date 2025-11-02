@@ -18,32 +18,30 @@ pub struct Database<'a> {
 
 impl<'a> Database<'a> {
     pub fn shared() -> &'static Self {
-        static DATABASE: Lazy<Database> = Lazy::new(|| {
-            let data = cfg_if::cfg_if! {
-                if #[cfg(windows)] {
-                    win32::DOCS
-                } else if #[cfg(any(target_os = "linux", target_os = "android"))] {
-                    linux::DOCS
-                } else if #[cfg(target_os = "macos")] {
-                    darwin::DOCS
-                } else {
-                    []
-                }
-            };
+        static DATABASE: Lazy<Database<'_>> = Lazy::new(|| {
+            #[cfg(windows)]
+            let data = win32::DATA;
+
+            #[cfg(any(target_os = "linux", target_os = "android"))]
+            let data = linux::DATA;
+
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            let data = darwin::DATA;
+
             let mut map = HashMap::with_capacity(data.len());
             for (item, doc) in data {
                 map.insert(item, doc);
             }
-            Self { inner: map }
+            Database { inner: map }
         });
         &DATABASE
     }
 
-    pub fn try_path(&self, path: &str) -> Result {
+    pub fn try_path(&self, path: &str) -> Result<'_> {
         self.inner.get(path).copied().ok_or(())
     }
 
-    pub fn try_module_item(&self, module: &str, item: &str) -> Result {
+    pub fn try_module_item(&self, module: &str, item: &str) -> Result<'_> {
         self.try_path(&format!("{}.{}", module, item))
     }
 }
