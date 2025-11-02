@@ -1,5 +1,5 @@
+#!/usr/bin/env python
 import inspect
-import io
 import json
 import os
 import pathlib
@@ -15,36 +15,14 @@ if typing.TYPE_CHECKING:
 
 IGNORED_MODULES = {"this", "antigravity"}
 IGNORED_ATTRS = {
-    # "__abstractmethods__",
-    # "__add__",
     "__annotations__",
-    # "__await__",
-    # "__class__",
-    # "__class_getitem__",
-    # "__delattr__",
+    "__class__",
     "__dict__",
     "__dir__",
-    # "__div__",
     "__doc__",
-    # "__eq__",
     "__file__",
-    "__ge__",
-    # "__getattribute__",
-    # "__getitem__",
-    # "__getstate__",
-    # "__gt__",
-    # "__le__",
-    "__loader__",
-    # "__lt__",
-    "__module__",
-    # "__mul__",
     "__name__",
-    # "__ne__",
-    "__objclass__",
-    "__package__",
-    # "__qualname__",
-    # "__spec__",
-    # "__sub__",
+    "__qualname__",
 }
 
 OUT_FILE = pathlib.Path(__file__).parent / "src" / f"{sys.platform}.rs"
@@ -104,24 +82,13 @@ def iter_modules() -> "Iterable[types.ModuleType]":
 
 
 def traverse(
-    obj: typing.Any, module: types.ModuleType, name_parts: tuple[str, ...]
+    obj: typing.Any, module: types.ModuleType, name_parts: tuple[str, ...] = ()
 ) -> "typing.Iterable[DocEntry]":
-    has_doc = any(
-        f(obj)
-        for f in (
-            inspect.ismodule,
-            inspect.isclass,
-            inspect.isbuiltin,
-            # inspect.isfunction,
-            # inspect.ismethod,
-        )
-    )
+    if inspect.ismodule(obj):
+        name_parts += (obj.__name__,)
 
-    if has_doc and isinstance(obj.__doc__, str):
+    if any(f(obj) for f in (inspect.ismodule, inspect.isclass, inspect.isbuiltin)):
         yield DocEntry(name_parts, pydoc.getdoc(obj))
-
-    # if inspect.isfunction(obj) or inspect.ismethod(obj):
-    #    return
 
     for name, attr in inspect.getmembers(obj):
         if name in IGNORED_ATTRS:
@@ -130,11 +97,12 @@ def traverse(
         if attr == obj:
             continue
 
-        if (module is obj) and (not is_child(attr, module)):
-            pass
-        # continue
+        parts = name_parts + (name,)
 
-        if (not inspect.ismodule(attr)) and not inspect.ismodule(obj):
+        if (module is obj) and (not is_child(attr, module)):
+            continue
+
+        if (not inspect.ismodule(obj)) and inspect.ismodule(attr):
             continue
 
         new_name_parts = name_parts + (name,)
@@ -146,21 +114,26 @@ def traverse(
             yield from traverse(attr, module, new_name_parts)
             continue
 
-        if inspect.isbuiltin(attr) and (
+        if (
             callable(attr)
             or not issubclass(attr_typ, type)
             or attr_typ.__name__ in ("getset_descriptor", "member_descriptor")
+        ) or any(
+            f(obj)
+            for f in (
+                inspect.isfunction,
+                inspect.ismethod,
+                inspect.ismethoddescriptor,
+            )
         ):
             yield DocEntry(new_name_parts, pydoc.getdoc(attr))
 
 
 def find_doc_entires() -> "Iterable[DocEntry]":
     yield from (
-        doc_entry
-        for module in iter_modules()
-        for doc_entry in traverse(module, module, (module.__name__,))
+        doc_entry for module in iter_modules() for doc_entry in traverse(module, module)
     )
-    yield from (doc_entry for doc_entry in traverse(__builtins__, __builtins__, ("",)))
+    yield from (doc_entry for doc_entry in traverse(__builtins__, __builtins__))
 
     builtin_types = [
         type(bytearray().__iter__()),
@@ -180,21 +153,17 @@ def find_doc_entires() -> "Iterable[DocEntry]":
     ]
     for typ in builtin_types:
         name_parts = ("builtins", typ.__name__)
-        # if not isinstance(typ.__doc__, str):
         yield DocEntry(name_parts, pydoc.getdoc(typ))
-        yield from traverse(typ, __builtins__, name_parts)
+        yield from traverse(typ, __builtins__)
 
 
 def main():
-    doc_entries = sorted(
+    doc_entries = {
         doc_entry.rust_repr for doc_entry in find_doc_entires() if doc_entry.doc
-    )
+    }
 
-    for doc_entry in doc_entries:
-        # continue
+    for doc_entry in sorted(doc_entries):
         print(doc_entry)
-        print()
-    # __import__("pprint").pprint(docs)
 
 
 if __name__ == "__main__":
