@@ -5,7 +5,6 @@ authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 repository.workspace = true
-license.workspace = false
 license-file = "LICENSE"
 
 [dependencies]
