@@ -1,15 +1,12 @@
-use ahash::AHashMap;
-use once_cell::sync::Lazy;
+pub type Result = std::result::Result<Option<&'static str>, ()>;
 
-pub type Result<'a> = std::result::Result<Option<&'a str>, ()>;
-
-pub struct Database<'a> {
-    inner: AHashMap<&'a str, Option<&'a str>>,
+pub struct Database {
+    inner: phf::Map<&'static str, Option<&'static str>>,
 }
 
-impl<'a> Database<'a> {
+impl Database {
     pub fn shared() -> &'static Self {
-        static DATABASE: Lazy<Database<'_>> = Lazy::new(|| {
+        static DATABASE: Database = {
             #[cfg(windows)]
             let data = include!("./win32.inc.rs");
 
@@ -19,20 +16,17 @@ impl<'a> Database<'a> {
             #[cfg(any(target_os = "macos", target_os = "ios"))]
             let data = include!("./darwin.inc.rs");
 
-            let mut map = AHashMap::with_capacity(data.len());
-            for (item, doc) in data {
-                map.insert(item, doc);
-            }
-            Database { inner: map }
-        });
+            Database { inner: data }
+        };
+
         &DATABASE
     }
 
-    pub fn try_path(&self, path: &str) -> Result<'a> {
+    pub fn try_path(&self, path: &str) -> Result {
         self.inner.get(path).copied().ok_or(())
     }
 
-    pub fn try_module_item(&self, module: &str, item: &str) -> Result<'a> {
+    pub fn try_module_item(&self, module: &str, item: &str) -> Result {
         self.try_path(&format!("{}.{}", module, item))
     }
 }

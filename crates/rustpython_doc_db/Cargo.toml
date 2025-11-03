@@ -9,7 +9,6 @@ license-file = "LICENSE"
 
 [dependencies]
 phf = { workspace = true }
-once_cell = { workspace = true }
 
 [lints]
 workspace = true
