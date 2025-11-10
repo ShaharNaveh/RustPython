@@ -1,7 +1,5 @@
-use crate::{
-    bytecode::{AsBag, Bag, CodeObject, Constant, ConstantBag},
-    marshal::{self, Read, ReadBorrowed, Write},
-};
+use crate::bytecode::*;
+use crate::marshal::{self, Read, ReadBorrowed, Write};
 
 /// A frozen module. Holds a frozen code object and whether it is part of a package
 #[derive(Copy, Clone)]
