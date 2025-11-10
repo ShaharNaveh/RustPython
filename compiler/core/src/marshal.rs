@@ -1,19 +1,4 @@
-use crate::{
-    OneIndexed, SourceLocation,
-    bytecode::{
-        // AsBag,
-        Bag,
-        BorrowedConstant,
-        CodeFlags,
-        CodeObject,
-        CodeUnit,
-        Constant,
-        ConstantBag,
-        Instruction,
-        // Oparg,
-        OpargByte,
-    },
-};
+use crate::{OneIndexed, SourceLocation, bytecode::*};
 use malachite_bigint::{BigInt, Sign};
 use num_complex::Complex64;
 use rustpython_wtf8::Wtf8;
@@ -180,6 +165,19 @@ impl<'a> ReadBorrowed<'a> for &'a [u8] {
     }
 }
 
+/// Parses bytecode bytes into CodeUnit instructions.
+/// Each instruction is 2 bytes: opcode and argument.
+pub fn parse_instructions_from_bytes(bytes: &[u8]) -> Result<Box<[CodeUnit]>> {
+    bytes
+        .chunks_exact(2)
+        .map(|cu| {
+            let op = Instruction::try_from(cu[0])?;
+            let arg = OpArgByte(cu[1]);
+            Ok(CodeUnit { op, arg })
+        })
+        .collect()
+}
+
 pub struct Cursor<B> {
     pub data: B,
     pub position: usize,
@@ -200,21 +198,14 @@ pub fn deserialize_code<R: Read, Bag: ConstantBag>(
 ) -> Result<CodeObject<Bag::Constant>> {
     let len = rdr.read_u32()?;
     let instructions = rdr.read_slice(len * 2)?;
-    let instructions = instructions
-        .chunks_exact(2)
-        .map(|cu| {
-            let op = Instruction::try_from(cu[0])?;
-            let arg = OpargByte(cu[1]);
-            Ok(CodeUnit { op, arg })
-        })
-        .collect::<Result<Box<[CodeUnit]>>>()?;
+    let instructions = parse_instructions_from_bytes(instructions)?;
 
     let len = rdr.read_u32()?;
     let locations = (0..len)
         .map(|_| {
             Ok(SourceLocation {
-                row: OneIndexed::new(rdr.read_u32()? as _).ok_or(MarshalError::InvalidLocation)?,
-                column: OneIndexed::from_zero_indexed(rdr.read_u32()? as _),
+                line: OneIndexed::new(rdr.read_u32()? as _).ok_or(MarshalError::InvalidLocation)?,
+                character_offset: OneIndexed::from_zero_indexed(rdr.read_u32()? as _),
             })
         })
         .collect::<Result<Box<[SourceLocation]>>>()?;
@@ -671,8 +662,8 @@ pub fn serialize_code<W: Write, C: Constant>(buf: &mut W, code: &CodeObject<C>) 
 
     write_len(buf, code.locations.len());
     for loc in &*code.locations {
-        buf.write_u32(loc.row.get() as _);
-        buf.write_u32(loc.column.to_zero_indexed() as _);
+        buf.write_u32(loc.line.get() as _);
+        buf.write_u32(loc.character_offset.to_zero_indexed() as _);
     }
 
     buf.write_u16(code.flags.bits());
