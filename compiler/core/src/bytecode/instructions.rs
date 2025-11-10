@@ -14,14 +14,14 @@ pub enum RealInstruction {
     BeforeAsyncWith = 1,
     BeforeWith = 2,
     BinaryOp(Arg<BinaryOperatorOparg>) = 45,
-    BinaryOpAddFloat = 150,
-    BinaryOpAddInt = 151,
-    BinaryOpAddUnicode = 152,
-    BinaryOpInplaceAddUnicode = 3,
-    BinaryOpMultiplyFloat = 153,
-    BinaryOpMultiplyInt = 154,
-    BinaryOpSubtractFloat = 155,
-    BinaryOpSubtractInt = 156,
+    BinaryOpAddFloat(Arg<BinaryOperatorOparg>) = 150,
+    BinaryOpAddInt(Arg<BinaryOperatorOparg>) = 151,
+    BinaryOpAddUnicode(Arg<BinaryOperatorOparg>) = 152,
+    BinaryOpInplaceAddUnicode(Arg<BinaryOperatorOparg>) = 3,
+    BinaryOpMultiplyFloat(Arg<BinaryOperatorOparg>) = 153,
+    BinaryOpMultiplyInt(Arg<BinaryOperatorOparg>) = 154,
+    BinaryOpSubtractFloat(Arg<BinaryOperatorOparg>) = 155,
+    BinaryOpSubtractInt(Arg<BinaryOperatorOparg>) = 156,
     BinarySlice = 4,
     BinarySubscr = 5,
     BinarySubscrDict = 157,
@@ -92,7 +92,7 @@ pub enum RealInstruction {
     FormatSimple = 14,
     FormatWithSpec = 15,
     ForIter(Arg<DeltaOparg>) = 72,
-    ForIterGen(Arg<Oparg>) = 187,
+    ForIterGen(Arg<DeltaOparg>) = 187,
     ForIterList(Arg<DeltaOparg>) = 188,
     ForIterRange(Arg<DeltaOparg>) = 189,
     ForIterTuple(Arg<DeltaOparg>) = 190,
@@ -132,17 +132,17 @@ pub enum RealInstruction {
     ListExtend(Arg<Oparg>) = 81,
     LoadAssertionError = 23,
     LoadAttr(Arg<NameIdxOparg>) = 82,
-    LoadAttrClass(Arg<Oparg>) = 191,
+    LoadAttrClass(Arg<NameIdxOparg>) = 191,
     LoadAttrGetattributeOverridden(Arg<NameIdxOparg>) = 192,
-    LoadAttrInstanceValue(Arg<Oparg>) = 193,
-    LoadAttrMethodLazyDict(Arg<Oparg>) = 194,
-    LoadAttrMethodNoDict(Arg<Oparg>) = 195,
-    LoadAttrMethodWithValues(Arg<Oparg>) = 196,
-    LoadAttrModule(Arg<Oparg>) = 197,
-    LoadAttrNondescriptorNoDict(Arg<Oparg>) = 198,
-    LoadAttrNondescriptorWithValues(Arg<Oparg>) = 199,
-    LoadAttrProperty(Arg<Oparg>) = 200,
-    LoadAttrSlot(Arg<Oparg>) = 201,
+    LoadAttrInstanceValue(Arg<NameIdxOparg>) = 193,
+    LoadAttrMethodLazyDict(Arg<NameIdxOparg>) = 194,
+    LoadAttrMethodNoDict(Arg<NameIdxOparg>) = 195,
+    LoadAttrMethodWithValues(Arg<NameIdxOparg>) = 196,
+    LoadAttrModule(Arg<NameIdxOparg>) = 197,
+    LoadAttrNondescriptorNoDict(Arg<NameIdxOparg>) = 198,
+    LoadAttrNondescriptorWithValues(Arg<NameIdxOparg>) = 199,
+    LoadAttrProperty(Arg<NameIdxOparg>) = 200,
+    LoadAttrSlot(Arg<NameIdxOparg>) = 201,
     LoadAttrWithHint(Arg<NameIdxOparg>) = 202,
     LoadBuildClass = 24,
     LoadConst(Arg<ConstIdxOparg>) = 83,
@@ -154,8 +154,8 @@ pub enum RealInstruction {
     LoadFromDictOrDeref(Arg<Oparg>) = 89,
     LoadFromDictOrGlobals(Arg<NameIdxOparg>) = 90,
     LoadGlobal(Arg<NameIdxOparg>) = 91,
-    LoadGlobalBuiltin(Arg<Oparg>) = 203,
-    LoadGlobalModule(Arg<Oparg>) = 204,
+    LoadGlobalBuiltin(Arg<NameIdxOparg>) = 203,
+    LoadGlobalModule(Arg<NameIdxOparg>) = 204,
     LoadLocals = 25,
     LoadName(Arg<NameIdxOparg>) = 92,
     LoadSuperAttr(Arg<NameIdxOparg>) = 93,
@@ -181,19 +181,19 @@ pub enum RealInstruction {
     Reraise(Arg<Oparg>) = 102,
     Reserved = 17,
     Resume(Arg<ResumeOparg>) = 149,
-    ResumeCheck = 207,
+    ResumeCheck(Arg<ResumeOparg>) = 207,
     ReturnConst(Arg<ConstIdxOparg>) = 103,
     ReturnGenerator = 35,
     ReturnValue = 36,
     Send(Arg<DeltaOparg>) = 104,
-    SendGen(Arg<Oparg>) = 208,
+    SendGen(Arg<DeltaOparg>) = 208,
     SetupAnnotations = 37,
     SetAdd(Arg<Oparg>) = 105,
     SetFunctionAttribute(Arg<Oparg>) = 106,
     SetUpdate(Arg<Oparg>) = 107,
     StoreAttr(Arg<NameIdxOparg>) = 108,
-    StoreAttrInstanceValue = 209,
-    StoreAttrSlot = 210,
+    StoreAttrInstanceValue(Arg<NameIdxOparg>) = 209,
+    StoreAttrSlot(Arg<NameIdxOparg>) = 210,
     StoreAttrWithHint(Arg<NameIdxOparg>) = 211,
     StoreDeref(Arg<Oparg>) = 109,
     StoreFast(Arg<Oparg>) = 110,
@@ -228,73 +228,80 @@ pub enum RealInstruction {
 impl RealInstruction {
     pub const fn deopt(self) -> Option<Self> {
         Some(match self {
-            Self::BinaryOpAddFloat
-            | Self::BinaryOpAddInt
-            | Self::BinaryOpAddUnicode
-            | Self::BinaryOpInplaceAddUnicode
-            | Self::BinaryOpMultiplyFloat
-            | Self::BinaryOpMultiplyInt
-            | Self::BinaryOpSubtractFloat
-            | Self::BinaryOpSubtractInt => Self::BINARY_OP,
-            Self::BinarySubscrDict
-            | Self::BinarySubscrGetitem
-            | Self::BinarySubscrListInt
-            | Self::BinarySubscrStrInt
-            | Self::BinarySubscrTupleInt => Self::BINARY_SUBSCR,
-            Self::CallAllocAndEnterInit
-            | Self::CallBoundMethodExactArgs
-            | Self::CallBoundMethodGeneral
-            | Self::CallBuiltinClass
-            | Self::CallBuiltinFast
-            | Self::CallBuiltinFastWithKeywords
-            | Self::CallBuiltinO
-            | Self::CallIsinstance
-            | Self::CallLen
-            | Self::CallListAppend
-            | Self::CallMethodDescriptorFast
-            | Self::CallMethodDescriptorFastWithKeywords
-            | Self::CallMethodDescriptorNoargs
-            | Self::CallMethodDescriptorO
-            | Self::CallNonPyGeneral
-            | Self::CallPyExactArgs
-            | Self::CallPyGeneral
-            | Self::CallStr1
-            | Self::CallTuple1
-            | Self::CallType1 => Self::CALL,
-            Self::CompareOpFloat | Self::CompareOpInt | Self::CompareOpStr => Self::COMPARE_OP,
-            Self::ContainsOpDict | Self::ContainsOpSet => Self::CONTAINS_OP,
-            Self::ForIterGen | Self::ForIterList | Self::ForIterRange | Self::ForIterTuple => {
-                Self::FOR_ITER
-            }
-            Self::LoadAttrClass
-            | Self::LoadAttrGetattributeOverridden
-            | Self::LoadAttrInstanceValue
-            | Self::LoadAttrMethodLazyDict
-            | Self::LoadAttrMethodNoDict
-            | Self::LoadAttrMethodWithValues
-            | Self::LoadAttrModule
-            | Self::LoadAttrNondescriptorNoDict
-            | Self::LoadAttrNondescriptorWithValues
-            | Self::LoadAttrProperty
-            | Self::LoadAttrSlot
-            | Self::LoadAttrWithHint => Self::LOAD_ATTR,
-            Self::LoadGlobalBuiltin | Self::LoadGlobalModule => Self::LOAD_GLOBAL,
-            Self::LoadSuperAttrAttr | Self::LoadSuperAttrMethod => Self::LOAD_SUPER_ATTR,
-            Self::ResumeCheck => Self::RESUME,
-            Self::SendGen => Self::SEND,
-            Self::StoreAttrInstanceValue | Self::StoreAttrSlot | Self::StoreAttrWithHint => {
-                Self::STORE_ATTR
-            }
-            Self::StoreSubscrDict | Self::StoreSubscrListInt => Self::STORE_SUBSCR,
-            Self::ToBoolAlwaysTrue
-            | Self::ToBoolBool
-            | Self::ToBoolInt
-            | Self::ToBoolList
-            | Self::ToBoolNone
-            | Self::ToBoolStr => Self::TO_BOOL,
-            Self::UnpackSequenceList | Self::UnpackSequenceTuple | Self::UnpackSequenceTwoTuple => {
-                Self::UNPACK_SEQUENCE
-            }
+            Self::BinaryOpAddFloat(value) => Self::BinaryOp(value),
+            Self::BinaryOpAddInt(value) => Self::BinaryOp(value),
+            Self::BinaryOpAddUnicode(value) => Self::BinaryOp(value),
+            Self::BinaryOpInplaceAddUnicode(value) => Self::BinaryOp(value),
+            Self::BinaryOpMultiplyFloat(value) => Self::BinaryOp(value),
+            Self::BinaryOpMultiplyInt(value) => Self::BinaryOp(value),
+            Self::BinaryOpSubtractFloat(value) => Self::BinaryOp(value),
+            Self::BinaryOpSubtractInt(value) => Self::BinaryOp(value),
+            Self::BinarySubscrDict => Self::BinarySubscr,
+            Self::BinarySubscrGetitem => Self::BinarySubscr,
+            Self::BinarySubscrListInt => Self::BinarySubscr,
+            Self::BinarySubscrStrInt => Self::BinarySubscr,
+            Self::BinarySubscrTupleInt => Self::BinarySubscr,
+            Self::CallAllocAndEnterInit(value) => Self::Call(value),
+            Self::CallBoundMethodExactArgs(value) => Self::Call(value),
+            Self::CallBoundMethodGeneral(value) => Self::Call(value),
+            Self::CallBuiltinClass(value) => Self::Call(value),
+            Self::CallBuiltinFast(value) => Self::Call(value),
+            Self::CallBuiltinFastWithKeywords(value) => Self::Call(value),
+            Self::CallBuiltinO(value) => Self::Call(value),
+            Self::CallIsinstance(value) => Self::Call(value),
+            Self::CallLen(value) => Self::Call(value),
+            Self::CallListAppend(value) => Self::Call(value),
+            Self::CallMethodDescriptorFast(value) => Self::Call(value),
+            Self::CallMethodDescriptorFastWithKeywords(value) => Self::Call(value),
+            Self::CallMethodDescriptorNoargs(value) => Self::Call(value),
+            Self::CallMethodDescriptorO(value) => Self::Call(value),
+            Self::CallNonPyGeneral(value) => Self::Call(value),
+            Self::CallPyExactArgs(value) => Self::Call(value),
+            Self::CallPyGeneral(value) => Self::Call(value),
+            Self::CallStr1(value) => Self::Call(value),
+            Self::CallTuple1(value) => Self::Call(value),
+            Self::CallType1(value) => Self::Call(value),
+            Self::CompareOpFloat(value) => Self::CompareOp(value),
+            Self::CompareOpInt(value) => Self::CompareOp(value),
+            Self::CompareOpStr(value) => Self::CompareOp(value),
+            Self::ContainsOpDict(value) => Self::ContainsOp(value),
+            Self::ContainsOpSet(value) => Self::ContainsOp(value),
+            Self::ForIterGen(value) => Self::ForIter(value),
+            Self::ForIterList(value) => Self::ForIter(value),
+            Self::ForIterRange(value) => Self::ForIter(value),
+            Self::ForIterTuple(value) => Self::ForIter(value),
+            Self::LoadAttrClass(value) => Self::LoadAttr(value),
+            Self::LoadAttrGetattributeOverridden(value) => Self::LoadAttr(value),
+            Self::LoadAttrInstanceValue(value) => Self::LoadAttr(value),
+            Self::LoadAttrMethodLazyDict(value) => Self::LoadAttr(value),
+            Self::LoadAttrMethodNoDict(value) => Self::LoadAttr(value),
+            Self::LoadAttrMethodWithValues(value) => Self::LoadAttr(value),
+            Self::LoadAttrModule(value) => Self::LoadAttr(value),
+            Self::LoadAttrNondescriptorNoDict(value) => Self::LoadAttr(value),
+            Self::LoadAttrNondescriptorWithValues(value) => Self::LoadAttr(value),
+            Self::LoadAttrProperty(value) => Self::LoadAttr(value),
+            Self::LoadAttrSlot(value) => Self::LoadAttr(value),
+            Self::LoadAttrWithHint(value) => Self::LoadAttr(value),
+            Self::LoadGlobalBuiltin(value) => Self::LoadGlobal(value),
+            Self::LoadGlobalModule(value) => Self::LoadGlobal(value),
+            Self::LoadSuperAttrAttr(value) => Self::LoadSuperAttr(value),
+            Self::LoadSuperAttrMethod(value) => Self::LoadSuperAttr(value),
+            Self::ResumeCheck(value) => Self::Resume(value),
+            Self::SendGen(value) => Self::Send(value),
+            Self::StoreAttrInstanceValue(value) => Self::StoreAttr(value),
+            Self::StoreAttrSlot(value) => Self::StoreAttr(value),
+            Self::StoreAttrWithHint(value) => Self::StoreAttr(value),
+            Self::StoreSubscrDict => Self::StoreSubscr,
+            Self::StoreSubscrListInt => Self::StoreSubscr,
+            Self::ToBoolAlwaysTrue => Self::ToBool,
+            Self::ToBoolBool => Self::ToBool,
+            Self::ToBoolInt => Self::ToBool,
+            Self::ToBoolList => Self::ToBool,
+            Self::ToBoolNone => Self::ToBool,
+            Self::ToBoolStr => Self::ToBool,
+            Self::UnpackSequenceList(value) => Self::UnpackSequence(value),
+            Self::UnpackSequenceTuple(value) => Self::UnpackSequence(value),
+            Self::UnpackSequenceTwoTuple(value) => Self::UnpackSequence(value),
             _ => return None,
         })
     }
@@ -511,7 +518,7 @@ impl RealInstruction {
     pub const fn has_local(self) -> bool {
         matches!(
             self,
-            Self::BinaryOpInplaceAddUnicode
+            Self::BinaryOpInplaceAddUnicode(_)
                 | Self::DeleteFast(_)
                 | Self::LoadFast(_)
                 | Self::LoadFastAndClear(_)

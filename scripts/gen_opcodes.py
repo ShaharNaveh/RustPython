@@ -2,6 +2,7 @@
 import abc
 import collections
 import enum
+import functools
 import itertools
 import pathlib
 import sys
@@ -114,7 +115,23 @@ class Inst:
         return self._inner.name.title().replace("_", "")
 
     @property
-    def oparg(self) -> Oparg | None:
+    def deopt(self) -> str:
+        if (family := self.family) is None:
+            return self.name
+
+        return family.name.title().replace("_", "")
+
+    def oparg(self, table: dict[str, typing.Self]) -> Oparg | None:
+        """
+        Parameters
+        ----------
+        table : dict
+            Deopts table.
+        """
+        # We might have a specilized opcode that needs to have the oparg the same as what it would deopt into
+        if (deopt_inst := table.get(self.name)) is not None:
+            return deopt_inst.oparg(table)
+
         return Oparg.try_from_instruction(self._inner)
 
     @property
@@ -123,15 +140,21 @@ class Inst:
 
     @property
     def family(self):
-        return self._inner.family
+        return getattr(self._inner, "family", None)
 
     @property
     def parts(self):
         return self._inner.parts
 
-    def as_match_arm(self, value: str = "_") -> str:
+    def as_match_arm(self, table: dict[str, typing.Self], value: str = "_") -> str:
+        """
+        Parameters
+        ----------
+        table : dict
+            Deopts table.
+        """
         out = self.name
-        if self.properties.oparg:
+        if self.oparg(table):
             out += f"({value})"
         return f"Self::{out}"
 
@@ -155,6 +178,18 @@ class InstructionsMeta(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def enum_name(self) -> str: ...
 
+    @functools.cached_property
+    def name_table(self) -> dict[str, Inst]:
+        return {inst.name: inst for inst in self}
+
+    @functools.cached_property
+    def deopt_table(self) -> dict[str, Inst]:
+        return {
+            inst.name: self.name_table[inst.deopt]
+            for inst in self
+            if inst.name != inst.deopt
+        }
+
     @property
     def rust_code(self) -> str:
         enum_variants = []
@@ -162,7 +197,8 @@ class InstructionsMeta(metaclass=abc.ABCMeta):
         for inst in self:
             name = inst.name
             opcode = self._analysis.opmap[inst._inner.name]
-            oparg = inst.oparg
+            oparg = inst.oparg(self.deopt_table)
+
             if oparg is None:
                 enum_variants.append(f"{name} = {opcode}")
             else:
@@ -196,7 +232,9 @@ impl {self.enum_name} {{
 
     def build_has_attr_fn(self, fn_attr: str, prop_attr: str, doc_flag: str):
         arms = "|".join(
-            inst.as_match_arm() for inst in self if getattr(inst.properties, prop_attr)
+            inst.as_match_arm(self.deopt_table)
+            for inst in self
+            if getattr(inst.properties, prop_attr)
         )
         if arms:
             inner = f"matches!(self, {arms})"
@@ -267,13 +305,13 @@ class RealInstructions(InstructionsMeta):
             line = f"Self::{inst.name} => {expr}"
             lines.append(line)
 
-        branches = ",\n".join(lines)
+        arms = ",\n".join(lines)
         doc = "from" if direction == "popped" else "on"
         return f"""
 /// How many items should be {direction} {doc} the stack.
 pub const fn num_{direction}<T: OpArgType>(self, oparg: T) -> u32 {{
     match self {{
-        {branches}
+        {arms}
     }}
 }}
         """
@@ -288,24 +326,14 @@ pub const fn num_{direction}<T: OpArgType>(self, oparg: T) -> u32 {{
 
     @property
     def fn_deopt(self) -> str:
-        def format_deopt_variants(lst: list[str]) -> str:
-            return "|".join(f"Self::{v}" for v in lst)
+        lines = []
+        for deopt, inst in self.deopt_table.items():
+            left = self.name_table[deopt].as_match_arm(self.deopt_table, value="value")
+            right = inst.as_match_arm(self.deopt_table, value="value")
+            lines.append(f"{left} => {right}")
 
-        deopts = collections.defaultdict(list)
-        for inst in self:
-            deopt = inst.name
+        arms = ",\n".join(sorted(lines))
 
-            if inst.family is not None:
-                deopt = inst.family.name
-
-            if inst.name == deopt:
-                continue
-            deopts[deopt].append(inst.name)
-
-        arms = ",\n".join(
-            f"{format_deopt_variants(deopt)} => Self::{name}"
-            for name, deopt in sorted(deopts.items())
-        )
         return f"""
 pub const fn deopt(self) -> Option<Self> {{
     Some(match self {{
