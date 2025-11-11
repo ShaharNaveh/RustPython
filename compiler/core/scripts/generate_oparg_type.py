@@ -8,6 +8,7 @@ import enum
 import inspect
 import pathlib
 import pydoc
+import textwrap
 import typing
 
 if typing.TYPE_CHECKING:
@@ -16,11 +17,30 @@ if typing.TYPE_CHECKING:
 CRATE_ROOT = pathlib.Path(__file__).parents[1]
 OUT_PATH = CRATE_ROOT / "src" / "bytecode" / "oparg_types.rs"
 
-DERIVE = "#[derive(Clone, Copy, Debug)]"
+DERIVE = "#[derive(Clone, Copy, Debug, Eq, PartialEq)]"
+
+REFS = {
+    "CodeObject": "[crate::CodeObject]",
+    "Instruction": "[crate::Instruction]",
+    "PEP695": "https://peps.python.org/pep-0695/",
+}
 
 
 def make_doc(s: str) -> str:
-    return "\n".join(f"/// {line}" for line in inspect.cleandoc(s).splitlines())
+    s = s.strip()
+
+    doc = "\n".join(f"/// {line}" for line in inspect.cleandoc(s).splitlines())
+
+    refs = "\n".join(f"/// [{ref}]: {value}" for ref, value in REFS.items() if ref in s)
+
+    if refs:
+        return f"""
+{doc}
+///
+{refs}
+""".strip()
+
+    return doc
 
 
 @enum.unique
@@ -63,7 +83,7 @@ class OpargTypeMeta(metaclass=abc.ABCMeta):
             Otherwise an empty string if class has no docstring set.
         """
         if docstr := pydoc._getowndoc(type(self)):
-            return make_doc(docstr)
+            return docstr
 
         return ""
 
@@ -78,7 +98,7 @@ class AliasOpargType(OpargTypeMeta):
     @property
     def rust_code(self) -> str:
         return f"""
-{self.doc}
+{make_doc(self.doc)}
 {DERIVE}
 pub struct {self.name}(crate::Oparg);
 
@@ -94,33 +114,33 @@ impl std::ops::Deref for {self.name} {{
 
 class VarNum(AliasOpargType):
     """
-    Used by `LoadFast*` [Instruction](crate::Instruction)s.
+    Used by `LoadFast*` [`Instruction`]s.
     """
 
 
 class Count(AliasOpargType):
     """
-    Used for Instructions like:
-        - [`Instructions::BuildList`]
-        - [`Instructions::UnpackEx`]
+    Used at instructions like:
+        - [`Instruction::BuildList`]
+        - [`Instruction::UnpackEx`]
     """
 
 
 class NameIdx(AliasOpargType):
     """
-    Index inside [`CodeObject.names`](crate::CodeObject.names).
+    Index inside [`CodeObject.names`].
     """
 
 
 class ConstIdx(AliasOpargType):
     """
-    Index inside [`CodeObject.constants`](crate::CodeObject.constants).
+    Index inside [`CodeObject.constants`].
     """
 
 
 class Delta(AliasOpargType):
     """
-    Used for `Jump` instructions.
+    Used by `Jump*` [`Instruction`]s.
     """
 
 
@@ -130,32 +150,39 @@ class NamedOpargType(OpargTypeMeta):
     _enum_cls = enum.IntEnum
     _start = 0
     _val_tpl = "{}"  # TODO(3.14): Use tstrings
-    _doc_suffix = ""
 
     @property
     @abc.abstractmethod
-    def names(self) -> tuple[str, ...]:
+    def variants(self) -> dict[str, str]:
         """
-        Oparg names.
+        Typed oparg variants.
+
+        Returns
+        -------
+        dict[str, str]
+            Ordered dict where: attr_name => doc
         """
         ...
 
     @property
-    def doc(self) -> str:
-        return make_doc(
-            f"Used for [Instruction::{self.name}](crate::Instruction::{self.name}).{self._doc_suffix}"
-        )
-
-    @property
     def rust_code(self) -> str:
-        arms = ",\n".join(
-            f"{member.name} = {self._val_tpl.format(member.value)}" for member in self
-        )
+        lines = []
+        for member, doc in self:
+            if doc:
+                lines.append(make_doc(doc))
 
-        # Should we check if _enum_cls is IntFlag and genertae a bitflag struct instead?
+            line = f"{member.name} = {self._val_tpl.format(member.value)},"
+            lines.append(line)
 
+        arms = "\n".join(lines)
+
+        if not (doc := pydoc._getowndoc(type(self))):
+            doc = ""
+        doc = make_doc(doc)
+
+        # TODO: Should we check if _enum_cls is IntFlag and genertae a bitflag struct instead?
         return f"""
-{self.doc}
+{doc}
 {DERIVE}
 #[repr(u32)]
 pub enum {self.name} {{
@@ -164,110 +191,230 @@ pub enum {self.name} {{
         """
 
     def __iter__(self):
-        yield from self._enum_cls(self.name, self.names, start=self._start)
+        yield from zip(
+            self._enum_cls(self.name, tuple(self.variants.keys()), start=self._start),
+            self.variants.values(),
+        )
 
 
 class BuildSlice(NamedOpargType):
-    names = ("Two", "Three")
-    _start = 2
-    _doc_suffix = """
-    Specifies if a slice was built with 2 or 3 arguments.
-
-    For example:
-
-    ```py
-    [0:10] # BuildSlice::Two
-    [0:10:2] # BuildSlice::Three
-    ```
     """
+    Specifies if a slice is built with either 2 or 3 arguments.
+    """
+
+    _start = 2
+    variants = {
+        "Two": """
+    ```py
+    x[5:10]
+    ```
+    """,
+        "Three": """
+    ```py
+    x[5:10:2]`
+    ```
+        """,
+    }
 
 
 class Resume(NamedOpargType):
-    names = ("AtFuncStart", "AfterYield", "AfterYieldFrom", "AfterAwait")
+    variants = {
+        "AtFuncStart": None,
+        "AfterYield": None,
+        "AfterYieldFrom": None,
+        "AfterAwait": None,
+    }
 
 
+# TODO
+"""
 class Compare(NamedOpargType):
-    names = ()  # TODO
+    names = ()  
+"""
 
 
 class BinOp(NamedOpargType):
-    names = (
-        "Add",
-        "And",
-        "FloorDivide",
-        "Lshift",
-        "MatrixMultiply",
-        "Multiply",
-        "Remainder",
-        "Or",
-        "Power",
-        "Rshift",
-        "Subtract",
-        "TrueDivide",
-        "Xor",
-        "InplaceAdd",
-        "InplaceAnd",
-        "InplaceFloorDivide",
-        "InplaceLshift",
-        "InplaceMatrixMultiply",
-        "InplaceMultiply",
-        "InplaceRemainder",
-        "InplaceOr",
-        "InplacePower",
-        "InplaceRshift",
-        "InplaceSubtract",
-        "InplaceTrueDivide",
-        "InplaceXor",
-    )
+    variants = {
+        "Add": "`+`",
+        "And": "`&`",
+        "FloorDivide": "`//`",
+        "Lshift": "`<<`",
+        "MatrixMultiply": "`@`",
+        "Multiply": "`*`",
+        "Remainder": "`%`",
+        "Or": "`|`",
+        "Power": "`**`",
+        "Rshift": "`>>`",
+        "Subtract": "`-`",
+        "TrueDivide": "`/`",
+        "Xor": "`^`",
+        "InplaceAdd": "`+`",
+        "InplaceAnd": "`&=`",
+        "InplaceFloorDivide": "`//=`",
+        "InplaceLshift": "`<<=`",
+        "InplaceMatrixMultiply": "`@=`",
+        "InplaceMultiply": "`*=`",
+        "InplaceRemainder": "`%=`",
+        "InplaceOr": "`|=`",
+        "InplacePower": "`**=`",
+        "InplaceRshift": "`>>=`",
+        "InplaceSubtract": "`-=`",
+        "InplaceTrueDivide": "`/=`",
+        "InplaceXor": "`^=`",
+    }
 
 
 class CallIntrinsic1(NamedOpargType):
-    names = (
-        "Print",
-        "ImportStar",
-        "StopIterationError",
-        "AsyncGenWrap",
-        "UnaryPositive",
-        "ListToTuple",
-        "TypeVar",
-        "ParamSpec",
-        "TypeVarTuple",
-        "SubscriptGeneric",
-        "TypeAlias",
-    )
+    """
+    [`CALL_INTRINSIC_1`]
+
+    [CALL_INTRINSIC_1]: https://docs.python.org/3.13/library/dis.html#opcode-CALL_INTRINSIC_1
+    """  # TODO: Move to Instruction
+
+    variants = {
+        # "Invalid": "Not valid",
+        "Print": "Prints the argument to standard out. Used in the REPL.",
+        "ImportStar": "Performs `import *` for the named module.",
+        "StopIterationError": "Extracts the return value from a `StopIteration` exception.",
+        "AsyncGenWrap": "Wraps an async generator value.",
+        "UnaryPositive": "Performs the unary `+` operation.",
+        "ListToTuple": "Converts a list to a tuple.",
+        "TypeVar": """
+        Creates a [`typing.TypeVar`].
+
+        [typing.TypeVar]: https://docs.python.org/3.13/library/typing.html#typing.TypeVar,
+        """,
+        "ParamSpec": """
+        Crates a [`typing.ParamSpec`].
+
+        [typing.ParamSpec]: https://docs.python.org/3.13/library/typing.html#typing.ParamSpec
+        """,
+        "TypeVarTuple": """
+        Crates a [`typing.TypeVarTuple`]
+
+        [typing.TypeVarTuple]: https://docs.python.org/3.13/library/typing.html#typing.TypeVarTuple
+        """,
+        "SubscriptGeneric": "Generic subscript for [`PEP695`].",
+        "TypeAlias": """
+        Creates a [`typing.TypeAliasType`].
+
+        Used in the [`type`] statement. The argument is a tuple of the type aliass name, type parameters, and value.
+
+        [type]: https://docs.python.org/3.13/reference/simple_stmts.html#type
+        [typing.TypeAliasType]: https://docs.python.org/3.13/library/typing.html#typing.TypeAliasType
+        """,
+    }
 
 
 class CallIntrinsic2(NamedOpargType):
-    names = (
-        "Invalid",
-        "PrepReraiseStar",
-        "TypeVarWithBound",
-        "TypeVarWithConstraint",
-        "SetFunctionTypeParams",
-        "SetTypeparamDefault",
-    )
+    """
+    [`CALL_INTRINSIC_2`]
+
+    [CALL_INTRINSIC_2]: https://docs.python.org/3.13/library/dis.html#opcode-CALL_INTRINSIC_2
+    """  # TODO: Move to Instruction
+
+    variants = {
+        # "Invalid": "Not valid",
+        "PrepReraiseStar": """
+        Calculates the [`ExceptionGroup`] to raise from a `try-except*`.
+
+        [ExceptionGroup]: https://docs.python.org/3.13/library/exceptions.html#ExceptionGroup
+        """,
+        "TypeVarWithBound": """
+        Creates a [`typing.TypeVar`] with a bound.
+
+        [typing.TypeVar]: https://docs.python.org/3.13/library/typing.html#typing.TypeVar
+        """,
+        "TypeVarWithConstraint": """
+        Creates a [`typing.TypeVar`] with constraints.
+
+        [typing.TypeVar]: https://docs.python.org/3.13/library/typing.html#typing.TypeVar
+        """,
+        "SetFunctionTypeParams": "Sets the `__type_params__` attribute of a function.",
+    }
 
 
 class RaiseVarArgs(NamedOpargType):
-    names = ("Reraise", "Raise", "RaiseCause")
+    """
+    Raises an exception using one of the 3 forms of the `raise` statement.
+    """
 
+    variants = {
+        "Reraise": """
+    Re-Raise previous exception.
 
-class RaiseVarArgs(NamedOpargType):
-    names = ("Reraise", "Raise", "RaiseCause")
+    ```py
+    raise 
+    ```
+    """,
+        "Raise": """
+    Raise exception instance or type at `STACK[-1]`.
+
+    ```py
+    raise STACK[-1] 
+    ```
+    """,
+        "RaiseCause": """
+    Raise exception instance or type at `STACK[-2]` with `__cause__` set to `STACK[-1]`.
+
+    ```py
+    raise STACK[-2] from STACK[-1]
+    ```
+    """,
+    }
 
 
 class SetFunctionAttribute(NamedOpargType):
-    names = ("Defaults", "KwDefaults", "Annotations", "Closure")
+    """
+    Determines which attribute to set.
+    """
 
     _val_tpl = "{:#04x}"
     _start = 1
     _enum_cls = enum.IntFlag
+    variants = {
+        "Defaults": "A tuple of default values for positional-only and positional-or-keyword parameters in positional order.",
+        "KwDefaults": "A dictionary of keyword-only parameters' default values.",
+        "Annotations": "A tuple of strings containing parameters' annotations.",
+        "Closure": "A tuple containing cells for free variables, making a closure.",
+    }
 
 
 class ConvertValue(NamedOpargType):
-    names = ("None", "Str", "Repr", "Ascii")
-
     _val_tpl = "{:#01x}"
+    variants = {
+        "None": "No conversion.",
+        "Str": "Converts by calling `str(...)`.",
+        "Repr": "Converts by calling `repr(...)`.",
+        "Ascii": "Converts by calling `ascii(...)`.",
+    }
+
+
+class Invert(NamedOpargType):
+    """
+    When used in the context of:
+    - [`Instruction::IsOp`]:
+        * [`Invert::No`]: Performs `is` comparison.
+        * [`Invert::Yes`]: Performs `is not` comparison.
+
+    - [`Instruction::ContainsOp`]:
+        * [`Invert::No`]: Performs `in` comparison.
+        * [`Invert::Yes`]: Performs `not in` comparison.
+    """  # TODO: Should be on the `Instruction::{IsOp, ContainsOp}` instead
+
+    variants = {"No": None, "Yes": None}
+
+
+class Where(NamedOpargType):
+    """
+    Indicates where the instruction occurs.
+    """
+
+    variants = {
+        # "NoWhere": "Nowhere",
+        "AfterAEnter": "After a call to `__aenter__`.",
+        "AfterAExit": "After a call to `__aexit__`.",
+    }
 
 
 def main():
