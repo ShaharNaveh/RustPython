@@ -53,7 +53,7 @@ impl std::ops::Deref for NameIdx {
     }
 }
 
-/// Used by `LoadFast*` [Instructions](crate::Instruction).
+/// Used by `LoadFast*` [Instruction](crate::Instruction)s.
 #[derive(Clone, Copy, Debug)]
 pub struct VarNum(crate::Oparg);
 
@@ -131,6 +131,25 @@ pub enum CallIntrinsic2 {
 #[repr(u32)]
 pub enum Compare {}
 
+/// Used for [Instruction::ConvertValue](crate::Instruction::ConvertValue).
+#[derive(Clone, Copy, Debug)]
+#[repr(u32)]
+pub enum ConvertValue {
+    None = 0x0,
+    Str = 0x1,
+    Repr = 0x2,
+    Ascii = 0x3,
+}
+
+/// Used for [Instruction::RaiseVarArgs](crate::Instruction::RaiseVarArgs).
+#[derive(Clone, Copy, Debug)]
+#[repr(u32)]
+pub enum RaiseVarArgs {
+    Reraise = 0,
+    Raise = 1,
+    RaiseCause = 2,
+}
+
 /// Used for [Instruction::RaiseVarArgs](crate::Instruction::RaiseVarArgs).
 #[derive(Clone, Copy, Debug)]
 #[repr(u32)]
@@ -148,4 +167,14 @@ pub enum Resume {
     AfterYield = 1,
     AfterYieldFrom = 2,
     AfterAwait = 3,
+}
+
+/// Used for [Instruction::SetFunctionAttribute](crate::Instruction::SetFunctionAttribute).
+#[derive(Clone, Copy, Debug)]
+#[repr(u32)]
+pub enum SetFunctionAttribute {
+    Defaults = 0x01,
+    KwDefaults = 0x02,
+    Annotations = 0x04,
+    Closure = 0x08,
 }

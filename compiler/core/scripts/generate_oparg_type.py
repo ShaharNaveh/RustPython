@@ -124,6 +124,10 @@ class Delta(AliasOpargType):
 class NamedOpargType(OpargTypeMeta):
     category = OpargCategory.Named
 
+    _enum_cls = enum.IntEnum
+    _start = 0
+    _val_tpl = "{}"  # TODO(3.14): Use tstrings
+
     @property
     @abc.abstractmethod
     def names(self) -> tuple[str, ...]:
@@ -140,7 +144,11 @@ class NamedOpargType(OpargTypeMeta):
 
     @property
     def rust_code(self) -> str:
-        arms = ",\n".join(f"{member.name} = {member.value}" for member in self)
+        arms = ",\n".join(
+            f"{member.name} = {self._val_tpl.format(member.value)}" for member in self
+        )
+
+        # Should we check if _enum_cls is IntFlag and genertae a bitflag struct instead?
 
         return f"""
 {self.doc}
@@ -152,7 +160,7 @@ pub enum {self.name} {{
         """
 
     def __iter__(self):
-        yield from enum.IntEnum(self.name, self.names, start=0)
+        yield from self._enum_cls(self.name, self.names, start=self._start)
 
 
 class Resume(NamedOpargType):
@@ -225,6 +233,24 @@ class RaiseVarArgs(NamedOpargType):
     names = ("Reraise", "Raise", "RaiseCause")
 
 
+class RaiseVarArgs(NamedOpargType):
+    names = ("Reraise", "Raise", "RaiseCause")
+
+
+class SetFunctionAttribute(NamedOpargType):
+    names = ("Defaults", "KwDefaults", "Annotations", "Closure")
+
+    _val_tpl = "{:#04x}"
+    _start = 1
+    _enum_cls = enum.IntFlag
+
+
+class ConvertValue(NamedOpargType):
+    names = ("None", "Str", "Repr", "Ascii")
+
+    _val_tpl = "{:#01x}"
+
+
 def main():
     script_path = pathlib.Path(__file__).absolute().relative_to(CRATE_ROOT).as_posix()
 
@@ -243,7 +269,6 @@ def main():
 // Do not edit!
 
 {code}
-
     """.strip()
 
     OUT_PATH.write_text(out)
