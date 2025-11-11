@@ -97,6 +97,22 @@ pub enum BinOp {
     InplaceXor = 25,
 }
 
+/// Used for [Instruction::BuildSlice](crate::Instruction::BuildSlice).
+/// Specifies if a slice was built with 2 or 3 arguments.
+///
+/// For example:
+///
+/// ```py
+/// [0:10] # BuildSlice::Two
+/// [0:10:2] # BuildSlice::Three
+/// ```
+#[derive(Clone, Copy, Debug)]
+#[repr(u32)]
+pub enum BuildSlice {
+    Two = 2,
+    Three = 3,
+}
+
 /// Used for [Instruction::CallIntrinsic1](crate::Instruction::CallIntrinsic1).
 #[derive(Clone, Copy, Debug)]
 #[repr(u32)]

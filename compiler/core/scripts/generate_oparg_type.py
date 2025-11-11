@@ -8,7 +8,6 @@ import enum
 import inspect
 import pathlib
 import pydoc
-import textwrap
 import typing
 
 if typing.TYPE_CHECKING:
@@ -18,6 +17,10 @@ CRATE_ROOT = pathlib.Path(__file__).parents[1]
 OUT_PATH = CRATE_ROOT / "src" / "bytecode" / "oparg_types.rs"
 
 DERIVE = "#[derive(Clone, Copy, Debug)]"
+
+
+def make_doc(s: str) -> str:
+    return "\n".join(f"/// {line}" for line in inspect.cleandoc(s).splitlines())
 
 
 @enum.unique
@@ -60,7 +63,7 @@ class OpargTypeMeta(metaclass=abc.ABCMeta):
             Otherwise an empty string if class has no docstring set.
         """
         if docstr := pydoc._getowndoc(type(self)):
-            return textwrap.indent(inspect.cleandoc(docstr), prefix="/// ")
+            return make_doc(docstr)
 
         return ""
 
@@ -127,6 +130,7 @@ class NamedOpargType(OpargTypeMeta):
     _enum_cls = enum.IntEnum
     _start = 0
     _val_tpl = "{}"  # TODO(3.14): Use tstrings
+    _doc_suffix = ""
 
     @property
     @abc.abstractmethod
@@ -138,8 +142,8 @@ class NamedOpargType(OpargTypeMeta):
 
     @property
     def doc(self) -> str:
-        return (
-            f"/// Used for [Instruction::{self.name}](crate::Instruction::{self.name})."
+        return make_doc(
+            f"Used for [Instruction::{self.name}](crate::Instruction::{self.name}).{self._doc_suffix}"
         )
 
     @property
@@ -161,6 +165,21 @@ pub enum {self.name} {{
 
     def __iter__(self):
         yield from self._enum_cls(self.name, self.names, start=self._start)
+
+
+class BuildSlice(NamedOpargType):
+    names = ("Two", "Three")
+    _start = 2
+    _doc_suffix = """
+    Specifies if a slice was built with 2 or 3 arguments.
+
+    For example:
+
+    ```py
+    [0:10] # BuildSlice::Two
+    [0:10:2] # BuildSlice::Three
+    ```
+    """
 
 
 class Resume(NamedOpargType):
