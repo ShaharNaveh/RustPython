@@ -144,33 +144,63 @@ class Delta(AliasOpargType):
     """
 
 
+@enum.unique
+class DocEnum(enum.Enum):
+    """
+    An enum that lets you optionally specify a docstring for the enum variants.
+
+    Examples
+    --------
+    >>> import enum
+    >>>
+    >>> class MyFlags(enum.IntEnum, DocEnum):
+    >>>     Foo = enum.auto(), "Foo oparg"
+    >>>     Bar = enum.auto()
+    >>>     Baz = enum.auto(), ["can", "be", "anything", "really"]
+    >>>
+    >>> MyFlags.Foo.__doc__
+    Foo oparg
+    >>> MyFlags.Bar.__doc__ is None
+    True
+    >>> MyFlags.Baz.__doc__
+    ['can', 'be', 'anything', 'really']
+    """
+
+    _ignore_ = ["_start"]
+    _start = 0
+
+    @staticmethod
+    def aa_generate_next_value_(name, start, count, last_values):
+        return count + _start
+
+    def __new__(cls, value: int, doc: str | None = None):
+        obj = int.__new__(cls, value)
+        obj._value_ = value
+        obj.__doc__ = doc
+        return obj
+
+
 class NamedOpargType(OpargTypeMeta):
     category = OpargCategory.Named
 
-    _enum_cls = enum.IntEnum
-    _start = 0
     _val_tpl = "{}"  # TODO(3.14): Use tstrings
 
     @property
     @abc.abstractmethod
-    def variants(self) -> dict[str, str]:
+    def flags(self) -> DocEnum:
         """
-        Typed oparg variants.
-
-        Returns
-        -------
-        dict[str, str]
-            Ordered dict where: attr_name => doc
+        Enum with variant values and optional docstrings.
         """
         ...
 
     @property
     def rust_code(self) -> str:
         lines = []
-        for member, doc in self:
+        for member in self.flags:
+            doc = member.__doc__
             if doc:
                 lines.append(make_doc(doc))
-
+            # TODO: Make use of `_numeric_repr_`
             line = f"{member.name} = {self._val_tpl.format(member.value)},"
             lines.append(line)
 
@@ -190,40 +220,43 @@ pub enum {self.name} {{
 }}
         """
 
-    def __iter__(self):
-        yield from zip(
-            self._enum_cls(self.name, tuple(self.variants.keys()), start=self._start),
-            self.variants.values(),
-        )
-
 
 class BuildSlice(NamedOpargType):
     """
     Specifies if a slice is built with either 2 or 3 arguments.
     """
 
-    _start = 2
-    variants = {
-        "Two": """
-    ```py
-    x[5:10]
-    ```
-    """,
-        "Three": """
-    ```py
-    x[5:10:2]`
-    ```
-        """,
-    }
+    @property
+    def flags(self):
+        two_doc = """
+        ```py
+        x[5:10]
+        ```
+        """
+
+        three_doc = """
+        ```py
+        x[5:10:2]
+        ```
+        """
+
+        class Inner(enum.IntEnum, DocEnum):
+            Two = 2, two_doc
+            Three = 3, three_doc
+
+        return Inner
 
 
 class Resume(NamedOpargType):
-    variants = {
-        "AtFuncStart": None,
-        "AfterYield": None,
-        "AfterYieldFrom": None,
-        "AfterAwait": None,
-    }
+    @property
+    def flags(self):
+        class Inner(enum.IntEnum, DocEnum):
+            AtFuncStart = enum.auto()
+            AfterYield = enum.auto()
+            AfterYieldFrom = enum.auto()
+            AfterAwait = enum.auto()
+
+        return Inner
 
 
 # TODO
@@ -234,34 +267,37 @@ class Compare(NamedOpargType):
 
 
 class BinOp(NamedOpargType):
-    variants = {
-        "Add": "`+`",
-        "And": "`&`",
-        "FloorDivide": "`//`",
-        "Lshift": "`<<`",
-        "MatrixMultiply": "`@`",
-        "Multiply": "`*`",
-        "Remainder": "`%`",
-        "Or": "`|`",
-        "Power": "`**`",
-        "Rshift": "`>>`",
-        "Subtract": "`-`",
-        "TrueDivide": "`/`",
-        "Xor": "`^`",
-        "InplaceAdd": "`+`",
-        "InplaceAnd": "`&=`",
-        "InplaceFloorDivide": "`//=`",
-        "InplaceLshift": "`<<=`",
-        "InplaceMatrixMultiply": "`@=`",
-        "InplaceMultiply": "`*=`",
-        "InplaceRemainder": "`%=`",
-        "InplaceOr": "`|=`",
-        "InplacePower": "`**=`",
-        "InplaceRshift": "`>>=`",
-        "InplaceSubtract": "`-=`",
-        "InplaceTrueDivide": "`/=`",
-        "InplaceXor": "`^=`",
-    }
+    @property
+    def flags(self):
+        class Inner(enum.IntEnum, DocEnum):
+            Add = enum.auto(), "`+`"
+            And = enum.auto(), "`&`"
+            FloorDivide = enum.auto(), "`//`"
+            Lshift = enum.auto(), "`<<`"
+            MatrixMultiply = enum.auto(), "`@`"
+            Multiply = enum.auto(), "`*`"
+            Remainder = enum.auto(), "`%`"
+            Or = enum.auto(), "`|`"
+            Power = enum.auto(), "`**`"
+            Rshift = enum.auto(), "`>>`"
+            Subtract = enum.auto(), "`-`"
+            TrueDivide = enum.auto(), "`/`"
+            Xor = enum.auto(), "`^`"
+            InplaceAdd = enum.auto(), "`+`"
+            InplaceAnd = enum.auto(), "`&=`"
+            InplaceFloorDivide = enum.auto(), "`//=`"
+            InplaceLshift = enum.auto(), "`<<=`"
+            InplaceMatrixMultiply = enum.auto(), "`@=`"
+            InplaceMultiply = enum.auto(), "`*=`"
+            InplaceRemainder = enum.auto(), "`%=`"
+            InplaceOr = enum.auto(), "`|=`"
+            InplacePower = enum.auto(), "`**=`"
+            InplaceRshift = enum.auto(), "`>>=`"
+            InplaceSubtract = enum.auto(), "`-=`"
+            InplaceTrueDivide = enum.auto(), "`/=`"
+            InplaceXor = enum.auto(), "`^=`"
+
+        return Inner
 
 
 class CallIntrinsic1(NamedOpargType):
@@ -271,67 +307,90 @@ class CallIntrinsic1(NamedOpargType):
     [CALL_INTRINSIC_1]: https://docs.python.org/3.13/library/dis.html#opcode-CALL_INTRINSIC_1
     """  # TODO: Move to Instruction
 
-    variants = {
-        # "Invalid": "Not valid",
-        "Print": "Prints the argument to standard out. Used in the REPL.",
-        "ImportStar": "Performs `import *` for the named module.",
-        "StopIterationError": "Extracts the return value from a `StopIteration` exception.",
-        "AsyncGenWrap": "Wraps an async generator value.",
-        "UnaryPositive": "Performs the unary `+` operation.",
-        "ListToTuple": "Converts a list to a tuple.",
-        "TypeVar": """
+    @property
+    def flags(self):
+        print_doc = "Prints the argument to standard out. Used in the REPL."
+        stop_iterator_error_doc = """
+        Extracts the return value from a `StopIteration` exception.
+        """
+
+        type_var_doc = """
         Creates a [`typing.TypeVar`].
 
         [typing.TypeVar]: https://docs.python.org/3.13/library/typing.html#typing.TypeVar,
-        """,
-        "ParamSpec": """
+        """
+
+        param_spec_doc = """
         Crates a [`typing.ParamSpec`].
 
         [typing.ParamSpec]: https://docs.python.org/3.13/library/typing.html#typing.ParamSpec
-        """,
-        "TypeVarTuple": """
+        """
+
+        type_var_tuple_doc = """
         Crates a [`typing.TypeVarTuple`]
 
         [typing.TypeVarTuple]: https://docs.python.org/3.13/library/typing.html#typing.TypeVarTuple
-        """,
-        "SubscriptGeneric": "Generic subscript for [`PEP695`].",
-        "TypeAlias": """
+        """
+
+        type_alias_doc = """
         Creates a [`typing.TypeAliasType`].
 
         Used in the [`type`] statement. The argument is a tuple of the type aliass name, type parameters, and value.
 
         [type]: https://docs.python.org/3.13/reference/simple_stmts.html#type
         [typing.TypeAliasType]: https://docs.python.org/3.13/library/typing.html#typing.TypeAliasType
-        """,
-    }
+        """
+
+        class Inner(enum.IntEnum, DocEnum):
+            Invalid = enum.auto(), "Not valid."
+            Print = enum.auto(), print_doc
+            ImportStar = enum.auto(), "Performs `import *` for the named module."
+            StopIterationError = enum.auto(), stop_iterator_error_doc
+            AsyncGenWrap = enum.auto(), "Wraps an async generator value."
+            UnaryPositive = enum.auto(), "Performs the unary `+` operation."
+            ListToTuple = enum.auto(), "Converts a list to a tuple."
+            TypeVar = enum.auto(), type_var_doc
+            ParamSpec = enum.auto(), param_spec_doc
+            TypeVarTuple = enum.auto(), type_var_tuple_doc
+            SubscriptGeneric = enum.auto(), "Generic subscript for [`PEP695`]."
+            TypeAlias = enum.auto(), type_alias_doc
+
+        return Inner
 
 
 class CallIntrinsic2(NamedOpargType):
-    """
-    [`CALL_INTRINSIC_2`]
-
-    [CALL_INTRINSIC_2]: https://docs.python.org/3.13/library/dis.html#opcode-CALL_INTRINSIC_2
-    """  # TODO: Move to Instruction
-
-    variants = {
-        # "Invalid": "Not valid",
-        "PrepReraiseStar": """
+    @property
+    def flags(self):
+        prep_reraise_star_doc = """
         Calculates the [`ExceptionGroup`] to raise from a `try-except*`.
 
         [ExceptionGroup]: https://docs.python.org/3.13/library/exceptions.html#ExceptionGroup
-        """,
-        "TypeVarWithBound": """
+        """
+
+        type_var_with_bound_doc = """
         Creates a [`typing.TypeVar`] with a bound.
 
         [typing.TypeVar]: https://docs.python.org/3.13/library/typing.html#typing.TypeVar
-        """,
-        "TypeVarWithConstraint": """
+        """
+
+        type_var_with_constraint_doc = """
         Creates a [`typing.TypeVar`] with constraints.
 
         [typing.TypeVar]: https://docs.python.org/3.13/library/typing.html#typing.TypeVar
-        """,
-        "SetFunctionTypeParams": "Sets the `__type_params__` attribute of a function.",
-    }
+        """
+
+        set_function_type_params_doc = (
+            "Sets the `__type_params__` attribute of a function."
+        )
+
+        class Inner(enum.IntEnum, DocEnum):
+            Invalid = enum.auto(), "Not valid."
+            PrepReraiseStar = enum.auto(), prep_reraise_star_doc
+            TypeVarWithBound = enum.auto(), type_var_with_bound_doc
+            TypeVarWithConstraint = enum.auto(), type_var_with_constraint_doc
+            SetFunctionTypeParams = enum.auto(), set_function_type_params_doc
+
+        return Inner
 
 
 class RaiseVarArgs(NamedOpargType):
@@ -339,29 +398,38 @@ class RaiseVarArgs(NamedOpargType):
     Raises an exception using one of the 3 forms of the `raise` statement.
     """
 
-    variants = {
-        "Reraise": """
-    Re-Raise previous exception.
+    @property
+    def flags(self):
+        reraise_doc = """
+        Re-Raise previous exception.
 
-    ```py
-    raise 
-    ```
-    """,
-        "Raise": """
-    Raise exception instance or type at `STACK[-1]`.
+        ```py
+        raise 
+        ```
+        """
 
-    ```py
-    raise STACK[-1] 
-    ```
-    """,
-        "RaiseCause": """
-    Raise exception instance or type at `STACK[-2]` with `__cause__` set to `STACK[-1]`.
+        raise_doc = """
+        Raise exception instance or type at `STACK[-1]`.
 
-    ```py
-    raise STACK[-2] from STACK[-1]
-    ```
-    """,
-    }
+        ```py
+        raise STACK[-1] 
+        ```
+        """
+
+        raise_cause_doc = """
+        Raise exception instance or type at `STACK[-2]` with `__cause__` set to `STACK[-1]`.
+
+        ```py
+        raise STACK[-2] from STACK[-1]
+        ```
+        """
+
+        class Inner(enum.IntEnum, DocEnum):
+            Reraise = enum.auto(), reraise_doc
+            Raise = enum.auto(), raise_doc
+            RaiseCause = enum.auto(), raise_cause_doc
+
+        return Inner
 
 
 class SetFunctionAttribute(NamedOpargType):
@@ -369,25 +437,42 @@ class SetFunctionAttribute(NamedOpargType):
     Determines which attribute to set.
     """
 
-    _val_tpl = "{:#04x}"
-    _start = 1
-    _enum_cls = enum.IntFlag
-    variants = {
-        "Defaults": "A tuple of default values for positional-only and positional-or-keyword parameters in positional order.",
-        "KwDefaults": "A dictionary of keyword-only parameters' default values.",
-        "Annotations": "A tuple of strings containing parameters' annotations.",
-        "Closure": "A tuple containing cells for free variables, making a closure.",
-    }
+    @property
+    def flags(self):
+        defaults_doc = "A tuple of default values for positional-only and positional-or-keyword parameters in positional order."
+        kw_defaults_doc = "A dictionary of keyword-only parameters' default values."
+        annotations_doc = "A tuple of strings containing parameters' annotations."
+        closure_doc = "A tuple containing cells for free variables, making a closure."
+
+        class Inner(enum.IntFlag, DocEnum):
+            _numeric_repr_ = hex
+
+            Defaults = enum.auto(), defaults_doc
+            KwDefaults = enum.auto(), kw_defaults_doc
+            Annotations = enum.auto(), annotations_doc
+            Closure = enum.auto(), closure_doc
+
+        return Inner
 
 
 class ConvertValue(NamedOpargType):
-    _val_tpl = "{:#01x}"
-    variants = {
-        "None": "No conversion.",
-        "Str": "Converts by calling `str(...)`.",
-        "Repr": "Converts by calling `repr(...)`.",
-        "Ascii": "Converts by calling `ascii(...)`.",
-    }
+    """
+    Used for implementing formatted string literals (f-strings).
+    """
+
+    @property
+    def flags(self):
+        class Inner(enum.IntFlag, DocEnum):
+            _numeric_repr_ = hex
+
+            _None = enum.auto(), "No conversion."
+            Str = enum.auto(), "Converts by calling `str(...)`."
+            Repr = enum.auto(), "Converts by calling `repr(...)`."
+            Ascii = enum.auto(), "Converts by calling `ascii(...)`."
+
+        # Inner._None._name_ = "None"
+
+        return Inner
 
 
 class Invert(NamedOpargType):
@@ -402,7 +487,13 @@ class Invert(NamedOpargType):
         * [`Invert::Yes`]: Performs `not in` comparison.
     """  # TODO: Should be on the `Instruction::{IsOp, ContainsOp}` instead
 
-    variants = {"No": None, "Yes": None}
+    @property
+    def flags(self):
+        class Inner(enum.IntEnum, DocEnum):
+            No = enum.auto()
+            Yes = enum.auto()
+
+        return Inner
 
 
 class Where(NamedOpargType):
@@ -410,11 +501,14 @@ class Where(NamedOpargType):
     Indicates where the instruction occurs.
     """
 
-    variants = {
-        # "NoWhere": "Nowhere",
-        "AfterAEnter": "After a call to `__aenter__`.",
-        "AfterAExit": "After a call to `__aexit__`.",
-    }
+    @property
+    def flags(self):
+        class Inner(enum.IntEnum, DocEnum):
+            NoWhere = enum.auto(), "Nowhere"
+            AfterAEnter = enum.auto(), "After a call to `__aenter__`."
+            AfterAExit = enum.auto(), "After a call to `__aexit__`."
+
+        return Inner
 
 
 def main():
