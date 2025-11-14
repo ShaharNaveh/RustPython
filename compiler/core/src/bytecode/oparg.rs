@@ -1,13 +1,35 @@
-use crate::{CodeUnit, RealInstruction};
+use crate::{CodeUnit, MarshalError, RealInstruction};
+use std::{fmt, marker::PhantomData, ops::Deref};
 
 pub trait AnyOparg: Copy + TryFrom<Oparg> {}
+
+/// Zero sized struct for holding a possible Oparg type.
+#[derive(Copy, Clone)]
+pub struct OpargType<T: AnyOparg>(PhantomData<T>);
+
+impl<T: AnyOparg> OpargType<T> {
+    pub const MARKER: Self = Self(PhantomData);
+
+    #[inline(always)]
+    pub fn get(self, oparg: Oparg) -> Result<T, MarshalError> {
+        T::try_from(oparg)
+    }
+
+    /// # Safety
+    /// T::try_from(oparg) must succeed.
+    #[inline(always)]
+    pub unsafe fn get_unchecked(self, oparg: Oparg) -> T {
+        // SAFETY: requirements forwarded from caller
+        unsafe { T::try_from(oparg).unwrap_unchecked() }
+    }
+}
 
 /// an opcode argument that may be extended by a prior ExtendedArg
 #[derive(Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct OpargByte(u8);
 
-impl OpArgByte {
+impl OpargByte {
     pub const NULL: Self = Self::new(0);
 
     pub const fn new(value: u8) -> Self {
@@ -15,7 +37,7 @@ impl OpArgByte {
     }
 }
 
-impl std::ops::Deref for OpargByte {
+impl Deref for OpargByte {
     type Target = u8;
 
     fn deref(&self) -> &Self::Target {
@@ -99,16 +121,16 @@ pub struct OpargState {
 
 impl OpargState {
     #[inline(always)]
-    pub fn get(&mut self, ins: CodeUnit) -> (Instruction, Oparg) {
+    pub fn get(&mut self, ins: CodeUnit) -> (RealInstruction, Oparg) {
         let arg = self.extend(ins.arg);
-        if ins.op != Instruction::ExtendedArg {
+        if ins.op != RealInstruction::ExtendedArg {
             self.reset();
         }
         (ins.op, arg)
     }
 
     #[inline(always)]
-    pub fn extend(&mut self, arg: OpargByte) -> OpArg {
+    pub fn extend(&mut self, arg: OpargByte) -> Oparg {
         self.state = Oparg::from((self.state << 8) | u32::from(arg));
         self.state
     }
