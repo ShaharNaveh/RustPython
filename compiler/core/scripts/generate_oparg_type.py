@@ -188,7 +188,7 @@ class AliasOpargType(OpargTypeMeta):
     """
 
     category = OpargCategory.Alias
-    inner = "Oparg"
+    inner = "crate::Oparg"
 
     @property
     def rust_def(self) -> str:
@@ -308,13 +308,13 @@ class NamedOpargType(OpargTypeMeta):
             f"{member.value} => Self::{member.name}" for member in self.flags
         )
 
-        typ = Oparg().name
+        target = "crate::Oparg"
 
         return f"""
-        impl TryFrom<{typ}> for {self.name} {{
+        impl TryFrom<{target}> for {self.name} {{
             type Error = {BASE_ERR};
 
-            fn try_from(value: {typ}) -> Result<Self, Self::Error> {{
+            fn try_from(value: {target}) -> Result<Self, Self::Error> {{
                 Self::try_from({self.inner}::from(value))
             }}
         }}
@@ -408,15 +408,6 @@ class Delta(AliasOpargType): ...
 
 
 class VarNum(AliasOpargType): ...
-
-
-class Oparg(AliasOpargType):
-    """
-    Full 32-bit oparg.
-    """
-
-    name = "Oparg"
-    inner = "u32"
 
 
 class BuildSlice(NamedOpargType):

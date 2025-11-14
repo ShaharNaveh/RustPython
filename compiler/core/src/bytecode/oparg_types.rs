@@ -5,28 +5,28 @@
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(transparent)]
-pub struct CompareOparg(Oparg);
+pub struct CompareOparg(crate::Oparg);
 
 impl crate::AnyOparg for CompareOparg {}
 
 impl std::ops::Deref for CompareOparg {
-    type Target = Oparg;
+    type Target = crate::Oparg;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl From<Oparg> for CompareOparg {
-    fn from(value: Oparg) -> Self {
+impl From<crate::Oparg> for CompareOparg {
+    fn from(value: crate::Oparg) -> Self {
         Self::new(value)
     }
 }
 
-impl TryFrom<Oparg> for CompareOparg {
+impl TryFrom<crate::Oparg> for CompareOparg {
     type Error = crate::MarshalError;
 
-    fn try_from(value: Oparg) -> Result<Self, Self::Error> {
+    fn try_from(value: crate::Oparg) -> Result<Self, Self::Error> {
         Ok(Self::from(value))
     }
 }
@@ -44,7 +44,7 @@ impl CompareOparg {
     }
 
     #[must_use]
-    pub const fn new(value: Oparg) -> Self {
+    pub const fn new(value: crate::Oparg) -> Self {
         Self(value)
     }
 }
@@ -54,105 +54,105 @@ impl CompareOparg {
 /// [CodeObject]: [crate::CodeObject]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(transparent)]
-pub struct ConstIdxOparg(Oparg);
+pub struct ConstIdxOparg(crate::Oparg);
 
 impl crate::AnyOparg for ConstIdxOparg {}
 
 impl std::ops::Deref for ConstIdxOparg {
-    type Target = Oparg;
+    type Target = crate::Oparg;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl From<Oparg> for ConstIdxOparg {
-    fn from(value: Oparg) -> Self {
+impl From<crate::Oparg> for ConstIdxOparg {
+    fn from(value: crate::Oparg) -> Self {
         Self::new(value)
     }
 }
 
-impl TryFrom<Oparg> for ConstIdxOparg {
+impl TryFrom<crate::Oparg> for ConstIdxOparg {
     type Error = crate::MarshalError;
 
-    fn try_from(value: Oparg) -> Result<Self, Self::Error> {
+    fn try_from(value: crate::Oparg) -> Result<Self, Self::Error> {
         Ok(Self::from(value))
     }
 }
 
 impl ConstIdxOparg {
     #[must_use]
-    pub const fn new(value: Oparg) -> Self {
+    pub const fn new(value: crate::Oparg) -> Self {
         Self(value)
     }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(transparent)]
-pub struct CountOparg(Oparg);
+pub struct CountOparg(crate::Oparg);
 
 impl crate::AnyOparg for CountOparg {}
 
 impl std::ops::Deref for CountOparg {
-    type Target = Oparg;
+    type Target = crate::Oparg;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl From<Oparg> for CountOparg {
-    fn from(value: Oparg) -> Self {
+impl From<crate::Oparg> for CountOparg {
+    fn from(value: crate::Oparg) -> Self {
         Self::new(value)
     }
 }
 
-impl TryFrom<Oparg> for CountOparg {
+impl TryFrom<crate::Oparg> for CountOparg {
     type Error = crate::MarshalError;
 
-    fn try_from(value: Oparg) -> Result<Self, Self::Error> {
+    fn try_from(value: crate::Oparg) -> Result<Self, Self::Error> {
         Ok(Self::from(value))
     }
 }
 
 impl CountOparg {
     #[must_use]
-    pub const fn new(value: Oparg) -> Self {
+    pub const fn new(value: crate::Oparg) -> Self {
         Self(value)
     }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(transparent)]
-pub struct DeltaOparg(Oparg);
+pub struct DeltaOparg(crate::Oparg);
 
 impl crate::AnyOparg for DeltaOparg {}
 
 impl std::ops::Deref for DeltaOparg {
-    type Target = Oparg;
+    type Target = crate::Oparg;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl From<Oparg> for DeltaOparg {
-    fn from(value: Oparg) -> Self {
+impl From<crate::Oparg> for DeltaOparg {
+    fn from(value: crate::Oparg) -> Self {
         Self::new(value)
     }
 }
 
-impl TryFrom<Oparg> for DeltaOparg {
+impl TryFrom<crate::Oparg> for DeltaOparg {
     type Error = crate::MarshalError;
 
-    fn try_from(value: Oparg) -> Result<Self, Self::Error> {
+    fn try_from(value: crate::Oparg) -> Result<Self, Self::Error> {
         Ok(Self::from(value))
     }
 }
 
 impl DeltaOparg {
     #[must_use]
-    pub const fn new(value: Oparg) -> Self {
+    pub const fn new(value: crate::Oparg) -> Self {
         Self(value)
     }
 }
@@ -162,106 +162,70 @@ impl DeltaOparg {
 /// [CodeObject]: [crate::CodeObject]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(transparent)]
-pub struct NameIdxOparg(Oparg);
+pub struct NameIdxOparg(crate::Oparg);
 
 impl crate::AnyOparg for NameIdxOparg {}
 
 impl std::ops::Deref for NameIdxOparg {
-    type Target = Oparg;
+    type Target = crate::Oparg;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl From<Oparg> for NameIdxOparg {
-    fn from(value: Oparg) -> Self {
+impl From<crate::Oparg> for NameIdxOparg {
+    fn from(value: crate::Oparg) -> Self {
         Self::new(value)
     }
 }
 
-impl TryFrom<Oparg> for NameIdxOparg {
+impl TryFrom<crate::Oparg> for NameIdxOparg {
     type Error = crate::MarshalError;
 
-    fn try_from(value: Oparg) -> Result<Self, Self::Error> {
+    fn try_from(value: crate::Oparg) -> Result<Self, Self::Error> {
         Ok(Self::from(value))
     }
 }
 
 impl NameIdxOparg {
     #[must_use]
-    pub const fn new(value: Oparg) -> Self {
-        Self(value)
-    }
-}
-
-/// Full 32-bit oparg.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[repr(transparent)]
-pub struct Oparg(u32);
-
-impl crate::AnyOparg for Oparg {}
-
-impl std::ops::Deref for Oparg {
-    type Target = u32;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl From<u32> for Oparg {
-    fn from(value: u32) -> Self {
-        Self::new(value)
-    }
-}
-
-impl TryFrom<u32> for Oparg {
-    type Error = crate::MarshalError;
-
-    fn try_from(value: u32) -> Result<Self, Self::Error> {
-        Ok(Self::from(value))
-    }
-}
-
-impl Oparg {
-    #[must_use]
-    pub const fn new(value: u32) -> Self {
+    pub const fn new(value: crate::Oparg) -> Self {
         Self(value)
     }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(transparent)]
-pub struct VarNumOparg(Oparg);
+pub struct VarNumOparg(crate::Oparg);
 
 impl crate::AnyOparg for VarNumOparg {}
 
 impl std::ops::Deref for VarNumOparg {
-    type Target = Oparg;
+    type Target = crate::Oparg;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl From<Oparg> for VarNumOparg {
-    fn from(value: Oparg) -> Self {
+impl From<crate::Oparg> for VarNumOparg {
+    fn from(value: crate::Oparg) -> Self {
         Self::new(value)
     }
 }
 
-impl TryFrom<Oparg> for VarNumOparg {
+impl TryFrom<crate::Oparg> for VarNumOparg {
     type Error = crate::MarshalError;
 
-    fn try_from(value: Oparg) -> Result<Self, Self::Error> {
+    fn try_from(value: crate::Oparg) -> Result<Self, Self::Error> {
         Ok(Self::from(value))
     }
 }
 
 impl VarNumOparg {
     #[must_use]
-    pub const fn new(value: Oparg) -> Self {
+    pub const fn new(value: crate::Oparg) -> Self {
         Self(value)
     }
 }
@@ -361,10 +325,10 @@ impl TryFrom<u32> for BinOpOparg {
     }
 }
 
-impl TryFrom<Oparg> for BinOpOparg {
+impl TryFrom<crate::Oparg> for BinOpOparg {
     type Error = crate::MarshalError;
 
-    fn try_from(value: Oparg) -> Result<Self, Self::Error> {
+    fn try_from(value: crate::Oparg) -> Result<Self, Self::Error> {
         Self::try_from(u32::from(value))
     }
 }
@@ -397,10 +361,10 @@ impl TryFrom<u32> for BuildSliceOparg {
     }
 }
 
-impl TryFrom<Oparg> for BuildSliceOparg {
+impl TryFrom<crate::Oparg> for BuildSliceOparg {
     type Error = crate::MarshalError;
 
-    fn try_from(value: Oparg) -> Result<Self, Self::Error> {
+    fn try_from(value: crate::Oparg) -> Result<Self, Self::Error> {
         Self::try_from(u32::from(value))
     }
 }
@@ -471,10 +435,10 @@ impl TryFrom<u32> for CallIntrinsic1Oparg {
     }
 }
 
-impl TryFrom<Oparg> for CallIntrinsic1Oparg {
+impl TryFrom<crate::Oparg> for CallIntrinsic1Oparg {
     type Error = crate::MarshalError;
 
-    fn try_from(value: Oparg) -> Result<Self, Self::Error> {
+    fn try_from(value: crate::Oparg) -> Result<Self, Self::Error> {
         Self::try_from(u32::from(value))
     }
 }
@@ -517,10 +481,10 @@ impl TryFrom<u32> for CallIntrinsic2Oparg {
     }
 }
 
-impl TryFrom<Oparg> for CallIntrinsic2Oparg {
+impl TryFrom<crate::Oparg> for CallIntrinsic2Oparg {
     type Error = crate::MarshalError;
 
-    fn try_from(value: Oparg) -> Result<Self, Self::Error> {
+    fn try_from(value: crate::Oparg) -> Result<Self, Self::Error> {
         Self::try_from(u32::from(value))
     }
 }
@@ -566,10 +530,10 @@ impl TryFrom<u32> for CmpOp {
     }
 }
 
-impl TryFrom<Oparg> for CmpOp {
+impl TryFrom<crate::Oparg> for CmpOp {
     type Error = crate::MarshalError;
 
-    fn try_from(value: Oparg) -> Result<Self, Self::Error> {
+    fn try_from(value: crate::Oparg) -> Result<Self, Self::Error> {
         Self::try_from(u32::from(value))
     }
 }
@@ -604,10 +568,10 @@ impl TryFrom<u32> for ConvertValueOparg {
     }
 }
 
-impl TryFrom<Oparg> for ConvertValueOparg {
+impl TryFrom<crate::Oparg> for ConvertValueOparg {
     type Error = crate::MarshalError;
 
-    fn try_from(value: Oparg) -> Result<Self, Self::Error> {
+    fn try_from(value: crate::Oparg) -> Result<Self, Self::Error> {
         Self::try_from(u32::from(value))
     }
 }
@@ -633,10 +597,10 @@ impl TryFrom<u32> for InvertOparg {
     }
 }
 
-impl TryFrom<Oparg> for InvertOparg {
+impl TryFrom<crate::Oparg> for InvertOparg {
     type Error = crate::MarshalError;
 
-    fn try_from(value: Oparg) -> Result<Self, Self::Error> {
+    fn try_from(value: crate::Oparg) -> Result<Self, Self::Error> {
         Self::try_from(u32::from(value))
     }
 }
@@ -680,10 +644,10 @@ impl TryFrom<u32> for RaiseVarargsOparg {
     }
 }
 
-impl TryFrom<Oparg> for RaiseVarargsOparg {
+impl TryFrom<crate::Oparg> for RaiseVarargsOparg {
     type Error = crate::MarshalError;
 
-    fn try_from(value: Oparg) -> Result<Self, Self::Error> {
+    fn try_from(value: crate::Oparg) -> Result<Self, Self::Error> {
         Self::try_from(u32::from(value))
     }
 }
@@ -713,10 +677,10 @@ impl TryFrom<u32> for ResumeOparg {
     }
 }
 
-impl TryFrom<Oparg> for ResumeOparg {
+impl TryFrom<crate::Oparg> for ResumeOparg {
     type Error = crate::MarshalError;
 
-    fn try_from(value: Oparg) -> Result<Self, Self::Error> {
+    fn try_from(value: crate::Oparg) -> Result<Self, Self::Error> {
         Self::try_from(u32::from(value))
     }
 }
@@ -751,10 +715,10 @@ impl TryFrom<u32> for SetFunctionAttributeOparg {
     }
 }
 
-impl TryFrom<Oparg> for SetFunctionAttributeOparg {
+impl TryFrom<crate::Oparg> for SetFunctionAttributeOparg {
     type Error = crate::MarshalError;
 
-    fn try_from(value: Oparg) -> Result<Self, Self::Error> {
+    fn try_from(value: crate::Oparg) -> Result<Self, Self::Error> {
         Self::try_from(u32::from(value))
     }
 }
@@ -786,10 +750,10 @@ impl TryFrom<u32> for WhereOparg {
     }
 }
 
-impl TryFrom<Oparg> for WhereOparg {
+impl TryFrom<crate::Oparg> for WhereOparg {
     type Error = crate::MarshalError;
 
-    fn try_from(value: Oparg) -> Result<Self, Self::Error> {
+    fn try_from(value: crate::Oparg) -> Result<Self, Self::Error> {
         Self::try_from(u32::from(value))
     }
 }
