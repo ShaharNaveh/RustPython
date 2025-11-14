@@ -6,17 +6,49 @@
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct CompareOparg(crate::RawOparg);
 
+impl std::ops::Deref for CompareOparg {
+    type Target = crate::RawOparg;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 /// Index inside [`CodeObject.constants`].
 ///
 /// [CodeObject]: [crate::CodeObject]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ConstIdxOparg(crate::RawOparg);
 
+impl std::ops::Deref for ConstIdxOparg {
+    type Target = crate::RawOparg;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct CountOparg(crate::RawOparg);
 
+impl std::ops::Deref for CountOparg {
+    type Target = crate::RawOparg;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct DeltaOparg(crate::RawOparg);
+
+impl std::ops::Deref for DeltaOparg {
+    type Target = crate::RawOparg;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 /// Index inside [`CodeObject.names`].
 ///
@@ -24,11 +56,35 @@ pub struct DeltaOparg(crate::RawOparg);
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct NameIdxOparg(crate::RawOparg);
 
+impl std::ops::Deref for NameIdxOparg {
+    type Target = crate::RawOparg;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct RawOparg(crate::RawOparg);
 
+impl std::ops::Deref for RawOparg {
+    type Target = crate::RawOparg;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct VarNumOparg(crate::RawOparg);
+
+impl std::ops::Deref for VarNumOparg {
+    type Target = crate::RawOparg;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(u32)]
