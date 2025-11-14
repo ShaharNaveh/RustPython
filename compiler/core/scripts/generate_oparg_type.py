@@ -26,7 +26,10 @@ REFS = {
 }
 
 
-def make_doc(s: str) -> str:
+def make_doc(s: str | None) -> str:
+    if s is None:
+        s = ""
+
     s = s.strip()
 
     doc = "\n".join(f"/// {line}" for line in inspect.cleandoc(s).splitlines())
@@ -45,8 +48,8 @@ def make_doc(s: str) -> str:
 
 @enum.unique
 class OpargCategory(enum.IntEnum):
-    Alias = enum.auto()
     Named = enum.auto()
+    Alias = enum.auto()
 
 
 class OpargTypeMeta(metaclass=abc.ABCMeta):
@@ -56,22 +59,56 @@ class OpargTypeMeta(metaclass=abc.ABCMeta):
         """
         Used to group generated opargs in the genertaed rust code.
         """
-        ...
 
     @property
     @abc.abstractmethod
-    def rust_code(self) -> str:
+    def rust_def(self) -> str:
         """
-        Rust code from class settings.
+        Rust source code for defining said enum/struct.
         """
-        ...
+
+    @property
+    def rust_fns(self) -> str:
+        """
+        Rust code that implements methods on said enum/struct.
+
+        Will take any class attribute that matches 'fn_*'.
+        """
+        fns = "\n\n".join(
+            getattr(self, attr).strip()
+            for attr in sorted(dir(self))
+            if attr.startswith("fn_")
+        )
+
+        if not fns:
+            return ""
+
+        return f"""
+        impl {self.name} {{
+            {fns}
+        }}
+        """
+
+    @property
+    def rust_trait(self) -> str:
+        """
+        Rust code that implements traits on said enum/struct.
+
+        Will take any class attribute that matches 'fn_*'.
+        """
+        return "\n\n".join(
+            getattr(self, attr).strip()
+            for attr in sorted(dir(self))
+            if attr.startswith("trait_")
+        )
 
     @property
     def name(self) -> str:
         """
-        Gets oparg type name.
+        Enum/Struct name.
         """
-        return type(self).__name__
+        cls_name = type(self).__name__
+        return f"{cls_name}Oparg"
 
     @property
     def doc(self) -> str:
@@ -82,10 +119,7 @@ class OpargTypeMeta(metaclass=abc.ABCMeta):
             Either the class docstring formatted for rustdoc.
             Otherwise an empty string if class has no docstring set.
         """
-        if docstr := pydoc._getowndoc(type(self)):
-            return docstr
-
-        return ""
+        return pydoc._getowndoc(type(self))
 
 
 class AliasOpargType(OpargTypeMeta):
@@ -96,34 +130,25 @@ class AliasOpargType(OpargTypeMeta):
     category = OpargCategory.Alias
 
     @property
-    def rust_code(self) -> str:
+    def rust_def(self) -> str:
+        docstr = make_doc(self.doc)
         return f"""
-{make_doc(self.doc)}
-{DERIVE}
-pub struct {self.name}(crate::Oparg);
-
-impl std::ops::Deref for {self.name} {{
-    type Target = crate::Oparg;
-
-    fn deref(&self) -> &Self::Target {{
-        &self.0
-    }}
-}}
+        {docstr}
+        {DERIVE}
+        pub struct {self.name}(crate::RawOparg);
         """
 
+    @property
+    def trait_deref(self) -> str:
+        return f"""
+        impl std::ops::Deref for {self.name} {{
+            type Target = crate::RawOparg;
 
-class VarNum(AliasOpargType):
-    """
-    Used by `LoadFast*` [`Instruction`]s.
-    """
-
-
-class Count(AliasOpargType):
-    """
-    Used at instructions like:
-        - [`Instruction::BuildList`]
-        - [`Instruction::UnpackEx`]
-    """
+            fn deref(&self) -> &Self::Target {{
+                &self.0
+            }}
+        }}
+        """
 
 
 class NameIdx(AliasOpargType):
@@ -138,14 +163,23 @@ class ConstIdx(AliasOpargType):
     """
 
 
-class Delta(AliasOpargType):
-    """
-    Used by `Jump*` [`Instruction`]s.
-    """
+class Compare(AliasOpargType): ...
+
+
+class Count(AliasOpargType): ...
+
+
+class Delta(AliasOpargType): ...
+
+
+class VarNum(AliasOpargType): ...
+
+
+class Raw(AliasOpargType): ...
 
 
 @enum.unique
-class DocEnum(enum.Enum):
+class DocEnum(metaclass=enum.EnumType):
     """
     An enum that lets you optionally specify a docstring for the enum variants.
 
@@ -166,12 +200,9 @@ class DocEnum(enum.Enum):
     ['can', 'be', 'anything', 'really']
     """
 
-    _ignore_ = ["_start"]
-    _start = 0
-
     @staticmethod
-    def aa_generate_next_value_(name, start, count, last_values):
-        return count + _start
+    def _generate_next_value_(name, start, count, last_values):
+        return count
 
     def __new__(cls, value: int, doc: str | None = None):
         obj = int.__new__(cls, value)
@@ -183,25 +214,22 @@ class DocEnum(enum.Enum):
 class NamedOpargType(OpargTypeMeta):
     category = OpargCategory.Named
 
-    _val_tpl = "{}"  # TODO(3.14): Use tstrings
-
     @property
     @abc.abstractmethod
     def flags(self) -> DocEnum:
         """
         Enum with variant values and optional docstrings.
         """
-        ...
 
     @property
-    def rust_code(self) -> str:
+    def rust_def(self) -> str:
         lines = []
         for member in self.flags:
             doc = member.__doc__
             if doc:
                 lines.append(make_doc(doc))
-            # TODO: Make use of `_numeric_repr_`
-            line = f"{member.name} = {self._val_tpl.format(member.value)},"
+            val_repr = getattr(self.flags, "_numeric_repr_", str)(member.value)
+            line = f"{member.name} = {val_repr},"
             lines.append(line)
 
         arms = "\n".join(lines)
@@ -210,14 +238,14 @@ class NamedOpargType(OpargTypeMeta):
             doc = ""
         doc = make_doc(doc)
 
-        # TODO: Should we check if _enum_cls is IntFlag and genertae a bitflag struct instead?
+        # TODO: Should we check if `issubclass(IntFlag, self.flags)` and genertae a bitflag struct instead?
         return f"""
-{doc}
-{DERIVE}
-#[repr(u32)]
-pub enum {self.name} {{
-    {arms}
-}}
+        {doc}
+        {DERIVE}
+        #[repr(u32)]
+        pub enum {self.name} {{
+            {arms}
+        }}
         """
 
 
@@ -259,13 +287,6 @@ class Resume(NamedOpargType):
         return Inner
 
 
-# TODO
-"""
-class Compare(NamedOpargType):
-    names = ()  
-"""
-
-
 class BinOp(NamedOpargType):
     @property
     def flags(self):
@@ -301,12 +322,6 @@ class BinOp(NamedOpargType):
 
 
 class CallIntrinsic1(NamedOpargType):
-    """
-    [`CALL_INTRINSIC_1`]
-
-    [CALL_INTRINSIC_1]: https://docs.python.org/3.13/library/dis.html#opcode-CALL_INTRINSIC_1
-    """  # TODO: Move to Instruction
-
     @property
     def flags(self):
         print_doc = "Prints the argument to standard out. Used in the REPL."
@@ -393,7 +408,7 @@ class CallIntrinsic2(NamedOpargType):
         return Inner
 
 
-class RaiseVarArgs(NamedOpargType):
+class RaiseVarargs(NamedOpargType):
     """
     Raises an exception using one of the 3 forms of the `raise` statement.
     """
@@ -445,7 +460,7 @@ class SetFunctionAttribute(NamedOpargType):
         closure_doc = "A tuple containing cells for free variables, making a closure."
 
         class Inner(enum.IntFlag, DocEnum):
-            _numeric_repr_ = hex
+            _generate_next_value_ = enum.IntFlag._generate_next_value_
 
             Defaults = enum.auto(), defaults_doc
             KwDefaults = enum.auto(), kw_defaults_doc
@@ -462,7 +477,7 @@ class ConvertValue(NamedOpargType):
 
     @property
     def flags(self):
-        class Inner(enum.IntFlag, DocEnum):
+        class Inner(enum.IntEnum, DocEnum):
             _numeric_repr_ = hex
 
             _None = enum.auto(), "No conversion."
@@ -470,7 +485,7 @@ class ConvertValue(NamedOpargType):
             Repr = enum.auto(), "Converts by calling `repr(...)`."
             Ascii = enum.auto(), "Converts by calling `ascii(...)`."
 
-        # Inner._None._name_ = "None"
+        Inner._None._name_ = "None"
 
         return Inner
 
@@ -511,24 +526,34 @@ class Where(NamedOpargType):
         return Inner
 
 
+"""
+import re
+
+name = 'CamelCaseTest123'
+split = re.sub('([A-Z][a-z]+)', r' \1', re.sub('([A-Z]+)', r' \1', name)).split()
+"""
+
+
 def main():
     script_path = pathlib.Path(__file__).absolute().relative_to(CRATE_ROOT).as_posix()
 
-    code = "\n\n".join(
-        oparg_type().rust_code.strip()
+    oparg_types = tuple(
+        oparg_type()
         for parent in OpargTypeMeta.__subclasses__()
         for oparg_type in sorted(
             parent.__subclasses__(), key=lambda cls: (cls.category, cls.__name__)
         )
     )
 
+    rust_defs = "\n\n".join(typ.rust_def.strip() for typ in oparg_types)
+
     out = f"""
-//! OpargType definitions.
+    //! OpargType definitions.
 
-// This file is generated by {script_path}
-// Do not edit!
+    // This file is generated by {script_path}
+    // Do not edit!
 
-{code}
+    {rust_defs}
     """.strip()
 
     OUT_PATH.write_text(out)
