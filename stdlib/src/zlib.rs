@@ -12,7 +12,7 @@ mod zlib {
     use crate::vm::{
         PyObject, PyPayload, PyResult, VirtualMachine,
         builtins::{PyBaseExceptionRef, PyBytesRef, PyIntRef, PyTypeRef},
-        common::lock::PyMutex,
+                    common::lock::PyMutex,
         convert::{ToPyException, TryFromBorrowedObject},
         function::{ArgBytesLike, ArgPrimitiveIndex, ArgSize, OptionalArg},
         types::Constructor,
