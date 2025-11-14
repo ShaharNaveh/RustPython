@@ -25,6 +25,9 @@ REFS = {
     "PEP695": "https://peps.python.org/pep-0695/",
 }
 
+BASE_ERR = "crate::MarshalError"
+ERR = f"{BASE_ERR}::InvalidBytecode"
+
 
 def make_doc(s: str | None) -> str:
     if s is None:
@@ -47,6 +50,39 @@ def make_doc(s: str | None) -> str:
 
 
 @enum.unique
+class DocEnum(metaclass=enum.EnumType):
+    """
+    An enum that lets you optionally specify a docstring for the enum variants.
+
+    Examples
+    --------
+    >>> import enum
+    >>>
+    >>> class MyFlags(enum.IntEnum, DocEnum):
+    >>>     Foo = enum.auto(), "Foo oparg"
+    >>>     Bar = enum.auto()
+    >>>     Baz = enum.auto(), ["can", "be", "anything", "really"]
+    >>>
+    >>> MyFlags.Foo.__doc__
+    Foo oparg
+    >>> MyFlags.Bar.__doc__ is None
+    True
+    >>> MyFlags.Baz.__doc__
+    ['can', 'be', 'anything', 'really']
+    """
+
+    @staticmethod
+    def _generate_next_value_(name, start, count, last_values):
+        return count
+
+    def __new__(cls, value: int, doc: str | None = None):
+        obj = int.__new__(cls, value)
+        obj._value_ = value
+        obj.__doc__ = doc
+        return obj
+
+
+@enum.unique
 class OpargCategory(enum.IntEnum):
     Named = enum.auto()
     Alias = enum.auto()
@@ -58,6 +94,13 @@ class OpargTypeMeta(metaclass=abc.ABCMeta):
     def category(self) -> OpargCategory:
         """
         Used to group generated opargs in the genertaed rust code.
+        """
+
+    @property
+    @abc.abstractmethod
+    def inner(self) -> str:
+        """
+        Inner value for enum/struct.
         """
 
     @property
@@ -103,6 +146,10 @@ class OpargTypeMeta(metaclass=abc.ABCMeta):
         )
 
     @property
+    def trait_any_oparg(self) -> str:
+        return f"impl crate::AnyOparg for {self.name} {{}}"
+
+    @property
     def rust_code(self) -> str:
         """
         Generated rust code.
@@ -141,7 +188,7 @@ class AliasOpargType(OpargTypeMeta):
     """
 
     category = OpargCategory.Alias
-    inner = "RawOparg"
+    inner = "Oparg"
 
     @property
     def rust_def(self) -> str:
@@ -149,6 +196,7 @@ class AliasOpargType(OpargTypeMeta):
         return f"""
         {docstr}
         {DERIVE}
+        #[repr(transparent)]
         pub struct {self.name}({self.inner});
         """
 
@@ -165,80 +213,40 @@ class AliasOpargType(OpargTypeMeta):
         """
 
     @property
+    def trait_from_inner(self) -> str:
+        return f"""
+        impl From<{self.inner}> for {self.name} {{
+            fn from(value: {self.inner}) -> Self {{
+                Self::new(value)
+            }}
+        }}
+        """
+
+    @property
+    def trait_try_from_inner(self) -> str:
+        return f"""
+        impl TryFrom<{self.inner}> for {self.name} {{
+            type Error = {BASE_ERR};
+
+            fn try_from(value: {self.inner}) -> Result<Self, Self::Error> {{
+                Ok(Self::from(value))
+            }}
+        }}
+        """
+
+    @property
     def fn_new(self) -> str:
         return f"""
         #[must_use]
-        pub const fn new(value: {self.inner}) -> 
+        pub const fn new(value: {self.inner}) -> Self {{
+            Self(value)
+        }}
         """
-
-
-class NameIdx(AliasOpargType):
-    """
-    Index inside [`CodeObject.names`].
-    """
-
-
-class ConstIdx(AliasOpargType):
-    """
-    Index inside [`CodeObject.constants`].
-    """
-
-
-class Compare(AliasOpargType): ...
-
-
-class Count(AliasOpargType): ...
-
-
-class Delta(AliasOpargType): ...
-
-
-class VarNum(AliasOpargType): ...
-
-
-class Raw(AliasOpargType):
-    """
-    Full 32-bit oparg.
-    """
-
-    inner = "u32"
-
-
-@enum.unique
-class DocEnum(metaclass=enum.EnumType):
-    """
-    An enum that lets you optionally specify a docstring for the enum variants.
-
-    Examples
-    --------
-    >>> import enum
-    >>>
-    >>> class MyFlags(enum.IntEnum, DocEnum):
-    >>>     Foo = enum.auto(), "Foo oparg"
-    >>>     Bar = enum.auto()
-    >>>     Baz = enum.auto(), ["can", "be", "anything", "really"]
-    >>>
-    >>> MyFlags.Foo.__doc__
-    Foo oparg
-    >>> MyFlags.Bar.__doc__ is None
-    True
-    >>> MyFlags.Baz.__doc__
-    ['can', 'be', 'anything', 'really']
-    """
-
-    @staticmethod
-    def _generate_next_value_(name, start, count, last_values):
-        return count
-
-    def __new__(cls, value: int, doc: str | None = None):
-        obj = int.__new__(cls, value)
-        obj._value_ = value
-        obj.__doc__ = doc
-        return obj
 
 
 class NamedOpargType(OpargTypeMeta):
     category = OpargCategory.Named
+    inner = "u32"
 
     @property
     @abc.abstractmethod
@@ -254,8 +262,7 @@ class NamedOpargType(OpargTypeMeta):
             doc = member.__doc__
             if doc:
                 lines.append(make_doc(doc))
-            val_repr = getattr(self.flags, "_numeric_repr_", str)(member.value)
-            line = f"{member.name} = {val_repr},"
+            line = f"{member.name} = {member.value},"
             lines.append(line)
 
         arms = "\n".join(lines)
@@ -268,11 +275,148 @@ class NamedOpargType(OpargTypeMeta):
         return f"""
         {doc}
         {DERIVE}
-        #[repr(u32)]
+        #[repr({self.inner})]
         pub enum {self.name} {{
             {arms}
         }}
         """
+
+    @property
+    def trait_try_from_inner(self) -> str:
+        arms = ",\n".join(
+            f"{member.value} => Self::{member.name}" for member in self.flags
+        )
+
+        return f"""
+        impl TryFrom<{self.inner}> for {self.name} {{
+            type Error = {BASE_ERR};
+
+            fn try_from(value: {self.inner}) -> Result<Self, Self::Error> {{
+                Ok(
+                    match value {{
+                        {arms},
+                        _ => return Err({ERR}),
+                    }}
+                )
+            }}
+        }}
+        """
+
+    @property
+    def trait_try_from_oparg(self) -> str:
+        arms = ",\n".join(
+            f"{member.value} => Self::{member.name}" for member in self.flags
+        )
+
+        typ = Oparg().name
+
+        return f"""
+        impl TryFrom<{typ}> for {self.name} {{
+            type Error = {BASE_ERR};
+
+            fn try_from(value: {typ}) -> Result<Self, Self::Error> {{
+                Self::try_from({self.inner}::from(value))
+            }}
+        }}
+        """
+
+
+class NameIdx(AliasOpargType):
+    """
+    Index inside [`CodeObject.names`].
+    """
+
+
+class ConstIdx(AliasOpargType):
+    """
+    Index inside [`CodeObject.constants`].
+    """
+
+
+class CmpOp(NamedOpargType):
+    name = "CmpOp"
+
+    @property
+    def flags(self):
+        class Cmp(enum.IntFlag):
+            # https://github.com/python/cpython/blob/8183fa5e3f78ca6ab862de7fb8b14f3d929421e0/Include/internal/pycore_code.h#L579-L585
+
+            Unordered = enum.auto()
+            LessThan = enum.auto()
+            GreaterThan = enum.auto()
+            Equals = enum.auto()
+            NotEquals = Unordered | LessThan | GreaterThan
+
+        class Inner(enum.IntEnum, DocEnum):
+            # https://github.com/python/cpython/blob/8183fa5e3f78ca6ab862de7fb8b14f3d929421e0/Python/compile.c#L2864-L2871
+
+            Lt = Cmp.LessThan, "`<`"
+            Le = Cmp.LessThan | Cmp.Equals, "`<=`"
+            Eq = Cmp.Equals, "`==`"
+            Ne = Cmp.NotEquals, "`!=`"
+            Gt = Cmp.GreaterThan, "`>`"
+            Ge = Cmp.GreaterThan | Cmp.Equals, "`>=`"
+
+        return Inner
+
+    @property
+    def trait_try_from_compare(self) -> str:
+        target = Compare().name
+
+        return f"""
+        impl TryFrom<{target}> for {self.name} {{
+            type Error = {BASE_ERR};
+
+            fn try_from(value: {target}) -> Result<Self, Self::Error> {{
+                Self::try_from({self.inner}::from(value) >> 5)
+            }}
+        }}
+        """
+
+    @property
+    def trait_any_oparg(self) -> str:
+        return ""
+
+
+class Compare(AliasOpargType):
+    @property
+    def fn_cmp_op(self) -> str:
+        target = CmpOp().name
+
+        return f"""
+        #[must_use]
+        pub fn cmp_op(self) -> Result<{target}, {BASE_ERR}> {{
+            {target}::try_from(self)
+        }}
+        """
+
+    @property
+    def fn_coerce_bool(self) -> str:
+        return """
+        /// Indicated if the comparison result should be coerced to bool.
+        #[must_use]
+        pub const fn coerce_bool(self) -> bool {
+            (self & 16) != 0
+        }
+        """
+
+
+class Count(AliasOpargType): ...
+
+
+class Delta(AliasOpargType): ...
+
+
+class VarNum(AliasOpargType): ...
+
+
+class Oparg(AliasOpargType):
+    """
+    Full 32-bit oparg.
+    """
+
+    name = "Oparg"
+    inner = "u32"
 
 
 class BuildSlice(NamedOpargType):
@@ -504,8 +648,6 @@ class ConvertValue(NamedOpargType):
     @property
     def flags(self):
         class Inner(enum.IntEnum, DocEnum):
-            _numeric_repr_ = hex
-
             _None = enum.auto(), "No conversion."
             Str = enum.auto(), "Converts by calling `str(...)`."
             Repr = enum.auto(), "Converts by calling `repr(...)`."
@@ -517,17 +659,6 @@ class ConvertValue(NamedOpargType):
 
 
 class Invert(NamedOpargType):
-    """
-    When used in the context of:
-    - [`Instruction::IsOp`]:
-        * [`Invert::No`]: Performs `is` comparison.
-        * [`Invert::Yes`]: Performs `is not` comparison.
-
-    - [`Instruction::ContainsOp`]:
-        * [`Invert::No`]: Performs `in` comparison.
-        * [`Invert::Yes`]: Performs `not in` comparison.
-    """  # TODO: Should be on the `Instruction::{IsOp, ContainsOp}` instead
-
     @property
     def flags(self):
         class Inner(enum.IntEnum, DocEnum):
@@ -552,14 +683,6 @@ class Where(NamedOpargType):
         return Inner
 
 
-"""
-import re
-
-name = 'CamelCaseTest123'
-split = re.sub('([A-Z][a-z]+)', r' \1', re.sub('([A-Z]+)', r' \1', name)).split()
-"""
-
-
 def main():
     script_path = pathlib.Path(__file__).absolute().relative_to(CRATE_ROOT).as_posix()
 
@@ -574,7 +697,7 @@ def main():
     rust_code = "\n\n".join(typ.rust_code.strip() for typ in oparg_types)
 
     out = f"""
-    //! OpargType definitions.
+    //! Oparg definitions.
 
     // This file is generated by {script_path}
     // Do not edit!
