@@ -120,7 +120,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
-          token: ${{ github.token }}
+          #token: ${{ github.token }} Don't set token. we want a recursive call
           fetch-depth: 0
 
       - name: Setup Rust
@@ -384,6 +384,7 @@ jobs:
     name: Check Rust code with clippy
     needs:
       - auto_format_pr
+    if: ${{ !cancelled() && !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
