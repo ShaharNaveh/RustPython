@@ -187,7 +187,7 @@ jobs:
         os: [macos-latest, ubuntu-latest, windows-latest]
       fail-fast: false
     steps:
-      - run: echo ${{ needs.auto_format_pr }}
+      - run: echo ${{ toJSON(needs.auto_format_pr) }}
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
         with:
