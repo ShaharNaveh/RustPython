@@ -8,7 +8,7 @@ Inspirational file: https://github.com/python/cpython/blob/main/Python/symtable.
 */
 
 use crate::{
-                        IndexMap,
+    IndexMap,
     error::{CodegenError, CodegenErrorType},
 };
 use bitflags::bitflags;

@@ -1,10 +1,8 @@
 include!("./data.inc.rs");
 
-
 fn new() {
-                    let x = 1;
+    let x = 1;
 }
-
 
 #[cfg(test)]
 mod test {
