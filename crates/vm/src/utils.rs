@@ -14,6 +14,10 @@ pub fn hash_iter<'a, I: IntoIterator<Item = &'a PyObjectRef>>(
     vm.state.hash_secret.hash_iter(iter, |obj| obj.hash(vm))
 }
 
+pub fn unused() {
+    let _x = 1;
+}
+
 impl ToPyObject for std::convert::Infallible {
     fn to_pyobject(self, _vm: &VirtualMachine) -> PyObjectRef {
         match self {}
