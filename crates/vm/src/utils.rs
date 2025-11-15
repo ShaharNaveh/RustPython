@@ -16,7 +16,7 @@ pub fn hash_iter<'a, I: IntoIterator<Item = &'a PyObjectRef>>(
 
 
 pub fn unused() {
-    let _x = 1;
+                let         _x          =             1;
 }
 
 impl ToPyObject for std::convert::Infallible {
