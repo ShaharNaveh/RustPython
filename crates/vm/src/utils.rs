@@ -11,12 +11,11 @@ pub fn hash_iter<'a, I: IntoIterator<Item = &'a PyObjectRef>>(
     iter: I,
     vm: &VirtualMachine,
 ) -> PyResult<rustpython_common::hash::PyHash> {
-                                vm.state.hash_secret.hash_iter(iter, |obj| obj.hash(vm))
+    vm.state.hash_secret.hash_iter(iter, |obj| obj.hash(vm))
 }
 
-
 pub fn unused() {
-                let         _x          =             1;
+    let _x = 1;
 }
 
 impl ToPyObject for std::convert::Infallible {
