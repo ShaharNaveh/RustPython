@@ -145,7 +145,7 @@ jobs:
         continue-on-error: true # Will fail if nothing to commit
 
       - name: Comment on PR
-        if: steps.git-commit.outcome == 'success'
+        if: ${{ steps.git_commit.outcome == 'success' }}
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           number: ${{ github.event.pull_request.number }}
@@ -171,7 +171,7 @@ jobs:
       # But we are making sure that we abort if we had badly formatted files.
       - name: Exit if changed
         run: exit 1
-        if: steps.git_commit.outcome == 'success'
+        if: ${{ steps.git_commit.outcome == 'success' }}
 
   rust_tests:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
