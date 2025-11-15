@@ -6,3 +6,4 @@ compiler/core/src/opcodes.rs linguist-generated=true
 Lib/*.py    text working-tree-encoding=UTF-8 eol=LF
 **/*.rs     text working-tree-encoding=UTF-8 eol=LF
 *.pck       binary
+crates/rustpython_doc_db/src/*.inc.rs   linguist-generated=true
