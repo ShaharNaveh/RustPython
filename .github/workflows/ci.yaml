@@ -108,7 +108,7 @@ env:
 
 jobs:
   auto_format_pr:
-    if: ${{ github.event_name == "pull_request" }}
+    if: github.event_name == "pull_request"
     runs-on: ubuntu-latest
     permissions:
       contents: write
