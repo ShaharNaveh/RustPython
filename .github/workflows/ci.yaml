@@ -116,7 +116,6 @@ jobs:
       checks: read
     outputs:
       changed: ${{ steps.git_commit.outcome == "success" && "yes" || "no" }}
-      timeout-minutes: ${{ contains(matrix.os, 'windows') && 45 || 35 }}
     steps:
       - name: Checkout PR branch
         uses: actions/checkout@v5
