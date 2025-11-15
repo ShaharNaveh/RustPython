@@ -174,7 +174,7 @@ jobs:
         if: ${{ steps.git_commit.outcome == 'success' }}
 
   rust_tests:
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
+    if: ${{ always() && !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
     env:
       RUST_BACKTRACE: full
     name: Run rust tests
@@ -187,6 +187,7 @@ jobs:
         os: [macos-latest, ubuntu-latest, windows-latest]
       fail-fast: false
     steps:
+      - run: echo ${{ needs.auto_format_pr }}
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
         with:
