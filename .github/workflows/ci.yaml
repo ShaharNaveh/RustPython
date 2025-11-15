@@ -114,8 +114,6 @@ jobs:
       contents: write
       pull-requests: write
       checks: read
-    outputs:
-      changed: ${{ steps.git-commit.outcome == 'success' && "yes" || "no" }}
     steps:
       - name: Checkout PR branch
         uses: actions/checkout@v5
