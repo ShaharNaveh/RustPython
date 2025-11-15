@@ -115,7 +115,7 @@ jobs:
       pull-requests: write
       checks: read
     outputs:
-      changed: ${{ steps.git_commit.outcome == 'success' && "yes" || "no" }}
+      changed: ${{ steps.git-commit.outcome == 'success' && "yes" || "no" }}
     steps:
       - name: Checkout PR branch
         uses: actions/checkout@v5
@@ -142,12 +142,12 @@ jobs:
         run: git add -u
 
       - name: git commit
-        id: git_commit
+        id: git-commit
         run: git commit -m "run `cargo fmt --all`"
         continue-on-error: true # Will fail if nothing to commit
 
       - name: Comment on PR
-        if: ${{ steps.git_commit.outcome == "success" }}
+        if: ${{ steps.git-commit.outcome == "success" }}
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           number: ${{ github.event.pull_request.number }}
@@ -167,7 +167,7 @@ jobs:
 
       - name: git push
         run: git push origin HEAD:${{ github.event.pull_request.head.ref }}
-        if: ${{ steps.git_commit.outcome == "success" }}
+        if: ${{ steps.git-commit.outcome == "success" }}
 
       # This step is not really needed as the earlier push should cancel this run anyways.
       # But we are making sure that we abort if we had badly formatted files.
