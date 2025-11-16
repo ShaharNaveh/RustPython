@@ -11,20 +11,18 @@ import pydoc
 import textwrap
 import typing
 
+from common import DEFAULT_OUTPUT_DIR
+
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
-CRATE_ROOT = pathlib.Path(__file__).parents[1]
-OUT_PATH = CRATE_ROOT / "src" / "bytecode" / "oparg_types.rs"
 
-DERIVE = "#[derive(Clone, Copy, Debug, Eq, PartialEq)]"
-
+DERIVE = "#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]"
 REFS = {
     "CodeObject": "[crate::CodeObject]",
     "Instruction": "[crate::Instruction]",
     "PEP695": "https://peps.python.org/pep-0695/",
 }
-
 BASE_ERR = "crate::MarshalError"
 ERR = f"{BASE_ERR}::InvalidBytecode"
 
@@ -212,6 +210,7 @@ class AliasOpargType(OpargTypeMeta):
         }}
         """
 
+    '''
     @property
     def trait_from_inner(self) -> str:
         return f"""
@@ -233,6 +232,7 @@ class AliasOpargType(OpargTypeMeta):
             }}
         }}
         """
+    '''
 
     @property
     def fn_new(self) -> str:
