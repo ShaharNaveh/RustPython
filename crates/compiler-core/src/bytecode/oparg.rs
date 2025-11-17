@@ -1,7 +1,7 @@
 use crate::{CodeUnit, MarshalError, RealInstruction};
 use std::{fmt, marker::PhantomData, ops::Deref};
 
-pub trait AnyOparg: Copy + TryFrom<Oparg> {}
+pub trait AnyOparg: Copy + TryFrom<Oparg> + Into<Oparg> {}
 
 /// Zero sized struct for holding a possible Oparg type.
 #[derive(Copy, Clone)]
@@ -20,7 +20,7 @@ impl<T: AnyOparg> OpargType<T> {
     #[inline(always)]
     pub unsafe fn get_unchecked(self, oparg: Oparg) -> T {
         // SAFETY: requirements forwarded from caller
-        unsafe { T::try_from(oparg).unwrap_unchecked() }
+        unsafe { self.get(oparg).unwrap_unchecked() }
     }
 }
 
@@ -83,6 +83,12 @@ impl TryFrom<u32> for Oparg {
 
     fn try_from(value: u32) -> Result<Self, Self::Error> {
         Ok(Self::from(value))
+    }
+}
+
+impl From<Oparg> for u32 {
+    fn from(value: Oparg) -> Self {
+        value.0
     }
 }
 

@@ -1,3 +1,9 @@
+use crate::CodeObject;
+use malachite_bigint::BigInt;
+use num_complex::Complex64;
+use rustpython_wtf8::{Wtf8, Wtf8Buf};
+use std::{fmt, hash, mem};
+
 pub trait Constant: Sized {
     type Name: AsRef<str>;
 
