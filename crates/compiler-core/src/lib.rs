@@ -8,9 +8,6 @@ mod mode;
 
 pub use mode::Mode;
 
-pub use bytecode::*;
-pub use marshal::MarshalError;
-
 pub use ruff_source_file::{
     LineIndex, OneIndexed, PositionEncoding, SourceFile, SourceFileBuilder, SourceLocation,
 };
