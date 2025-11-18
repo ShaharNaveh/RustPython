@@ -1,5 +1,9 @@
-use crate::{BorrowedConstant, Constant, ConstantBag, ConstantData, OneIndexed, SourceLocation};
+use crate::{
+    BorrowedConstant, Constant, ConstantBag, ConstantData, MarshalError, OneIndexed, OpargByte,
+    OpargState, RealInstruction, SourceLocation,
+};
 use bitflags::bitflags;
+use itertools::Itertools;
 use std::{collections::BTreeSet, fmt, ops::Deref};
 
 /// CPython 3.11+ linetable location info codes
@@ -129,14 +133,14 @@ impl CodeFlags {
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct CodeUnit {
-    pub op: Instruction,
-    pub arg: OpArgByte,
+    pub op: RealInstruction,
+    pub arg: OpargByte,
 }
 
 const _: () = assert!(mem::size_of::<CodeUnit>() == 2);
 
 impl CodeUnit {
-    pub const fn new(op: Instruction, arg: OpArgByte) -> Self {
+    pub const fn new(op: RealInstruction, arg: OpargByte) -> Self {
         Self { op, arg }
     }
 }
@@ -254,6 +258,8 @@ impl<C: Constant> CodeObject<C> {
 
     /// Return the labels targeted by the instructions of this CodeObject
     pub fn label_targets(&self) -> BTreeSet<Label> {
+        let label_targets = BTreeSet::new();
+        /*
         let mut label_targets = BTreeSet::new();
         let mut arg_state = OpArgState::default();
         for instruction in &*self.instructions {
@@ -262,6 +268,7 @@ impl<C: Constant> CodeObject<C> {
                 label_targets.insert(l.get(arg));
             }
         }
+        */
         label_targets
     }
 
@@ -275,7 +282,7 @@ impl<C: Constant> CodeObject<C> {
         let line_digits = (3).max(self.locations.last().unwrap().line.digits().get());
         let offset_digits = (4).max(1 + self.instructions.len().ilog10() as usize);
         let mut last_line = OneIndexed::MAX;
-        let mut arg_state = OpArgState::default();
+        let mut arg_state = OpargState::default();
         for (offset, &instruction) in self.instructions.iter().enumerate() {
             let (instruction, arg) = arg_state.get(instruction);
             // optional line number
@@ -299,15 +306,18 @@ impl<C: Constant> CodeObject<C> {
             }
 
             // arrow and offset
+            /*
             let arrow = if label_targets.contains(&Label(offset as u32)) {
                 ">>"
             } else {
                 "  "
             };
+            */
+            let arrow = " ";
             write!(f, "{arrow} {offset:offset_digits$} ")?;
 
             // instruction
-            instruction.fmt_dis(arg, f, self, expand_code_objects, 21, level)?;
+            //instruction.fmt_dis(arg, f, self, expand_code_objects, 21, level)?;
             writeln!(f)?;
         }
         Ok(())

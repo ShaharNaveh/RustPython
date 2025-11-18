@@ -1,7 +1,19 @@
 use crate::{CodeUnit, MarshalError, RealInstruction};
-use std::{fmt, marker::PhantomData, ops::Deref};
+use std::{
+    fmt,
+    marker::PhantomData,
+    ops::{ Deref },
+};
 
-pub trait AnyOparg: Copy + TryFrom<Oparg> + Into<Oparg> {}
+pub trait AnyOparg: Copy {
+    fn try_from_oparg(value: Oparg) -> Result<Self, MarshalError>;
+
+    fn as_oparg(self) -> Oparg;
+
+    fn as_u32(self) -> u32 {
+        self.as_oparg().as_u32()
+    }
+}
 
 /// Zero sized struct for holding a possible Oparg type.
 #[derive(Copy, Clone)]
@@ -12,7 +24,7 @@ impl<T: AnyOparg> OpargType<T> {
 
     #[inline(always)]
     pub fn get(self, oparg: Oparg) -> Result<T, MarshalError> {
-        T::try_from(oparg)
+        T::try_from_oparg(oparg)
     }
 
     /// # Safety
@@ -21,6 +33,20 @@ impl<T: AnyOparg> OpargType<T> {
     pub unsafe fn get_unchecked(self, oparg: Oparg) -> T {
         // SAFETY: requirements forwarded from caller
         unsafe { self.get(oparg).unwrap_unchecked() }
+    }
+}
+
+impl<T: AnyOparg> PartialEq for OpargType<T> {
+    fn eq(&self, _: &Self) -> bool {
+        true
+    }
+}
+
+impl<T: AnyOparg> Eq for OpargType<T> {}
+
+impl<T: AnyOparg> fmt::Debug for OpargType<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "OpargType<{}>", std::any::type_name::<T>())
     }
 }
 
@@ -58,11 +84,19 @@ impl fmt::Debug for OpargByte {
 }
 
 /// Full 32-bit oparg, including any possible [`RealInstruction::ExtendedArg`] extension.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 #[repr(transparent)]
 pub struct Oparg(u32);
 
-impl AnyOparg for Oparg {}
+impl AnyOparg for Oparg {
+    fn try_from_oparg(value: Self) -> Result<Self, MarshalError> {
+        Ok(value)
+    }
+
+    fn to_oparg(self) -> Self {
+        self
+    }
+}
 
 impl std::ops::Deref for Oparg {
     type Target = u32;
@@ -78,14 +112,6 @@ impl From<u32> for Oparg {
     }
 }
 
-impl TryFrom<u32> for Oparg {
-    type Error = crate::MarshalError;
-
-    fn try_from(value: u32) -> Result<Self, Self::Error> {
-        Ok(Self::from(value))
-    }
-}
-
 impl From<Oparg> for u32 {
     fn from(value: Oparg) -> Self {
         value.0
@@ -93,9 +119,17 @@ impl From<Oparg> for u32 {
 }
 
 impl Oparg {
+    pub const NULL: Self = Self::new(0);
+
     #[must_use]
     pub const fn new(value: u32) -> Self {
         Self(value)
+    }
+
+    // Const hack; Use `u32::from(oparg)` when it can be used in a const context.
+    #[must_use]
+    pub const fn as_u32(self) -> u32 {
+        self.0
     }
 
     /// Returns how many CodeUnits an instruction with this oparg will be encoded as.
@@ -129,7 +163,7 @@ impl OpargState {
     #[inline(always)]
     pub fn get(&mut self, ins: CodeUnit) -> (RealInstruction, Oparg) {
         let arg = self.extend(ins.arg);
-        if ins.op != RealInstruction::ExtendedArg {
+        if !matches!(ins.op, RealInstruction::ExtendedArg(_)) {
             self.reset();
         }
         (ins.op, arg)
@@ -137,7 +171,8 @@ impl OpargState {
 
     #[inline(always)]
     pub fn extend(&mut self, arg: OpargByte) -> Oparg {
-        self.state = Oparg::from((self.state << 8) | u32::from(arg));
+        let
+        self.state = Oparg::new((self.state.as_u32() << 8) | u32::from(*arg));
         self.state
     }
 

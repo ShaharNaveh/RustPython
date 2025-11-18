@@ -331,15 +331,16 @@ class RealInstructions(InstructionsMeta):
             elif direction == "pushed":
                 val = stack.top_offset - stack.base_offset
 
-            expr = val.to_c()
-            line = f"Self::{inst.name} => {expr}"
+            expr = val.to_c().replace("oparg", "*oparg")
+            left_side = inst.as_match_arm(self.deopt_table)
+            line = f"{left_side} => {expr}"
             lines.append(line)
 
         arms = ",\n".join(lines)
         doc = "from" if direction == "popped" else "on"
         return f"""
 /// How many items should be {direction} {doc} the stack.
-pub const fn num_{direction}(self, oparg: Oparg) -> u32 {{
+pub(crate) const fn num_{direction}(self, oparg: Oparg) -> u32 {{
     match self {{
         {arms}
     }}
