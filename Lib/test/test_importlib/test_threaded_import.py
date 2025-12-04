@@ -6,7 +6,6 @@
 # randrange, and then Python hangs.
 
 import _imp as imp
-import _multiprocessing  # TODO: RUSTPYTHON
 import os
 import importlib
 import sys
@@ -14,7 +13,7 @@ import time
 import shutil
 import threading
 import unittest
-from unittest import mock
+from test import support
 from test.support import verbose
 from test.support.import_helper import forget, mock_register_at_fork
 from test.support.os_helper import (TESTFN, unlink, rmtree)
@@ -136,14 +135,12 @@ class ThreadedImportTests(unittest.TestCase):
             if verbose:
                 print("OK.")
 
-    # TODO: RUSTPYTHON
-    @unittest.expectedFailure
-    def test_parallel_module_init(self):
+    @support.bigmemtest(size=50, memuse=76*2**20, dry_run=False)
+    def test_parallel_module_init(self, size):
         self.check_parallel_module_init()
 
-    # TODO: RUSTPYTHON
-    @unittest.expectedFailure
-    def test_parallel_meta_path(self):
+    @support.bigmemtest(size=50, memuse=76*2**20, dry_run=False)
+    def test_parallel_meta_path(self, size):
         finder = Finder()
         sys.meta_path.insert(0, finder)
         try:
@@ -153,9 +150,8 @@ class ThreadedImportTests(unittest.TestCase):
         finally:
             sys.meta_path.remove(finder)
 
-    # TODO: RUSTPYTHON; maybe hang?
-    @unittest.expectedFailure
-    def test_parallel_path_hooks(self):
+    @support.bigmemtest(size=50, memuse=76*2**20, dry_run=False)
+    def test_parallel_path_hooks(self, size):
         # Here the Finder instance is only used to check concurrent calls
         # to path_hook().
         finder = Finder()
@@ -249,16 +245,15 @@ class ThreadedImportTests(unittest.TestCase):
             __import__(TESTFN)
         del sys.modules[TESTFN]
 
-    @unittest.skip("TODO: RUSTPYTHON; hang")
-    def test_concurrent_futures_circular_import(self):
+    @support.bigmemtest(size=1, memuse=1.8*2**30, dry_run=False)
+    def test_concurrent_futures_circular_import(self, size):
         # Regression test for bpo-43515
         fn = os.path.join(os.path.dirname(__file__),
                           'partial', 'cfimport.py')
         script_helper.assert_python_ok(fn)
 
-    @unittest.skipUnless(hasattr(_multiprocessing, "SemLock"), "TODO: RUSTPYTHON, pool_in_threads.py needs _multiprocessing.SemLock")                                                                                      
-    @unittest.expectedFailureIfWindows("TODO: RUSTPYTHON")
-    def test_multiprocessing_pool_circular_import(self):
+    @support.bigmemtest(size=1, memuse=1.8*2**30, dry_run=False)
+    def test_multiprocessing_pool_circular_import(self, size):
         # Regression test for bpo-41567
         fn = os.path.join(os.path.dirname(__file__),
                           'partial', 'pool_in_threads.py')
@@ -271,7 +266,7 @@ def setUpModule():
     try:
         old_switchinterval = sys.getswitchinterval()
         unittest.addModuleCleanup(sys.setswitchinterval, old_switchinterval)
-        sys.setswitchinterval(1e-5)
+        support.setswitchinterval(1e-5)
     except AttributeError:
         pass
 

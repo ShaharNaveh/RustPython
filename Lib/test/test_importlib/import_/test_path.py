@@ -68,8 +68,6 @@ class FinderTests:
             self.assertIn(path, sys.path_importer_cache)
             self.assertIs(sys.path_importer_cache[path], importer)
 
-    # TODO: RUSTPYTHON
-    @unittest.expectedFailure
     def test_empty_path_hooks(self):
         # Test that if sys.path_hooks is empty a warning is raised,
         # sys.path_importer_cache gets None set, and PathFinder returns None.
@@ -82,7 +80,7 @@ class FinderTests:
                 self.assertIsNone(self.find('os'))
                 self.assertIsNone(sys.path_importer_cache[path_entry])
                 self.assertEqual(len(w), 1)
-                self.assertTrue(issubclass(w[-1].category, ImportWarning))
+                self.assertIsSubclass(w[-1].category, ImportWarning)
 
     def test_path_importer_cache_empty_string(self):
         # The empty string should create a finder using the cwd.

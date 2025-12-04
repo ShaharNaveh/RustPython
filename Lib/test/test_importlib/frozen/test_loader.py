@@ -3,11 +3,8 @@ from test.test_importlib import abc, util
 machinery = util.import_importlib('importlib.machinery')
 
 from test.support import captured_stdout, import_helper, STDLIB_DIR
-import _imp
 import contextlib
-import marshal
 import os.path
-import sys
 import types
 import unittest
 import warnings
@@ -64,7 +61,7 @@ class ExecModuleTests(abc.LoaderTests):
             module.main()
 
         self.assertTrue(module.initialized)
-        self.assertTrue(hasattr(module, '__spec__'))
+        self.assertHasAttr(module, '__spec__')
         self.assertEqual(module.__spec__.origin, 'frozen')
         return module, stdout.getvalue()
 
@@ -75,10 +72,9 @@ class ExecModuleTests(abc.LoaderTests):
         for attr, value in check.items():
             self.assertEqual(getattr(module, attr), value)
         self.assertEqual(output, 'Hello world!\n')
-        self.assertTrue(hasattr(module, '__spec__'))
+        self.assertHasAttr(module, '__spec__')
         self.assertEqual(module.__spec__.loader_state.origname, name)
 
-    @unittest.skipIf(sys.platform == "win32", "TODO: RUSTPYTHON")
     def test_package(self):
         name = '__phello__'
         module, output = self.exec_module(name)
@@ -92,7 +88,6 @@ class ExecModuleTests(abc.LoaderTests):
         self.assertEqual(output, 'Hello world!\n')
         self.assertEqual(module.__spec__.loader_state.origname, name)
 
-    @unittest.skipIf(sys.platform == 'win32', "TODO:RUSTPYTHON Flaky on Windows")
     def test_lacking_parent(self):
         name = '__phello__.spam'
         with util.uncache('__phello__'):
@@ -141,7 +136,7 @@ class InspectLoaderTests:
             exec(code, mod.__dict__)
         with captured_stdout() as stdout:
             mod.main()
-        self.assertTrue(hasattr(mod, 'initialized'))
+        self.assertHasAttr(mod, 'initialized')
         self.assertEqual(stdout.getvalue(), 'Hello world!\n')
 
     def test_get_source(self):
@@ -150,7 +145,6 @@ class InspectLoaderTests:
             result = self.machinery.FrozenImporter.get_source('__hello__')
         self.assertIsNone(result)
 
-    @unittest.skipIf(sys.platform == "win32", "TODO: RUSTPYTHON")
     def test_is_package(self):
         # Should be able to tell what is a package.
         test_for = (('__hello__', False), ('__phello__', True),
