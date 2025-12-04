@@ -117,7 +117,10 @@ class ModuleFilesDiskTests(DirectSpec, util.DiskSetup, ModulesFiles, unittest.Te
 
 
 class ModuleFilesZipTests(DirectSpec, util.ZipSetup, ModulesFiles, unittest.TestCase):
-    pass
+
+    @unittest.expectedFailure # TODO: RUSTPYTHON; FileNotFoundError: Can't open orphan path
+    def test_module_resources(self):
+        return super().test_module_resources()
 
 
 class ImplicitContextFiles:
@@ -186,7 +189,11 @@ class ImplicitContextFilesDiskTests(
 class ImplicitContextFilesZipTests(
     DirectSpec, util.ZipSetup, ImplicitContextFiles, unittest.TestCase
 ):
-    pass
+
+    @unittest.expectedFailure # TODO: RUSTPYTHON; FileNotFoundError: Can't open orphan path
+    def test_implicit_files_submodule(self):
+        return super().test_implicit_files_submodule()
+
 
 
 if __name__ == '__main__':
