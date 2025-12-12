@@ -594,9 +594,6 @@ pub enum Instruction {
         op: Arg<BinaryOperator>,
     },
     BinarySubscript,
-    Break {
-        target: Arg<Label>,
-    },
     BuildListFromTuples {
         size: Arg<u32>,
     },
@@ -657,9 +654,6 @@ pub enum Instruction {
     },
     /// Performs `in` comparison, or `not in` if `invert` is 1.
     ContainsOp(Arg<Invert>),
-    Continue {
-        target: Arg<Label>,
-    },
     /// Convert value to a string, depending on `oparg`:
     ///
     /// ```python
@@ -817,10 +811,6 @@ pub enum Instruction {
     SetupAsyncWith {
         end: Arg<Label>,
     },
-
-    SetupExcept {
-        handler: Arg<Label>,
-    },
     /// Setup a finally handler, which will be called whenever one of this events occurs:
     /// - the block is popped
     /// - the function returns
@@ -828,7 +818,6 @@ pub enum Instruction {
     SetupFinally {
         handler: Arg<Label>,
     },
-    SetupLoop,
     SetupWith {
         end: Arg<Label>,
     },
@@ -1621,11 +1610,8 @@ impl Instruction {
             | JumpIfFalseOrPop { target: l }
             | ForIter { target: l }
             | SetupFinally { handler: l }
-            | SetupExcept { handler: l }
             | SetupWith { end: l }
-            | SetupAsyncWith { end: l }
-            | Break { target: l }
-            | Continue { target: l } => Some(*l),
+            | SetupAsyncWith { end: l } => Some(*l),
             _ => None,
         }
     }
@@ -1642,12 +1628,7 @@ impl Instruction {
     pub const fn unconditional_branch(&self) -> bool {
         matches!(
             self,
-            Jump { .. }
-                | Continue { .. }
-                | Break { .. }
-                | ReturnValue
-                | ReturnConst { .. }
-                | Raise { .. }
+            Jump { .. } | ReturnValue | ReturnConst { .. } | Raise { .. }
         )
     }
 
@@ -1692,8 +1673,6 @@ impl Instruction {
             GetLen => 1,
             CallIntrinsic1 { .. } => 0,  // Takes 1, pushes 1
             CallIntrinsic2 { .. } => -1, // Takes 2, pushes 1
-            Continue { .. } => 0,
-            Break { .. } => 0,
             Jump { .. } => 0,
             PopJumpIfTrue { .. } | PopJumpIfFalse { .. } => -1,
             JumpIfTrueOrPop { .. } | JumpIfFalseOrPop { .. } => {
@@ -1735,8 +1714,7 @@ impl Instruction {
             Resume { .. } => 0,
             YieldValue => 0,
             YieldFrom => -1,
-            SetupAnnotation | SetupLoop | SetupFinally { .. } | EnterFinally | EndFinally => 0,
-            SetupExcept { .. } => jump as i32,
+            SetupAnnotation | SetupFinally { .. } | EnterFinally | EndFinally => 0,
             SetupWith { .. } => (!jump) as i32,
             WithCleanupStart => 0,
             WithCleanupFinish => -1,
@@ -1863,7 +1841,6 @@ impl Instruction {
             BeforeAsyncWith => w!(BeforeAsyncWith),
             BinaryOp { op } => write!(f, "{:pad$}({})", "BINARY_OP", op.get(arg)),
             BinarySubscript => w!(BinarySubscript),
-            Break { target } => w!(Break, target),
             BuildListFromTuples { size } => w!(BuildListFromTuples, size),
             BuildList { size } => w!(BuildList, size),
             BuildMapForCall { size } => w!(BuildMapForCall, size),
@@ -1885,7 +1862,6 @@ impl Instruction {
             CallMethodPositional { nargs } => w!(CallMethodPositional, nargs),
             CompareOperation { op } => w!(CompareOperation, ?op),
             ContainsOp(inv) => w!(CONTAINS_OP, ?inv),
-            Continue { target } => w!(Continue, target),
             ConvertValue { oparg } => write!(f, "{:pad$}{}", "CONVERT_VALUE", oparg.get(arg)),
             CopyItem { index } => w!(CopyItem, index),
             DeleteAttr { idx } => w!(DeleteAttr, name = idx),
@@ -1946,9 +1922,7 @@ impl Instruction {
             SetFunctionAttribute { attr } => w!(SetFunctionAttribute, ?attr),
             SetupAnnotation => w!(SetupAnnotation),
             SetupAsyncWith { end } => w!(SetupAsyncWith, end),
-            SetupExcept { handler } => w!(SetupExcept, handler),
             SetupFinally { handler } => w!(SetupFinally, handler),
-            SetupLoop => w!(SetupLoop),
             SetupWith { end } => w!(SetupWith, end),
             StoreAttr { idx } => w!(StoreAttr, name = idx),
             StoreDeref(idx) => w!(StoreDeref, cell_name = idx),
