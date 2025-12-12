@@ -1708,15 +1708,16 @@ pub(crate) fn call_slot_new(
             break;
         }
     }
-    if let Some(ref basetype) = staticbase {
-        if !typ.fast_issubclass(basetype) {
-            return Err(vm.new_type_error(format!(
-                "{}.__new__({}) is not safe, use {}.__new__()",
-                typ.name(),
-                subtype.name(),
-                basetype.name()
-            )));
-        }
+
+    if let Some(ref basetype) = staticbase
+        && !typ.fast_issubclass(basetype)
+    {
+        return Err(vm.new_type_error(format!(
+            "{}.__new__({}) is not safe, use {}.__new__()",
+            typ.name(),
+            subtype.name(),
+            basetype.name()
+        )));
     }
 
     let slot_new = typ
