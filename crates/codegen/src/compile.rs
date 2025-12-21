@@ -38,7 +38,7 @@ use rustpython_compiler_core::{
     bytecode::{
         self, Arg as OpArgMarker, BinaryOperator, BuildSliceArgCount, CodeObject,
         ComparisonOperator, ConstantData, ConvertValueOparg, Instruction, Invert, OpArg, OpArgType,
-        UnpackExArgs,
+        PreserveTos, UnpackExArgs,
     },
 };
 use rustpython_wtf8::Wtf8Buf;
@@ -63,7 +63,7 @@ pub enum FBlockType {
     StopIteration,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Copy, Debug)]
 pub struct FBlockInfo {
     pub fb_type: FBlockType,
     pub fb_block: BlockIdx,
@@ -894,6 +894,81 @@ impl Compiler {
         // TODO: Add assertion to check expected type matches
         // assert!(matches!(fblock.fb_type, expected_type));
         code.fblock.pop().expect("fblock stack underflow")
+    }
+
+    fn unwind_fblock(&mut self, info: FBlockInfo, preserve_tos: PreserveTos) -> CompileResult<()> {
+        match info.fb_type {
+            FBlockType::WhileLoop
+            | FBlockType::ExceptionHandler
+            | FBlockType::ExceptionGroupHandler
+            | FBlockType::AsyncComprehensionGenerator
+            | FBlockType::StopIteration => {}
+            FBlockType::FinallyEnd => {
+                emit!(self, Instruction::PopFinally { preserve_tos });
+            }
+            FBlockType::ForLoop => {
+                if matches!(preserve_tos, PreserveTos::Yes) {
+                    emit!(self, Instruction::Swap { index: 2 });
+                }
+
+                emit!(self, Instruction::Pop);
+            }
+            FBlockType::TryExcept => {
+                emit!(self, Instruction::PopBlock);
+            }
+            FBlockType::FinallyTry => {
+                emit!(self, Instruction::PopBlock);
+                emit!(
+                    self,
+                    Instruction::CallFinally {
+                        delta: info.fb_exit,
+                    }
+                );
+            }
+            FBlockType::With | FBlockType::AsyncWith => {
+                emit!(self, Instruction::PopBlock);
+                if matches!(preserve_tos, PreserveTos::Yes) {
+                    emit!(self, Instruction::Swap { index: 2 });
+                }
+                emit!(self, Instruction::BeginFinally);
+                emit!(self, Instruction::WithCleanupStart);
+                if matches!(info.fb_type, FBlockType::AsyncWith) {
+                    emit!(self, Instruction::GetAwaitable);
+                    self.emit_load_const(ConstantData::None);
+                    emit!(self, Instruction::YieldFrom);
+                }
+                emit!(self, Instruction::WithCleanupFinish);
+                emit!(
+                    self,
+                    Instruction::PopFinally {
+                        preserve_tos: PreserveTos::No
+                    }
+                );
+            }
+            FBlockType::HandlerCleanup => {
+                if matches!(preserve_tos, PreserveTos::Yes) {
+                    emit!(self, Instruction::Swap { index: 2 });
+                }
+
+                if info.fb_exit == BlockIdx::NULL {
+                    emit!(self, Instruction::PopBlock);
+                    emit!(self, Instruction::PopException);
+                    emit!(
+                        self,
+                        Instruction::CallFinally {
+                            delta: info.fb_exit,
+                        }
+                    );
+                } else {
+                    emit!(self, Instruction::PopException);
+                }
+            }
+            FBlockType::PopValue => {
+                unimplemented!()
+            }
+        };
+
+        Ok(())
     }
 
     // could take impl Into<Cow<str>>, but everything is borrowed from ast structs; we never
