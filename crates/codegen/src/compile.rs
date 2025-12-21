@@ -3084,9 +3084,9 @@ impl Compiler {
         is_async: bool,
     ) -> CompileResult<()> {
         // Start loop
-        let for_block = self.new_block();
-        let else_block = self.new_block();
-        let after_block = self.new_block();
+        let start = self.new_block();
+        let cleanup = self.new_block();
+        let end = self.new_block();
 
         emit!(self, Instruction::SetupLoop);
 
@@ -3096,17 +3096,12 @@ impl Compiler {
         if is_async {
             emit!(self, Instruction::GetAIter);
 
-            self.switch_to_block(for_block);
+            self.switch_to_block(start);
 
             // Push fblock for async for loop
-            self.push_fblock(FBlockType::ForLoop, for_block, after_block)?;
+            self.push_fblock(FBlockType::ForLoop, start, end)?;
 
-            emit!(
-                self,
-                Instruction::SetupExcept {
-                    handler: else_block,
-                }
-            );
+            emit!(self, Instruction::SetupExcept { handler: cleanup });
             emit!(self, Instruction::GetANext);
             self.emit_load_const(ConstantData::None);
             emit!(self, Instruction::YieldFrom);
@@ -3122,23 +3117,23 @@ impl Compiler {
             // Retrieve Iterator
             emit!(self, Instruction::GetIter);
 
-            self.switch_to_block(for_block);
+            self.switch_to_block(start);
 
             // Push fblock for for loop
-            self.push_fblock(FBlockType::ForLoop, for_block, after_block)?;
+            self.push_fblock(FBlockType::ForLoop, start, end)?;
 
-            emit!(self, Instruction::ForIter { target: else_block });
+            emit!(self, Instruction::ForIter { target: cleanup });
 
             // Start of loop iteration, set targets:
             self.compile_store(target)?;
         };
 
-        let was_in_loop = self.ctx.loop_data.replace((for_block, after_block));
+        let was_in_loop = self.ctx.loop_data.replace((start, end));
         self.compile_statements(body)?;
         self.ctx.loop_data = was_in_loop;
-        emit!(self, Instruction::Jump { target: for_block });
+        emit!(self, Instruction::Jump { target: start });
 
-        self.switch_to_block(else_block);
+        self.switch_to_block(cleanup);
 
         // Pop fblock
         self.pop_fblock(FBlockType::ForLoop);
@@ -3149,7 +3144,7 @@ impl Compiler {
         emit!(self, Instruction::PopBlock);
         self.compile_statements(orelse)?;
 
-        self.switch_to_block(after_block);
+        self.switch_to_block(end);
 
         Ok(())
     }
