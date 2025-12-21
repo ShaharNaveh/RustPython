@@ -861,8 +861,10 @@ impl Compiler {
         unwrap_internal(self, stack_top.finalize_code(self.opts.optimize))
     }
 
-    /// Push a new fblock
-    // = compiler_push_fblock
+    /// Push a new fblock.
+    ///
+    /// # See also
+    /// [CPython `compiler_push_fblock`](https://github.com/python/cpython/blob/627894459a84be3488a1789919679c997056a03c/Python/compile.c#L1426-L1445)
     fn push_fblock(
         &mut self,
         fb_type: FBlockType,
@@ -897,6 +899,7 @@ impl Compiler {
     fn name(&mut self, name: &str) -> bytecode::NameIdx {
         self._name_inner(name, |i| &mut i.metadata.names)
     }
+
     fn varname(&mut self, name: &str) -> CompileResult<bytecode::NameIdx> {
         if Self::is_forbidden_arg_name(name) {
             return Err(self.error(CodegenErrorType::SyntaxError(format!(
@@ -905,6 +908,7 @@ impl Compiler {
         }
         Ok(self._name_inner(name, |i| &mut i.metadata.varnames))
     }
+
     fn _name_inner(
         &mut self,
         name: &str,
@@ -925,6 +929,7 @@ impl Compiler {
         self.current_code_info().metadata.qualname = Some(qualname.clone());
         qualname
     }
+
     fn make_qualname(&mut self) -> String {
         let stack_size = self.code_stack.len();
         assert!(stack_size >= 1);
