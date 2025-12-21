@@ -885,8 +885,10 @@ impl Compiler {
         Ok(())
     }
 
-    /// Pop an fblock
-    // = compiler_pop_fblock
+    /// Pop an fblock.
+    ///
+    /// # See also
+    /// [CPython `compiler_pop_fblock`](https://github.com/python/cpython/blob/627894459a84be3488a1789919679c997056a03c/Python/compile.c#L1447-L1458)
     fn pop_fblock(&mut self, _expected_type: FBlockType) -> FBlockInfo {
         let code = self.current_code_info();
         // TODO: Add assertion to check expected type matches
