@@ -590,6 +590,7 @@ pub type NameIdx = u32;
 #[repr(u8)]
 pub enum Instruction {
     BeforeAsyncWith,
+    BeginFinally,
     BinaryOp {
         op: Arg<BinaryOperator>,
     },
@@ -624,6 +625,9 @@ pub enum Instruction {
     },
     BuildTuple {
         size: Arg<u32>,
+    },
+    CallFinally {
+        delta: Arg<Label>,
     },
     CallFunctionEx {
         has_kwargs: Arg<bool>,
@@ -779,6 +783,9 @@ pub enum Instruction {
     Pop,
     PopBlock,
     PopException,
+    PopFinally {
+        preserve_tos: Arg<PreserveTos>,
+    },
     /// Pop the top of the stack, and jump if this value is false.
     PopJumpIfFalse {
         target: Arg<Label>,
@@ -1349,6 +1356,30 @@ impl BuildSliceArgCount {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum PreserveTos {
+    No,
+    Yes,
+}
+
+impl OpArgType for PreserveTos {
+    #[inline(always)]
+    fn from_op_arg(x: u32) -> Option<Self> {
+        Some(match x {
+            0 => Self::No,
+            _ => Self::Yes,
+        })
+    }
+
+    #[inline(always)]
+    fn to_op_arg(self) -> u32 {
+        match self {
+            Self::No => 0,
+            Self::Yes => 1,
+        }
+    }
+}
+
 #[derive(Copy, Clone)]
 pub struct UnpackExArgs {
     pub before: u8,
@@ -1714,8 +1745,26 @@ impl Instruction {
             Resume { .. } => 0,
             YieldValue => 0,
             YieldFrom => -1,
-            SetupAnnotation | SetupFinally { .. } | EnterFinally | EndFinally => 0,
+            SetupAnnotation => 0,
+            SetupFinally { .. } => {
+                if jump {
+                    6
+                } else {
+                    0
+                }
+            }
+            EnterFinally => 0,
+            EndFinally => 0,
+            BeginFinally => 6,
+            CallFinally { .. } => {
+                if jump {
+                    1
+                } else {
+                    0
+                }
+            }
             SetupWith { .. } => (!jump) as i32,
+            PopFinally { .. } => -6,
             WithCleanupStart => 0,
             WithCleanupFinish => -1,
             PopBlock => 0,
@@ -1838,6 +1887,7 @@ impl Instruction {
             };
 
         match self {
+            BeginFinally => w!(BEGIN_FINALLY),
             BeforeAsyncWith => w!(BeforeAsyncWith),
             BinaryOp { op } => write!(f, "{:pad$}({})", "BINARY_OP", op.get(arg)),
             BinarySubscript => w!(BinarySubscript),
@@ -1852,6 +1902,7 @@ impl Instruction {
             BuildTupleFromIter => w!(BuildTupleFromIter),
             BuildTupleFromTuples { size } => w!(BuildTupleFromTuples, size),
             BuildTuple { size } => w!(BuildTuple, size),
+            CallFinally { delta } => w!(CALL_FINALLY, delta),
             CallFunctionEx { has_kwargs } => w!(CallFunctionEx, has_kwargs),
             CallFunctionKeyword { nargs } => w!(CallFunctionKeyword, nargs),
             CallFunctionPositional { nargs } => w!(CallFunctionPositional, nargs),
@@ -1911,6 +1962,7 @@ impl Instruction {
             Pop => w!(Pop),
             PopBlock => w!(PopBlock),
             PopException => w!(PopException),
+            PopFinally { preserve_tos } => w!(POP_FINALLY, ?preserve_tos),
             PopJumpIfFalse { target } => w!(PopJumpIfFalse, target),
             PopJumpIfTrue { target } => w!(PopJumpIfTrue, target),
             Raise { kind } => w!(Raise, ?kind),
