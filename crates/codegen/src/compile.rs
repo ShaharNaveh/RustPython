@@ -1565,7 +1565,13 @@ impl Compiler {
                 orelse,
                 is_async,
                 ..
-            }) => self.compile_for(target, iter, body, orelse, *is_async)?,
+            }) => {
+                if *is_async {
+                    self.compile_async_for(target, iter, body, orelse)?
+                } else {
+                    self.compile_for(target, iter, body, orelse)?
+                }
+            }
             Stmt::Match(StmtMatch { subject, cases, .. }) => self.compile_match(subject, cases)?,
             Stmt::Raise(StmtRaise { exc, cause, .. }) => {
                 let kind = match exc {
@@ -3081,7 +3087,6 @@ impl Compiler {
         iter: &Expr,
         body: &[Stmt],
         orelse: &[Stmt],
-        is_async: bool,
     ) -> CompileResult<()> {
         // Start loop
         let start = self.new_block();
@@ -3093,40 +3098,18 @@ impl Compiler {
         // The thing iterated:
         self.compile_expression(iter)?;
 
-        if is_async {
-            emit!(self, Instruction::GetAIter);
+        // Retrieve Iterator
+        emit!(self, Instruction::GetIter);
 
-            self.switch_to_block(start);
+        self.switch_to_block(start);
 
-            // Push fblock for async for loop
-            self.push_fblock(FBlockType::ForLoop, start, end)?;
+        // Push fblock for for loop
+        self.push_fblock(FBlockType::ForLoop, start, end)?;
 
-            emit!(self, Instruction::SetupExcept { handler: cleanup });
-            emit!(self, Instruction::GetANext);
-            self.emit_load_const(ConstantData::None);
-            emit!(self, Instruction::YieldFrom);
-            emit!(
-                self,
-                Instruction::Resume {
-                    arg: bytecode::ResumeType::AfterAwait as u32
-                }
-            );
-            self.compile_store(target)?;
-            emit!(self, Instruction::PopBlock);
-        } else {
-            // Retrieve Iterator
-            emit!(self, Instruction::GetIter);
+        emit!(self, Instruction::ForIter { target: cleanup });
 
-            self.switch_to_block(start);
-
-            // Push fblock for for loop
-            self.push_fblock(FBlockType::ForLoop, start, end)?;
-
-            emit!(self, Instruction::ForIter { target: cleanup });
-
-            // Start of loop iteration, set targets:
-            self.compile_store(target)?;
-        };
+        // Start of loop iteration, set targets:
+        self.compile_store(target)?;
 
         let was_in_loop = self.ctx.loop_data.replace((start, end));
         self.compile_statements(body)?;
@@ -3138,9 +3121,62 @@ impl Compiler {
         // Pop fblock
         self.pop_fblock(FBlockType::ForLoop);
 
-        if is_async {
-            emit!(self, Instruction::EndAsyncFor);
-        }
+        emit!(self, Instruction::PopBlock);
+        self.compile_statements(orelse)?;
+
+        self.switch_to_block(end);
+
+        Ok(())
+    }
+
+    fn compile_async_for(
+        &mut self,
+        target: &Expr,
+        iter: &Expr,
+        body: &[Stmt],
+        orelse: &[Stmt],
+    ) -> CompileResult<()> {
+        // Start loop
+        let start = self.new_block();
+        let cleanup = self.new_block();
+        let end = self.new_block();
+
+        emit!(self, Instruction::SetupLoop);
+
+        // The thing iterated:
+        self.compile_expression(iter)?;
+
+        emit!(self, Instruction::GetAIter);
+
+        self.switch_to_block(start);
+
+        // Push fblock for async for loop
+        self.push_fblock(FBlockType::ForLoop, start, end)?;
+
+        emit!(self, Instruction::SetupExcept { handler: cleanup });
+        emit!(self, Instruction::GetANext);
+        self.emit_load_const(ConstantData::None);
+        emit!(self, Instruction::YieldFrom);
+        emit!(
+            self,
+            Instruction::Resume {
+                arg: bytecode::ResumeType::AfterAwait as u32
+            }
+        );
+        self.compile_store(target)?;
+        emit!(self, Instruction::PopBlock);
+
+        let was_in_loop = self.ctx.loop_data.replace((start, end));
+        self.compile_statements(body)?;
+        self.ctx.loop_data = was_in_loop;
+        emit!(self, Instruction::Jump { target: start });
+
+        self.switch_to_block(cleanup);
+
+        // Pop fblock
+        self.pop_fblock(FBlockType::ForLoop);
+
+        emit!(self, Instruction::EndAsyncFor);
         emit!(self, Instruction::PopBlock);
         self.compile_statements(orelse)?;
 
