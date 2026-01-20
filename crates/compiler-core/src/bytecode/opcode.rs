@@ -224,39 +224,28 @@ pub enum Opcode {
     UnpackSequenceList = 209,                   // Placeholder
     UnpackSequenceTuple = 210,                  // Placeholder
     UnpackSequenceTwoTuple = 211,               // Placeholder
-    // RustPython-only opcodes (212-219)
-    // These either don't exist in CPython 3.14 or are RustPython-specific.
-    BeforeAsyncWith = 212,
-    BeforeWith = 213,
-    BinarySubscr = 214,
-    Break = 215,
-    Continue = 216,
-    JumpIfNotExcMatch = 217,
-    ReturnConst = 218,
-    SetExcInfo = 219,
-    // End of custom opcodes
-    InstrumentedEndFor = 234,           // Placeholder
-    InstrumentedPopIter = 235,          // Placeholder
-    InstrumentedEndSend = 236,          // Placeholder
-    InstrumentedForIter = 237,          // Placeholder
-    InstrumentedInstruction = 238,      // Placeholder
-    InstrumentedJumpForward = 239,      // Placeholder
-    InstrumentedNotTaken = 240,         // Placeholder
-    InstrumentedPopJumpIfTrue = 241,    // Placeholder
-    InstrumentedPopJumpIfFalse = 242,   // Placeholder
-    InstrumentedPopJumpIfNone = 243,    // Placeholder
-    InstrumentedPopJumpIfNotNone = 244, // Placeholder
-    InstrumentedResume = 245,           // Placeholder
-    InstrumentedReturnValue = 246,      // Placeholder
-    InstrumentedYieldValue = 247,       // Placeholder
-    InstrumentedEndAsyncFor = 248,      // Placeholder
-    InstrumentedLoadSuperAttr = 249,    // Placeholder
-    InstrumentedCall = 250,             // Placeholder
-    InstrumentedCallKw = 251,           // Placeholder
-    InstrumentedCallFunctionEx = 252,   // Placeholder
-    InstrumentedJumpBackward = 253,     // Placeholder
-    InstrumentedLine = 254,             // Placeholder
-    EnterExecutor = 255,                // Placeholder
+    InstrumentedEndFor = 234,                   // Placeholder
+    InstrumentedPopIter = 235,                  // Placeholder
+    InstrumentedEndSend = 236,                  // Placeholder
+    InstrumentedForIter = 237,                  // Placeholder
+    InstrumentedInstruction = 238,              // Placeholder
+    InstrumentedJumpForward = 239,              // Placeholder
+    InstrumentedNotTaken = 240,                 // Placeholder
+    InstrumentedPopJumpIfTrue = 241,            // Placeholder
+    InstrumentedPopJumpIfFalse = 242,           // Placeholder
+    InstrumentedPopJumpIfNone = 243,            // Placeholder
+    InstrumentedPopJumpIfNotNone = 244,         // Placeholder
+    InstrumentedResume = 245,                   // Placeholder
+    InstrumentedReturnValue = 246,              // Placeholder
+    InstrumentedYieldValue = 247,               // Placeholder
+    InstrumentedEndAsyncFor = 248,              // Placeholder
+    InstrumentedLoadSuperAttr = 249,            // Placeholder
+    InstrumentedCall = 250,                     // Placeholder
+    InstrumentedCallKw = 251,                   // Placeholder
+    InstrumentedCallFunctionEx = 252,           // Placeholder
+    InstrumentedJumpBackward = 253,             // Placeholder
+    InstrumentedLine = 254,                     // Placeholder
+    EnterExecutor = 255,                        // Placeholder
 }
 
 const _: () = assert!(mem::size_of::<Opcode>() == 1);
