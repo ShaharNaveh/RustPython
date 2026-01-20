@@ -4,14 +4,16 @@ use crate::{
     bytecode::{
         BorrowedConstant, Constant, InstrDisplayContext,
         oparg::{
-            BinaryOperator, BuildSliceArgCount, ComparisonOperator, ConvertValueOparg,
+            AnyOparg, BinaryOperator, BuildSliceArgCount, ComparisonOperator, ConvertValueOparg,
             IntrinsicFunction1, IntrinsicFunction2, Invert, Label, MakeFunctionFlags, NameIdx,
             OpArg, OpArgByte, OpArgType, RaiseKind, SpecialMethod, UnpackExArgs,
         },
+        opcode::AnyOpcode,
     },
     marshal::MarshalError,
 };
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 /// A Single bytecode instruction that are executed by the VM.
 ///
@@ -861,6 +863,16 @@ impl TryFrom<u8> for Instruction {
 
 =======
 >>>>>>> 676878c4d (Move to another file)
+||||||| parent of de1844aad (save)
+=======
+/// Single bytecode instruction that is executed by the VM.
+#[derive(Clone, Copy, Debug)]
+struct Instruction {
+    opcode: AnyOpcode,
+    oparg: Option<AnyOparg>,
+}
+
+>>>>>>> de1844aad (save)
 impl InstructionMetadata for Instruction {
     #[inline]
     fn label_arg(&self) -> Option<Arg<Label>> {
@@ -1371,6 +1383,7 @@ impl InstructionMetadata for Instruction {
     }
 }
 
+<<<<<<< HEAD
 /// Instructions used by the compiler. They are not executed by the VM.
 ///
 /// CPython 3.14.2 aligned (256-266).
@@ -1417,6 +1430,71 @@ impl TryFrom<u16> for PseudoInstruction {
     }
 }
 
+||||||| parent of de1844aad (save)
+/// Instructions used by the compiler. They are not executed by the VM.
+#[derive(Clone, Copy, Debug)]
+#[repr(u16)]
+pub enum PseudoInstruction {
+    Jump {
+        target: Arg<Label>,
+    } = 256,
+    JumpNoInterrupt {
+        target: Arg<Label>,
+    } = 257, // Placeholder
+    Reserved258 = 258,
+    LoadAttrMethod {
+        idx: Arg<NameIdx>,
+    } = 259,
+    // "Zero" variants are for 0-arg super() calls (has_class=false).
+    // Non-"Zero" variants are for 2-arg super(cls, self) calls (has_class=true).
+    /// 2-arg super(cls, self).method() - has_class=true, load_method=true
+    LoadSuperMethod {
+        idx: Arg<NameIdx>,
+    } = 260,
+    LoadZeroSuperAttr {
+        idx: Arg<NameIdx>,
+    } = 261,
+    LoadZeroSuperMethod {
+        idx: Arg<NameIdx>,
+    } = 262,
+    PopBlock = 263,
+    SetupCleanup = 264,       // Placeholder
+    SetupFinally = 265,       // Placeholder
+    SetupWith = 266,          // Placeholder
+    StoreFastMaybeNull = 267, // Placeholder
+    LoadClosure(Arg<NameIdx>) = 268,
+}
+
+const _: () = assert!(mem::size_of::<PseudoInstruction>() == 2);
+
+impl From<PseudoInstruction> for u16 {
+    #[inline]
+    fn from(ins: PseudoInstruction) -> Self {
+        // SAFETY: there's no padding bits
+        unsafe { mem::transmute::<PseudoInstruction, Self>(ins) }
+    }
+}
+
+impl TryFrom<u16> for PseudoInstruction {
+    type Error = MarshalError;
+
+    #[inline]
+    fn try_from(value: u16) -> Result<Self, MarshalError> {
+        let start = u16::from(Self::Jump {
+            target: Arg::marker(),
+        });
+        let end = u16::from(Self::LoadClosure(Arg::marker()));
+
+        if (start..=end).contains(&value) {
+            Ok(unsafe { mem::transmute::<u16, Self>(value) })
+        } else {
+            Err(Self::Error::InvalidBytecode)
+        }
+    }
+}
+
+=======
+>>>>>>> de1844aad (save)
 impl InstructionMetadata for PseudoInstruction {
     fn label_arg(&self) -> Option<Arg<Label>> {
         match self {
@@ -1604,61 +1682,6 @@ pub trait InstructionMetadata {
 
     fn display(&self, arg: OpArg, ctx: &impl InstrDisplayContext) -> impl fmt::Display {
         fmt::from_fn(move |f| self.fmt_dis(arg, f, ctx, false, 0, 0))
-    }
-}
-
-#[derive(Copy, Clone)]
-pub struct Arg<T: OpArgType>(PhantomData<T>);
-
-impl<T: OpArgType> Arg<T> {
-    #[inline]
-    pub const fn marker() -> Self {
-        Self(PhantomData)
-    }
-
-    #[inline]
-    pub fn new(arg: T) -> (Self, OpArg) {
-        (Self(PhantomData), OpArg(arg.to_op_arg()))
-    }
-
-    #[inline]
-    pub fn new_single(arg: T) -> (Self, OpArgByte)
-    where
-        T: Into<u8>,
-    {
-        (Self(PhantomData), OpArgByte(arg.into()))
-    }
-
-    #[inline(always)]
-    pub fn get(self, arg: OpArg) -> T {
-        self.try_get(arg).unwrap()
-    }
-
-    #[inline(always)]
-    pub fn try_get(self, arg: OpArg) -> Option<T> {
-        T::from_op_arg(arg.0)
-    }
-
-    /// # Safety
-    /// T::from_op_arg(self) must succeed
-    #[inline(always)]
-    pub unsafe fn get_unchecked(self, arg: OpArg) -> T {
-        // SAFETY: requirements forwarded from caller
-        unsafe { T::from_op_arg(arg.0).unwrap_unchecked() }
-    }
-}
-
-impl<T: OpArgType> PartialEq for Arg<T> {
-    fn eq(&self, _: &Self) -> bool {
-        true
-    }
-}
-
-impl<T: OpArgType> Eq for Arg<T> {}
-
-impl<T: OpArgType> fmt::Debug for Arg<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Arg<{}>", core::any::type_name::<T>())
     }
 }
 

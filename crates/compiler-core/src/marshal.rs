@@ -20,6 +20,13 @@ pub enum MarshalError {
     BadType,
 }
 
+impl MarshalError {
+    /// Useful for creating enums with the "num_enum" crate.
+    pub(crate) const fn new_invalid_bytecode<T>(_: T) -> MarshalError {
+        MarshalError::InvalidBytecode
+    }
+}
+
 impl core::fmt::Display for MarshalError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {

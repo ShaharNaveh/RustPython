@@ -1,14 +1,9 @@
 use bitflags::bitflags;
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 use core::{fmt, num::NonZeroU8};
 
 use crate::bytecode::{CodeUnit, instruction::Instruction};
-
-pub trait OpArgType: Copy {
-    fn from_op_arg(x: u32) -> Option<Self>;
-
-    fn to_op_arg(self) -> u32;
-}
 
 /// Opcode argument that may be extended by a prior ExtendedArg.
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -105,13 +100,16 @@ impl OpArgState {
 /// - [CPython FVC_* flags](https://github.com/python/cpython/blob/8183fa5e3f78ca6ab862de7fb8b14f3d929421e0/Include/ceval.h#L129-L132)
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub enum ConvertValueOparg {
+#[num_enum(error_type(name = MarshalError, constructor = MarshalError::new_invalid_bytecode))]
+pub enum ConvertValue {
     /// No conversion.
     ///
     /// ```python
     /// f"{x}"
     /// f"{x:4}"
     /// ```
+    // Ruff `ConversionFlag::None` is `-1i8`, when its converted to `u8` its value is `u8::MAX`.
+    #[num_enum(alternatives = [255])]
     None = 0,
     /// Converts by calling `str(<value>)`.
     ///
@@ -150,91 +148,16 @@ impl fmt::Display for ConvertValueOparg {
     }
 }
 
-impl OpArgType for ConvertValueOparg {
-    #[inline]
-    fn from_op_arg(x: u32) -> Option<Self> {
-        Some(match x {
-            // Ruff `ConversionFlag::None` is `-1i8`,
-            // when its converted to `u8` its value is `u8::MAX`
-            0 | 255 => Self::None,
-            1 => Self::Str,
-            2 => Self::Repr,
-            3 => Self::Ascii,
-            _ => return None,
-        })
-    }
-
-    #[inline]
-    fn to_op_arg(self) -> u32 {
-        self as u32
-    }
-}
-
 /// Resume type for the RESUME instruction
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-#[repr(u32)]
+#[repr(u8)]
+#[num_enum(error_type(name = MarshalError, constructor = MarshalError::new_invalid_bytecode))]
 pub enum ResumeType {
     AtFuncStart = 0,
     AfterYield = 1,
     AfterYieldFrom = 2,
     AfterAwait = 3,
 }
-
-impl OpArgType for u32 {
-    #[inline(always)]
-    fn from_op_arg(x: u32) -> Option<Self> {
-        Some(x)
-    }
-
-    #[inline(always)]
-    fn to_op_arg(self) -> u32 {
-        self
-    }
-}
-
-impl OpArgType for bool {
-    #[inline(always)]
-    fn from_op_arg(x: u32) -> Option<Self> {
-        Some(x != 0)
-    }
-
-    #[inline(always)]
-    fn to_op_arg(self) -> u32 {
-        self as u32
-    }
-}
-
-macro_rules! op_arg_enum_impl {
-    (enum $name:ident { $($(#[$var_attr:meta])* $var:ident = $value:literal,)* }) => {
-        impl OpArgType for $name {
-            fn to_op_arg(self) -> u32 {
-                self as u32
-            }
-
-            fn from_op_arg(x: u32) -> Option<Self> {
-                Some(match u8::try_from(x).ok()? {
-                    $($value => Self::$var,)*
-                    _ => return None,
-                })
-            }
-        }
-    };
-}
-
-macro_rules! op_arg_enum {
-    ($(#[$attr:meta])* $vis:vis enum $name:ident { $($(#[$var_attr:meta])* $var:ident = $value:literal,)* }) => {
-        $(#[$attr])*
-        $vis enum $name {
-            $($(#[$var_attr])* $var = $value,)*
-        }
-
-        op_arg_enum_impl!(enum $name {
-            $($(#[$var_attr])* $var = $value,)*
-        });
-    };
-}
-
-pub type NameIdx = u32;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
 #[repr(transparent)]
@@ -596,16 +519,16 @@ pub struct UnpackExArgs {
     pub after: u8,
 }
 
-impl OpArgType for UnpackExArgs {
-    #[inline(always)]
-    fn from_op_arg(x: u32) -> Option<Self> {
-        let [before, after, ..] = x.to_le_bytes();
-        Some(Self { before, after })
+impl From<u32> for UnpackExArgs {
+    fn from(value: u32) -> Self {
+        let [before, after, ..] = value.to_le_bytes();
+        Self { before, after }
     }
+}
 
-    #[inline(always)]
-    fn to_op_arg(self) -> u32 {
-        u32::from_le_bytes([self.before, self.after, 0, 0])
+impl From<UnpackExArgs> for u32 {
+    fn from(value: UnpackExArgs) -> Self {
+        Self::from_le_bytes([value.before, value.after, 0, 0])
     }
 }
 
@@ -613,4 +536,13 @@ impl fmt::Display for UnpackExArgs {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "before: {}, after: {}", self.before, self.after)
     }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum AnyOparg {
+    ConvertValue(ConvertValue),
+    Invert(Invert),
+    Label(Label),
+    ResumeType(ResumeType),
+    UnpackExArgs(UnpackExArgs),
 }

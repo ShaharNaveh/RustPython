@@ -4,16 +4,12 @@ use num_enum::TryFromPrimitive;
 
 use crate::marshal::MarshalError;
 
-const fn new_invalid_bytecode<T>(_: T) -> MarshalError {
-    MarshalError::InvalidBytecode
-}
-
 /// VM opcodes of CPython 3.14.
 ///
 /// ## See also
 /// - [CPython opcode IDs](https://github.com/python/cpython/blob/v3.14.2/Include/opcode_ids.h)
 #[derive(Clone, Copy, Debug, TryFromPrimitive)]
-#[num_enum(error_type(name = MarshalError, constructor = new_invalid_bytecode))]
+#[num_enum(error_type(name = MarshalError, constructor = MarshalError::new_invalid_bytecode))]
 #[repr(u8)]
 pub enum Opcode {
     Cache = 0,       // Placeholder
@@ -267,7 +263,7 @@ const _: () = assert!(mem::size_of::<Opcode>() == 1);
 
 /// Opcodes that are used by the compiler. They are not executed by the VM.
 #[derive(Clone, Copy, Debug, TryFromPrimitive)]
-#[num_enum(error_type(name = MarshalError, constructor = new_invalid_bytecode))]
+#[num_enum(error_type(name = MarshalError, constructor = MarshalError::new_invalid_bytecode))]
 #[repr(u16)]
 pub enum PseudoOpcode {
     AnnotationsPlaceholder = 256, // Placeholder
