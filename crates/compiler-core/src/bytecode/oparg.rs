@@ -8,7 +8,7 @@ use crate::bytecode::{
     opcode::{AnyOpcode, Opcode, PseudoOpcode},
 };
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub enum AnyOparg {
     BinaryOperator(BinaryOperator),
     BuildSliceArgCount(BuildSliceArgCount),
@@ -29,6 +29,62 @@ pub enum AnyOparg {
     UnpackExArgs(UnpackExArgs),
 }
 
+struct OpargConstructor;
+
+impl OpargConstructor {
+    const INVERT_FN: fn(u32) -> AnyOparg = |v| Invert::try_from(v).map(Into::into);
+    const LABEL_FN: fn(u32) -> AnyOparg = |v| Ok(Label::from(v).into());
+    const NAME_IDX_FN: fn(u32) -> AnyOparg = |v| Ok(NameIdx::from(v).into());
+    const RAW_FN: fn(u32) -> AnyOparg = |v| Ok(v.into());
+
+    fn new(opcode: AnyOpcode) -> Option<impl Fn(u32) -> Result<AnyOparg, MarshalError>> {
+        match opcode {
+            AnyOpcode::Real(op) => Self::from_opcode(op),
+            AnyOpcode::Pseudo(op) => Self::from_pseudo_opcode(op),
+        }
+    }
+
+    fn from_opcode(opcode: Opcode) -> Option<impl Fn(u32) -> Result<AnyOparg, MarshalError>> {
+        todo!()
+    }
+
+    fn from_pseudo_opcode(
+        opcode: PseudoOpcode,
+    ) -> Option<impl Fn(u32) -> Result<AnyOparg, MarshalError>> {
+        todo!()
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct AnyOpargBuilder {
+    opcode: AnyOpcode,
+    oparg: Option<u32>,
+}
+
+impl AnyOpargBuilder {
+    pub const fn new(opcode: AnyOpcode) -> Self {
+        Self { opcode, None }
+    }
+
+    pub const fn oparg(mut self, oparg: u32) -> Self {
+        self.oparg = Some(oparg);
+        self
+    }
+
+    pub fn build(self) -> Result<Option<AnyOparg>, MarshalError> {
+        match opcode {
+            AnyOpcode::Real(op) => self.build_opcode(op),
+            AnyOpcode::Pseudo(op) => self.build_pseudo_opcode(op),
+        }
+    }
+
+    fn oparg_constructor<F>(self) -> Option<F>
+    where
+        F: Fn(u32) -> Result<Option<AnyOparg>, MarshalError>,
+    {
+    }
+}
+
 impl AnyOparg {
     pub fn from_any_opcode(
         self,
@@ -41,7 +97,11 @@ impl AnyOparg {
         }
     }
 
-    pub fn from_opcode(self, opcode: Opcode, value: u32) -> Result<Option<Self>, MarshalError> {
+    pub fn from_opcode(
+        self,
+        opcode: Opcode,
+        value: Option<u32>,
+    ) -> Result<Option<Self>, MarshalError> {
         let oparg = match opcode {
             Opcode::Cache => None,
             Opcode::BinarySlice => None,
@@ -281,6 +341,10 @@ impl AnyOparg {
         value: u32,
     ) -> Result<Option<Self>, MarshalError> {
         None // TODO
+    }
+
+    pub const fn builder(opcode: AnyOpcode) -> AnyOpargBuilder {
+        AnyOpargBuilder::new(opcode)
     }
 }
 
