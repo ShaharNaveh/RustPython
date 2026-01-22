@@ -37,6 +37,7 @@ impl OpargConstructor {
     const NAME_IDX_FN: fn(u32) -> AnyOparg = |v| Ok(NameIdx::from(v).into());
     const RAW_FN: fn(u32) -> AnyOparg = |v| Ok(v.into());
 
+    /// FIXME: Add docs
     const fn new(opcode: AnyOpcode) -> Option<impl Fn(u32) -> Result<AnyOparg, MarshalError>> {
         match opcode {
             AnyOpcode::Real(op) => Self::from_opcode(op),
@@ -44,6 +45,7 @@ impl OpargConstructor {
         }
     }
 
+    /// FIXME: Add docs
     const fn from_opcode(opcode: Opcode) -> Option<impl Fn(u32) -> Result<AnyOparg, MarshalError>> {
         Some(match opcode {
             Opcode::Cache => return None,
@@ -276,6 +278,7 @@ impl OpargConstructor {
         })
     }
 
+    /// FIXME: Add docs
     const fn from_pseudo_opcode(
         opcode: PseudoOpcode,
     ) -> Option<impl Fn(u32) -> Result<AnyOparg, MarshalError>> {
@@ -299,6 +302,7 @@ impl OpargConstructor {
     }
 }
 
+/// FIXME: Add docs
 #[derive(Clone, Copy)]
 pub struct AnyOpargBuilder {
     opcode: AnyOpcode,
@@ -306,15 +310,18 @@ pub struct AnyOpargBuilder {
 }
 
 impl AnyOpargBuilder {
+    /// FIXME: Add docs
     pub const fn new(opcode: AnyOpcode) -> Self {
         Self { opcode, None }
     }
 
+    /// FIXME: Add docs
     pub const fn oparg(mut self, oparg: u32) -> Self {
         self.oparg = Some(oparg);
         self
     }
 
+    /// FIXME: Add docs
     pub fn build(self) -> Result<Option<AnyOparg>, MarshalError> {
         Ok(match OpargConstructor::new(self.opcode) {
             Some(f) => match self.oparg {
@@ -327,6 +334,7 @@ impl AnyOpargBuilder {
 }
 
 impl AnyOparg {
+    /// FIXME: Add docs
     pub const fn builder(opcode: AnyOpcode) -> AnyOpargBuilder {
         AnyOpargBuilder::new(opcode)
     }
@@ -344,7 +352,7 @@ impl From<u32> for StoreFastLoadFast {
     }
 }
 
-/// Opcode argument that may be extended by a prior ExtendedArg.
+/// Opcode argument that may be extended by a prior [`Opcode::ExtendedArg`].
 #[derive(Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct OpArgByte(pub u8);
@@ -365,7 +373,7 @@ impl fmt::Debug for OpArgByte {
     }
 }
 
-/// Full 32-bit op_arg, including any possible ExtendedArg extension.
+/// Full 32-bit op_arg, including any possible [`Opcode::ExtendedArg`] extension.
 #[derive(Copy, Clone, Debug)]
 #[repr(transparent)]
 pub struct OpArg(pub u32);
@@ -408,9 +416,9 @@ pub struct OpArgState {
 
 impl OpArgState {
     #[inline(always)]
-    pub fn get(&mut self, ins: CodeUnit) -> (Instruction, OpArg) {
+    pub fn get(&mut self, ins: CodeUnit) -> (Opcode, OpArg) {
         let arg = self.extend(ins.arg);
-        if !matches!(ins.op, Instruction::ExtendedArg) {
+        if !matches!(ins.op, Opcode::ExtendedArg) {
             self.reset();
         }
         (ins.op, arg)
@@ -428,7 +436,7 @@ impl OpArgState {
     }
 }
 
-/// Oparg values for [`Instruction::ConvertValue`].
+/// Oparg values for [`Opcode::ConvertValue`].
 ///
 /// ## See also
 ///
@@ -689,15 +697,7 @@ pub enum ComparisonOperator {
     GreaterOrEqual = 0b110,
 }
 
-/// The possible Binary operators.
-///
-/// # Examples
-///
-/// ```rust
-/// use rustpython_compiler_core::bytecode::{Arg, BinaryOperator, Instruction};
-/// let (op, _) = Arg::new(BinaryOperator::Add);
-/// let instruction = Instruction::BinaryOp { op };
-/// ```
+/// The possible binary operators.
 ///
 /// See also:
 /// - [_PyEval_BinaryOps](https://github.com/python/cpython/blob/8183fa5e3f78ca6ab862de7fb8b14f3d929421e0/Python/ceval.c#L316-L343)
