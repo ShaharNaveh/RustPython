@@ -319,3 +319,34 @@ impl TryFrom<u16> for AnyOpcode {
         }
     }
 }
+
+pub trait OpcodeMetadata {
+    fn is_scope_exit(self) -> bool;
+
+    fn is_unconditional_jump(self) -> bool;
+}
+
+impl OpcodeMetadata for Opcode {
+    fn is_scope_exit(self) -> bool {
+        matches!(self, Self::ReturnValue, Self::RaiseVarargs, Self::Raise)
+    }
+
+    fn is_unconditional_jump(self) -> bool {
+        matches!(self, Self::JumpForward, Self::JumpBackward)
+    }
+}
+
+impl OpcodeMetadata for PseudoOpcode {
+    fn is_scope_exit(self) -> bool {
+        false
+    }
+
+    fn is_unconditional_jump(self) -> bool {
+        matches!(
+            self,
+            Self::Jump,
+            Self::JumpNoInterrupt,
+            Self::JumpBackwardNoInterrupt,
+        )
+    }
+}
