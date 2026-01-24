@@ -3,9 +3,13 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 use core::fmt;
 
-use crate::bytecode::{
-    CodeUnit,
-    opcode::{AnyOpcode, Opcode, PseudoOpcode},
+use crate::{
+    bytecode::{
+        CodeUnit,
+        instruction::Instruction,
+        opcode::{AnyOpcode, Opcode, PseudoOpcode},
+    },
+    marshal::MarshalError,
 };
 
 #[derive(Clone, Copy)]
@@ -100,12 +104,12 @@ impl OpargConstructor {
             Opcode::BuildSlice => |v| BuildSliceArgCount::try_from(v).map(Into::into),
             Opcode::BuildTuple => Self::RAW_FN,
             Opcode::Call => Self::RAW_FN,
-            Opcode::CallIntrinsic1 => |v| CallIntrinsic1::try_from(v).map(Into::into),
-            Opcode::CallIntrinsic2 => |v| CallIntrinsic2::try_from(v).map(Into::into),
+            Opcode::CallIntrinsic1 => |v| IntrinsicFunction1::try_from(v).map(Into::into),
+            Opcode::CallIntrinsic2 => |v| IntrinsicFunction2::try_from(v).map(Into::into),
             Opcode::CallKw => Self::RAW_FN,
             Opcode::CompareOp => |v| ComparisonOperator::try_from(v).map(Into::into),
             Opcode::ContainsOp => Self::INVERT_FN,
-            Opcode::ConvertValue => |v| ConvertValueOparg::try_from(v).map(Into::into),
+            Opcode::ConvertValue => |v| ConvertValue::try_from(v).map(Into::into),
             Opcode::Copy => Self::RAW_FN,
             Opcode::CopyFreeVars => Self::RAW_FN,
             Opcode::DeleteAttr => Self::NAME_IDX_FN,
@@ -416,12 +420,12 @@ pub struct OpArgState {
 
 impl OpArgState {
     #[inline(always)]
-    pub fn get(&mut self, ins: CodeUnit) -> (Opcode, OpArg) {
+    pub fn get(&mut self, ins: CodeUnit) -> Instruction {
         let arg = self.extend(ins.arg);
         if !matches!(ins.op, Opcode::ExtendedArg) {
             self.reset();
         }
-        (ins.op, arg)
+        Instruction::new(ins.op, arg)
     }
 
     #[inline(always)]
@@ -477,7 +481,7 @@ pub enum ConvertValue {
     Ascii = 3,
 }
 
-impl fmt::Display for ConvertValueOparg {
+impl fmt::Display for ConvertValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let out = match self {
             Self::Str => "1 (str)",
@@ -491,8 +495,8 @@ impl fmt::Display for ConvertValueOparg {
     }
 }
 
-/// Resume type for the RESUME instruction
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+/// Resume type for [`Opcode::Resume`].
+#[derive(Copy, Clone, Debug, Hash, IntoPrimitive, PartialEq, Eq)]
 #[num_enum(error_type(name = MarshalError, constructor = MarshalError::new_invalid_bytecode))]
 #[repr(u8)]
 pub enum ResumeType {
@@ -826,6 +830,7 @@ impl fmt::Display for SpecialMethod {
 /// Specifies if a slice is built with either 2 or 3 arguments.
 #[derive(Clone, Copy, Debug, IntoPrimitive, TryFromPrimitive)]
 #[num_enum(error_type(name = MarshalError, constructor = MarshalError::new_invalid_bytecode))]
+#[repr(u8)]
 pub enum BuildSliceArgCount {
     /// ```py
     /// x[5:10]

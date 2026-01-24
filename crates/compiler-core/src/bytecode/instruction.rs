@@ -3,7 +3,7 @@ use core::{fmt, marker::PhantomData, mem};
 use crate::{
     bytecode::{
         BorrowedConstant, Constant, InstrDisplayContext,
-        oparg::{AnyOparg, OpArg, OpArgByte},
+        oparg::{AnyOparg, OpArg, OpArgByte, RaiseKind},
         opcode::{AnyOpcode, Opcode, PseudoOpcode},
     },
     marshal::MarshalError,
@@ -317,181 +317,184 @@ impl Instruction {
         pad: usize,
         level: usize,
     ) -> fmt::Result {
-        macro_rules! w {
-            ($variant:ident) => {
-                write!(f, stringify!($variant))
-            };
-            ($variant:ident, $map:ident = $arg_marker:expr) => {{
-                let arg = $arg_marker.get(arg);
-                write!(f, "{:pad$}({}, {})", stringify!($variant), arg, $map(arg))
-            }};
-            ($variant:ident, $arg_marker:expr) => {
-                write!(f, "{:pad$}({})", stringify!($variant), $arg_marker.get(arg))
-            };
-            ($variant:ident, ?$arg_marker:expr) => {
-                write!(
-                    f,
-                    "{:pad$}({:?})",
-                    stringify!($variant),
-                    $arg_marker.get(arg)
-                )
-            };
-        }
-
-        let varname = |i: u32| ctx.get_varname(i as usize);
-        let name = |i: u32| ctx.get_name(i as usize);
-        let cell_name = |i: u32| ctx.get_cell_name(i as usize);
-
-        let fmt_const =
-            |op: &str, arg: OpArg, f: &mut fmt::Formatter<'_>, idx: &Arg<u32>| -> fmt::Result {
-                let value = ctx.get_constant(idx.get(arg) as usize);
-                match value.borrow_constant() {
-                    BorrowedConstant::Code { code } if expand_code_objects => {
-                        write!(f, "{op:pad$}({code:?}):")?;
-                        code.display_inner(f, true, level + 1)?;
-                        Ok(())
-                    }
-                    c => {
-                        write!(f, "{op:pad$}(")?;
-                        c.fmt_display(f)?;
-                        write!(f, ")")
-                    }
-                }
-            };
-
-        match self {
-            Self::BinaryOp => write!(f, "{:pad$}({})", "BINARY_OP", op.get(arg)),
-            Self::BuildList { size } => w!(BUILD_LIST, size),
-            Self::BuildMap { size } => w!(BUILD_MAP, size),
-            Self::BuildSet { size } => w!(BUILD_SET, size),
-            Self::BuildSlice { argc } => w!(BUILD_SLICE, ?argc),
-            Self::BuildString { size } => w!(BUILD_STRING, size),
-            Self::BuildTuple { size } => w!(BUILD_TUPLE, size),
-            Self::Call { nargs } => w!(CALL, nargs),
-            Self::CallFunctionEx => w!(CALL_FUNCTION_EX),
-            Self::CallKw { nargs } => w!(CALL_KW, nargs),
-            Self::CallIntrinsic1 { func } => w!(CALL_INTRINSIC_1, ?func),
-            Self::CallIntrinsic2 { func } => w!(CALL_INTRINSIC_2, ?func),
-            Self::CheckEgMatch => w!(CHECK_EG_MATCH),
-            Self::CheckExcMatch => w!(CHECK_EXC_MATCH),
-            Self::CleanupThrow => w!(CLEANUP_THROW),
-            Self::CompareOp => w!(COMPARE_OP, ?op),
-            Self::ContainsOp(inv) => w!(CONTAINS_OP, ?inv),
-            Self::ConvertValue { oparg } => write!(f, "{:pad$}{}", "CONVERT_VALUE", oparg.get(arg)),
-            Self::Copy { index } => w!(COPY, index),
-            Self::DeleteAttr { idx } => w!(DELETE_ATTR, name = idx),
-            Self::DeleteDeref(idx) => w!(DELETE_DEREF, cell_name = idx),
-            Self::DeleteFast(idx) => w!(DELETE_FAST, varname = idx),
-            Self::DeleteGlobal(idx) => w!(DELETE_GLOBAL, name = idx),
-            Self::DeleteName(idx) => w!(DELETE_NAME, name = idx),
-            Self::DeleteSubscr => w!(DELETE_SUBSCR),
-            Self::DictMerge { index } => w!(DICT_MERGE, index),
-            Self::DictUpdate { index } => w!(DICT_UPDATE, index),
-            Self::EndAsyncFor => w!(END_ASYNC_FOR),
-            Self::EndSend => w!(END_SEND),
-            Self::ExtendedArg => w!(EXTENDED_ARG, Arg::<u32>::marker()),
-            Self::ForIter { target } => w!(FOR_ITER, target),
-            Self::FormatSimple => w!(FORMAT_SIMPLE),
-            Self::FormatWithSpec => w!(FORMAT_WITH_SPEC),
-            Self::GetAIter => w!(GET_AITER),
-            Self::GetANext => w!(GET_ANEXT),
-            Self::GetAwaitable => w!(GET_AWAITABLE),
-            Self::Reserved => w!(RESERVED),
-            Self::GetIter => w!(GET_ITER),
-            Self::GetLen => w!(GET_LEN),
-            Self::ImportFrom { idx } => w!(IMPORT_FROM, name = idx),
-            Self::ImportName { idx } => w!(IMPORT_NAME, name = idx),
-            Self::IsOp(inv) => w!(IS_OP, ?inv),
-            Self::JumpBackward { target } => w!(JUMP_BACKWARD, target),
-            Self::JumpBackwardNoInterrupt { target } => w!(JUMP_BACKWARD_NO_INTERRUPT, target),
-            Self::JumpForward { target } => w!(JUMP_FORWARD, target),
-            Self::ListAppend { i } => w!(LIST_APPEND, i),
-            Self::ListExtend { i } => w!(LIST_EXTEND, i),
-            Self::LoadAttr { idx } => {
-                let encoded = idx.get(arg);
-                let (name_idx, is_method) = decode_load_attr_arg(encoded);
-                let attr_name = name(name_idx);
-                if is_method {
+        todo!()
+        /*
+            macro_rules! w {
+                ($variant:ident) => {
+                    write!(f, stringify!($variant))
+                };
+                ($variant:ident, $map:ident = $arg_marker:expr) => {{
+                    let arg = $arg_marker.get(arg);
+                    write!(f, "{:pad$}({}, {})", stringify!($variant), arg, $map(arg))
+                }};
+                ($variant:ident, $arg_marker:expr) => {
+                    write!(f, "{:pad$}({})", stringify!($variant), $arg_marker.get(arg))
+                };
+                ($variant:ident, ?$arg_marker:expr) => {
                     write!(
                         f,
-                        "{:pad$}({}, {}, method=true)",
-                        "LOAD_ATTR", encoded, attr_name
+                        "{:pad$}({:?})",
+                        stringify!($variant),
+                        $arg_marker.get(arg)
                     )
-                } else {
-                    write!(f, "{:pad$}({}, {})", "LOAD_ATTR", encoded, attr_name)
+                };
+            }
+
+            let varname = |i: u32| ctx.get_varname(i as usize);
+            let name = |i: u32| ctx.get_name(i as usize);
+            let cell_name = |i: u32| ctx.get_cell_name(i as usize);
+
+            let fmt_const =
+                |op: &str, arg: OpArg, f: &mut fmt::Formatter<'_>, idx: &Arg<u32>| -> fmt::Result {
+                    let value = ctx.get_constant(idx.get(arg) as usize);
+                    match value.borrow_constant() {
+                        BorrowedConstant::Code { code } if expand_code_objects => {
+                            write!(f, "{op:pad$}({code:?}):")?;
+                            code.display_inner(f, true, level + 1)?;
+                            Ok(())
+                        }
+                        c => {
+                            write!(f, "{op:pad$}(")?;
+                            c.fmt_display(f)?;
+                            write!(f, ")")
+                        }
+                    }
+                };
+
+            match self {
+                Self::BinaryOp => write!(f, "{:pad$}({})", "BINARY_OP", op.get(arg)),
+                Self::BuildList { size } => w!(BUILD_LIST, size),
+                Self::BuildMap { size } => w!(BUILD_MAP, size),
+                Self::BuildSet { size } => w!(BUILD_SET, size),
+                Self::BuildSlice { argc } => w!(BUILD_SLICE, ?argc),
+                Self::BuildString { size } => w!(BUILD_STRING, size),
+                Self::BuildTuple { size } => w!(BUILD_TUPLE, size),
+                Self::Call { nargs } => w!(CALL, nargs),
+                Self::CallFunctionEx => w!(CALL_FUNCTION_EX),
+                Self::CallKw { nargs } => w!(CALL_KW, nargs),
+                Self::CallIntrinsic1 { func } => w!(CALL_INTRINSIC_1, ?func),
+                Self::CallIntrinsic2 { func } => w!(CALL_INTRINSIC_2, ?func),
+                Self::CheckEgMatch => w!(CHECK_EG_MATCH),
+                Self::CheckExcMatch => w!(CHECK_EXC_MATCH),
+                Self::CleanupThrow => w!(CLEANUP_THROW),
+                Self::CompareOp => w!(COMPARE_OP, ?op),
+                Self::ContainsOp(inv) => w!(CONTAINS_OP, ?inv),
+                Self::ConvertValue { oparg } => write!(f, "{:pad$}{}", "CONVERT_VALUE", oparg.get(arg)),
+                Self::Copy { index } => w!(COPY, index),
+                Self::DeleteAttr { idx } => w!(DELETE_ATTR, name = idx),
+                Self::DeleteDeref(idx) => w!(DELETE_DEREF, cell_name = idx),
+                Self::DeleteFast(idx) => w!(DELETE_FAST, varname = idx),
+                Self::DeleteGlobal(idx) => w!(DELETE_GLOBAL, name = idx),
+                Self::DeleteName(idx) => w!(DELETE_NAME, name = idx),
+                Self::DeleteSubscr => w!(DELETE_SUBSCR),
+                Self::DictMerge { index } => w!(DICT_MERGE, index),
+                Self::DictUpdate { index } => w!(DICT_UPDATE, index),
+                Self::EndAsyncFor => w!(END_ASYNC_FOR),
+                Self::EndSend => w!(END_SEND),
+                Self::ExtendedArg => w!(EXTENDED_ARG, Arg::<u32>::marker()),
+                Self::ForIter { target } => w!(FOR_ITER, target),
+                Self::FormatSimple => w!(FORMAT_SIMPLE),
+                Self::FormatWithSpec => w!(FORMAT_WITH_SPEC),
+                Self::GetAIter => w!(GET_AITER),
+                Self::GetANext => w!(GET_ANEXT),
+                Self::GetAwaitable => w!(GET_AWAITABLE),
+                Self::Reserved => w!(RESERVED),
+                Self::GetIter => w!(GET_ITER),
+                Self::GetLen => w!(GET_LEN),
+                Self::ImportFrom { idx } => w!(IMPORT_FROM, name = idx),
+                Self::ImportName { idx } => w!(IMPORT_NAME, name = idx),
+                Self::IsOp(inv) => w!(IS_OP, ?inv),
+                Self::JumpBackward { target } => w!(JUMP_BACKWARD, target),
+                Self::JumpBackwardNoInterrupt { target } => w!(JUMP_BACKWARD_NO_INTERRUPT, target),
+                Self::JumpForward { target } => w!(JUMP_FORWARD, target),
+                Self::ListAppend { i } => w!(LIST_APPEND, i),
+                Self::ListExtend { i } => w!(LIST_EXTEND, i),
+                Self::LoadAttr { idx } => {
+                    let encoded = idx.get(arg);
+                    let (name_idx, is_method) = decode_load_attr_arg(encoded);
+                    let attr_name = name(name_idx);
+                    if is_method {
+                        write!(
+                            f,
+                            "{:pad$}({}, {}, method=true)",
+                            "LOAD_ATTR", encoded, attr_name
+                        )
+                    } else {
+                        write!(f, "{:pad$}({}, {})", "LOAD_ATTR", encoded, attr_name)
+                    }
                 }
+                Self::LoadBuildClass => w!(LOAD_BUILD_CLASS),
+                Self::LoadFromDictOrDeref(i) => w!(LOAD_FROM_DICT_OR_DEREF, cell_name = i),
+                Self::LoadConst { idx } => fmt_const("LOAD_CONST", arg, f, idx),
+                Self::LoadSmallInt { idx } => w!(LOAD_SMALL_INT, idx),
+                Self::LoadDeref(idx) => w!(LOAD_DEREF, cell_name = idx),
+                Self::LoadFast(idx) => w!(LOAD_FAST, varname = idx),
+                Self::LoadFastAndClear(idx) => w!(LOAD_FAST_AND_CLEAR, varname = idx),
+                Self::LoadGlobal(idx) => w!(LOAD_GLOBAL, name = idx),
+                Self::LoadName(idx) => w!(LOAD_NAME, name = idx),
+                Self::LoadSpecial { method } => w!(LOAD_SPECIAL, method),
+                Self::LoadSuperAttr { arg: idx } => {
+                    let encoded = idx.get(arg);
+                    let (name_idx, load_method, has_class) = decode_load_super_attr_arg(encoded);
+                    let attr_name = name(name_idx);
+                    write!(
+                        f,
+                        "{:pad$}({}, {}, method={}, class={})",
+                        "LOAD_SUPER_ATTR", encoded, attr_name, load_method, has_class
+                    )
+                }
+                Self::MakeFunction => w!(MAKE_FUNCTION),
+                Self::MapAdd { i } => w!(MAP_ADD, i),
+                Self::MatchClass(arg) => w!(MATCH_CLASS, arg),
+                Self::MatchKeys => w!(MATCH_KEYS),
+                Self::MatchMapping => w!(MATCH_MAPPING),
+                Self::MatchSequence => w!(MATCH_SEQUENCE),
+                Self::Nop => w!(NOP),
+                Self::PopExcept => w!(POP_EXCEPT),
+                Self::PopJumpIfFalse { target } => w!(POP_JUMP_IF_FALSE, target),
+                Self::PopJumpIfTrue { target } => w!(POP_JUMP_IF_TRUE, target),
+                Self::PopTop => w!(POP_TOP),
+                Self::EndFor => w!(END_FOR),
+                Self::PopIter => w!(POP_ITER),
+                Self::PushExcInfo => w!(PUSH_EXC_INFO),
+                Self::PushNull => w!(PUSH_NULL),
+                Self::RaiseVarargs { kind } => w!(RAISE_VARARGS, ?kind),
+                Self::Reraise { depth } => w!(RERAISE, depth),
+                Self::Resume { arg } => w!(RESUME, arg),
+                Self::ReturnValue => w!(RETURN_VALUE),
+                Self::Send { target } => w!(SEND, target),
+                Self::SetAdd { i } => w!(SET_ADD, i),
+                Self::SetFunctionAttribute { attr } => w!(SET_FUNCTION_ATTRIBUTE, ?attr),
+                Self::SetupAnnotations => w!(SETUP_ANNOTATIONS),
+                Self::SetUpdate { i } => w!(SET_UPDATE, i),
+                Self::StoreAttr { idx } => w!(STORE_ATTR, name = idx),
+                Self::StoreDeref(idx) => w!(STORE_DEREF, cell_name = idx),
+                Self::StoreFast(idx) => w!(STORE_FAST, varname = idx),
+                Self::StoreFastLoadFast {
+                    store_idx,
+                    load_idx,
+                } => {
+                    write!(f, "STORE_FAST_LOAD_FAST")?;
+                    write!(f, " ({}, {})", store_idx.get(arg), load_idx.get(arg))
+                }
+                Self::StoreGlobal(idx) => w!(STORE_GLOBAL, name = idx),
+                Self::StoreName(idx) => w!(STORE_NAME, name = idx),
+                Self::StoreSubscr => w!(STORE_SUBSCR),
+                Self::Swap { index } => w!(SWAP, index),
+                Self::ToBool => w!(TO_BOOL),
+                Self::UnpackEx { args } => w!(UNPACK_EX, args),
+                Self::UnpackSequence { size } => w!(UNPACK_SEQUENCE, size),
+                Self::WithExceptStart => w!(WITH_EXCEPT_START),
+                Self::UnaryInvert => w!(UNARY_INVERT),
+                Self::UnaryNegative => w!(UNARY_NEGATIVE),
+                Self::UnaryNot => w!(UNARY_NOT),
+                Self::YieldValue { arg } => w!(YIELD_VALUE, arg),
+                Self::GetYieldFromIter => w!(GET_YIELD_FROM_ITER),
+                Self::BuildTemplate => w!(BUILD_TEMPLATE),
+                Self::BuildInterpolation { oparg } => w!(BUILD_INTERPOLATION, oparg),
+                _ => w!(RUSTPYTHON_PLACEHOLDER),
             }
-            Self::LoadBuildClass => w!(LOAD_BUILD_CLASS),
-            Self::LoadFromDictOrDeref(i) => w!(LOAD_FROM_DICT_OR_DEREF, cell_name = i),
-            Self::LoadConst { idx } => fmt_const("LOAD_CONST", arg, f, idx),
-            Self::LoadSmallInt { idx } => w!(LOAD_SMALL_INT, idx),
-            Self::LoadDeref(idx) => w!(LOAD_DEREF, cell_name = idx),
-            Self::LoadFast(idx) => w!(LOAD_FAST, varname = idx),
-            Self::LoadFastAndClear(idx) => w!(LOAD_FAST_AND_CLEAR, varname = idx),
-            Self::LoadGlobal(idx) => w!(LOAD_GLOBAL, name = idx),
-            Self::LoadName(idx) => w!(LOAD_NAME, name = idx),
-            Self::LoadSpecial { method } => w!(LOAD_SPECIAL, method),
-            Self::LoadSuperAttr { arg: idx } => {
-                let encoded = idx.get(arg);
-                let (name_idx, load_method, has_class) = decode_load_super_attr_arg(encoded);
-                let attr_name = name(name_idx);
-                write!(
-                    f,
-                    "{:pad$}({}, {}, method={}, class={})",
-                    "LOAD_SUPER_ATTR", encoded, attr_name, load_method, has_class
-                )
-            }
-            Self::MakeFunction => w!(MAKE_FUNCTION),
-            Self::MapAdd { i } => w!(MAP_ADD, i),
-            Self::MatchClass(arg) => w!(MATCH_CLASS, arg),
-            Self::MatchKeys => w!(MATCH_KEYS),
-            Self::MatchMapping => w!(MATCH_MAPPING),
-            Self::MatchSequence => w!(MATCH_SEQUENCE),
-            Self::Nop => w!(NOP),
-            Self::PopExcept => w!(POP_EXCEPT),
-            Self::PopJumpIfFalse { target } => w!(POP_JUMP_IF_FALSE, target),
-            Self::PopJumpIfTrue { target } => w!(POP_JUMP_IF_TRUE, target),
-            Self::PopTop => w!(POP_TOP),
-            Self::EndFor => w!(END_FOR),
-            Self::PopIter => w!(POP_ITER),
-            Self::PushExcInfo => w!(PUSH_EXC_INFO),
-            Self::PushNull => w!(PUSH_NULL),
-            Self::RaiseVarargs { kind } => w!(RAISE_VARARGS, ?kind),
-            Self::Reraise { depth } => w!(RERAISE, depth),
-            Self::Resume { arg } => w!(RESUME, arg),
-            Self::ReturnValue => w!(RETURN_VALUE),
-            Self::Send { target } => w!(SEND, target),
-            Self::SetAdd { i } => w!(SET_ADD, i),
-            Self::SetFunctionAttribute { attr } => w!(SET_FUNCTION_ATTRIBUTE, ?attr),
-            Self::SetupAnnotations => w!(SETUP_ANNOTATIONS),
-            Self::SetUpdate { i } => w!(SET_UPDATE, i),
-            Self::StoreAttr { idx } => w!(STORE_ATTR, name = idx),
-            Self::StoreDeref(idx) => w!(STORE_DEREF, cell_name = idx),
-            Self::StoreFast(idx) => w!(STORE_FAST, varname = idx),
-            Self::StoreFastLoadFast {
-                store_idx,
-                load_idx,
-            } => {
-                write!(f, "STORE_FAST_LOAD_FAST")?;
-                write!(f, " ({}, {})", store_idx.get(arg), load_idx.get(arg))
-            }
-            Self::StoreGlobal(idx) => w!(STORE_GLOBAL, name = idx),
-            Self::StoreName(idx) => w!(STORE_NAME, name = idx),
-            Self::StoreSubscr => w!(STORE_SUBSCR),
-            Self::Swap { index } => w!(SWAP, index),
-            Self::ToBool => w!(TO_BOOL),
-            Self::UnpackEx { args } => w!(UNPACK_EX, args),
-            Self::UnpackSequence { size } => w!(UNPACK_SEQUENCE, size),
-            Self::WithExceptStart => w!(WITH_EXCEPT_START),
-            Self::UnaryInvert => w!(UNARY_INVERT),
-            Self::UnaryNegative => w!(UNARY_NEGATIVE),
-            Self::UnaryNot => w!(UNARY_NOT),
-            Self::YieldValue { arg } => w!(YIELD_VALUE, arg),
-            Self::GetYieldFromIter => w!(GET_YIELD_FROM_ITER),
-            Self::BuildTemplate => w!(BUILD_TEMPLATE),
-            Self::BuildInterpolation { oparg } => w!(BUILD_INTERPOLATION, oparg),
-            _ => w!(RUSTPYTHON_PLACEHOLDER),
-        }
+        */
     }
 }
 

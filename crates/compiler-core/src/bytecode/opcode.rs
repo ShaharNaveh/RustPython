@@ -328,11 +328,11 @@ pub trait OpcodeMetadata {
 
 impl OpcodeMetadata for Opcode {
     fn is_scope_exit(self) -> bool {
-        matches!(self, Self::ReturnValue, Self::RaiseVarargs, Self::Raise)
+        matches!(self, Self::ReturnValue | Self::RaiseVarargs | Self::Raise)
     }
 
     fn is_unconditional_jump(self) -> bool {
-        matches!(self, Self::JumpForward, Self::JumpBackward)
+        matches!(self, Self::JumpForward | Self::JumpBackward)
     }
 }
 
@@ -344,9 +344,7 @@ impl OpcodeMetadata for PseudoOpcode {
     fn is_unconditional_jump(self) -> bool {
         matches!(
             self,
-            Self::Jump,
-            Self::JumpNoInterrupt,
-            Self::JumpBackwardNoInterrupt,
+            Self::Jump | Self::JumpNoInterrupt | Self::JumpBackwardNoInterrupt
         )
     }
 }

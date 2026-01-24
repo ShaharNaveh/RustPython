@@ -16,14 +16,13 @@ use rustpython_wtf8::{Wtf8, Wtf8Buf};
 
 pub use crate::bytecode::{
     instruction::{
-        AnyInstruction, Arg, Instruction, InstructionMetadata, PseudoInstruction,
-        decode_load_attr_arg, decode_load_super_attr_arg, encode_load_attr_arg,
-        encode_load_super_attr_arg,
+        AnyInstruction, Instruction, InstructionMetadata, PseudoInstruction, decode_load_attr_arg,
+        decode_load_super_attr_arg, encode_load_attr_arg, encode_load_super_attr_arg,
     },
     oparg::{
         BinaryOperator, BuildSliceArgCount, ComparisonOperator, ConvertValueOparg,
         IntrinsicFunction1, IntrinsicFunction2, Invert, Label, MakeFunctionFlags, NameIdx, OpArg,
-        OpArgByte, OpArgState, OpArgType, RaiseKind, ResumeType, SpecialMethod, UnpackExArgs,
+        OpArgByte, OpArgState, RaiseKind, ResumeType, SpecialMethod, UnpackExArgs,
     },
 };
 
@@ -599,11 +598,14 @@ impl<C: Constant> CodeObject<C> {
         let mut label_targets = BTreeSet::new();
         let mut arg_state = OpArgState::default();
         for instruction in &*self.instructions {
-            let (instruction, arg) = arg_state.get(*instruction);
-            if let Some(l) = instruction.label_arg() {
-                label_targets.insert(l.get(arg));
+            let inst = arg_state.get(*instruction);
+            if let Some(oparg) = inst.oparg()
+                && let Some(label) = oparg.as_label()
+            {
+                label_targets.insert(label);
             }
         }
+
         label_targets
     }
 
@@ -641,7 +643,7 @@ impl<C: Constant> CodeObject<C> {
             }
 
             // arrow and offset
-            let arrow = if label_targets.contains(&Label(offset as u32)) {
+            let arrow = if label_targets.contains(&(offset as u32).into()) {
                 ">>"
             } else {
                 "  "
