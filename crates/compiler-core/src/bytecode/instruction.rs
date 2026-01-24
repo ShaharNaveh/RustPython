@@ -14,132 +14,134 @@ use crate::{
 pub struct Instruction {
     opcode: Opcode,
     oparg: Option<AnyOparg>,
-
 }
 impl Instruction {
     fn stack_effect(&self) -> i32 {
-       // Assume that we have a valid oparg for this instruction.
-        let oparg = self.oparg.map_or(0, |op| i32::from(op));
+        // Assume that we have a valid oparg for this instruction.
+        let oparg = self.oparg.map_or(0, |op| {
+            i32::try_from(u32::from(op)).expect("oparg does not fit in an i32")
+        });
+
         match self.opcode {
             Self::Nop => 0,
             Self::NotTaken => 0,
-            Self::ImportName { .. } => -1,
-            Self::ImportFrom { .. } => 1,
-            Self::LoadFast(_) => 1,
-            Self::LoadFastBorrow(_) => 1,
-            Self::LoadFastAndClear(_) => 1,
-            Self::LoadName(_) => 1,
-            Self::LoadGlobal(_) => 1,
-            Self::LoadDeref(_) => 1,
-            Self::StoreFast(_) => -1,
-            Self::StoreName(_) => -1,
-            Self::StoreGlobal(_) => -1,
-            Self::StoreDeref(_) => -1,
-            Self::StoreFastLoadFast { .. } => 0, // pop 1, push 1
-            Self::DeleteFast(_) => 0,
-            Self::DeleteName(_) => 0,
-            Self::DeleteGlobal(_) => 0,
-            Self::DeleteDeref(_) => 0,
-            Self::LoadFromDictOrDeref(_) => 1,
+            Self::ImportName => -1,
+            Self::ImportFrom => 1,
+            Self::LoadFast => 1,
+            Self::LoadFastBorrow => 1,
+            Self::LoadFastAndClear => 1,
+            Self::LoadName => 1,
+            Self::LoadGlobal => 1,
+            Self::LoadDeref => 1,
+            Self::StoreFast => -1,
+            Self::StoreName => -1,
+            Self::StoreGlobal => -1,
+            Self::StoreDeref => -1,
+            Self::StoreFastLoadFast => 0, // pop 1, push 1
+            Self::DeleteFast => 0,
+            Self::DeleteName => 0,
+            Self::DeleteGlobal => 0,
+            Self::DeleteDeref => 0,
+            Self::LoadFromDictOrDeref => 1,
             Self::StoreSubscr => -3,
             Self::DeleteSubscr => -2,
-            Self::LoadAttr { .. } => 0,
-            Self::StoreAttr { .. } => -2,
-            Self::DeleteAttr { .. } => -1,
-            Self::LoadCommonConstant { .. } => 1,
-            Self::LoadConst { .. } => 1,
-            Self::LoadSmallInt { .. } => 1,
-            Self::LoadSpecial { .. } => 0,
+            Self::LoadAttr => 0,
+            Self::StoreAttr => -2,
+            Self::DeleteAttr => -1,
+            Self::LoadCommonConstant => 1,
+            Self::LoadConst => 1,
+            Self::LoadSmallInt => 1,
+            Self::LoadSpecial => 0,
             Self::Reserved => 0,
-            Self::BinaryOp { .. } => -1,
-            Self::CompareOp { .. } => -1,
-            Self::Copy { .. } => 1,
+            Self::BinaryOp => -1,
+            Self::CompareOp => -1,
+            Self::Copy => 1,
             Self::PopTop => -1,
-            Self::Swap { .. } => 0,
+            Self::Swap => 0,
             Self::ToBool => 0,
             Self::GetIter => 0,
             Self::GetLen => 1,
-            Self::CallIntrinsic1 { .. } => 0,  // Takes 1, pushes 1
-            Self::CallIntrinsic2 { .. } => -1, // Takes 2, pushes 1
-            Self::PopJumpIfTrue { .. } => -1,
-            Self::PopJumpIfFalse { .. } => -1,
+            Self::CallIntrinsic1 => 0,  // Takes 1, pushes 1
+            Self::CallIntrinsic2 => -1, // Takes 2, pushes 1
+            Self::PopJumpIfTrue => -1,
+            Self::PopJumpIfFalse => -1,
             Self::MakeFunction => {
                 // CPython 3.14 style: MakeFunction only pops code object
                 -1 + 1 // pop code, push function
             }
-            Self::SetFunctionAttribute { .. } => {
+            Self::SetFunctionAttribute => {
                 // pops attribute value and function, pushes function back
                 -2 + 1
             }
             // Call: pops nargs + self_or_null + callable, pushes result
-            Self::Call { nargs } => -(nargs.get(arg) as i32) - 2 + 1,
+            Self::Call => -oparg - 2 + 1,
             // CallKw: pops kw_names_tuple + nargs + self_or_null + callable, pushes result
-            Self::CallKw { nargs } => -1 - (nargs.get(arg) as i32) - 2 + 1,
+            Self::CallKw => -1 - oparg - 2 + 1,
             // CallFunctionEx: always pops kwargs_or_null + args_tuple + self_or_null + callable, pushes result
             Self::CallFunctionEx => -4 + 1,
             Self::CheckEgMatch => 0, // pops 2 (exc, type), pushes 2 (rest, match)
-            Self::ConvertValue { .. } => 0,
+            Self::ConvertValue => 0,
             Self::FormatSimple => 0,
             Self::FormatWithSpec => -1,
-            Self::ForIter { .. } => 1, // push next value
-            Self::IsOp(_) => -1,
-            Self::ContainsOp(_) => -1,
+            Self::ForIter => 1, // push next value
+            Self::IsOp => -1,
+            Self::ContainsOp => -1,
             Self::ReturnValue => -1,
-            Self::Resume { .. } => 0,
-            Self::YieldValue { .. } => 0,
+            Self::Resume => 0,
+            Self::YieldValue => 0,
             // SEND: (receiver, val) -> (receiver, retval) - no change, both paths keep same depth
-            Self::Send { .. } => 0,
+            Self::Send => 0,
             // END_SEND: (receiver, value) -> (value)
             Self::EndSend => -1,
             // CLEANUP_THROW: (sub_iter, last_sent_val, exc) -> (None, value) = 3 pop, 2 push = -1
             Self::CleanupThrow => -1,
-            Self::PushExcInfo => 1,    // [exc] -> [prev_exc, exc]
-            Self::CheckExcMatch => 0,  // [exc, type] -> [exc, bool] (pops type, pushes bool)
-            Self::Reraise { .. } => 0, // Exception raised, stack effect doesn't matter
+            Self::PushExcInfo => 1,   // [exc] -> [prev_exc, exc]
+            Self::CheckExcMatch => 0, // [exc, type] -> [exc, bool] (pops type, pushes bool)
+            Self::Reraise => 0,       // Exception raised, stack effect doesn't matter
             Self::SetupAnnotations => 0,
             Self::WithExceptStart => 1, // push __exit__ result
-            Self::RaiseVarargs { kind } => {
+            Self::RaiseVarargs => {
                 // Stack effects for different raise kinds:
                 // - Reraise (0): gets from VM state, no stack pop
                 // - Raise (1): pops 1 exception
                 // - RaiseCause (2): pops 2 (exception + cause)
                 // - ReraiseFromStack (3): pops 1 exception from stack
-                match kind.get(arg) {
+                match self
+                    .oparg
+                    .expect("Opcode::RaiseVarargs expects to have an oparg")
+                    .expect_raise_kind()
+                {
                     RaiseKind::BareRaise => 0,
                     RaiseKind::Raise => -1,
                     RaiseKind::RaiseCause => -2,
                     RaiseKind::ReraiseFromStack => -1,
                 }
             }
-            Self::BuildString { size } => -(size.get(arg) as i32) + 1,
-            Self::BuildTuple { size, .. } => -(size.get(arg) as i32) + 1,
-            Self::BuildList { size, .. } => -(size.get(arg) as i32) + 1,
-            Self::BuildSet { size, .. } => -(size.get(arg) as i32) + 1,
-            Self::BuildMap { size } => {
-                let nargs = size.get(arg) * 2;
-                -(nargs as i32) + 1
-            }
-            Self::DictUpdate { .. } => -1,
-            Self::DictMerge { .. } => -1,
-            Self::BuildSlice { argc } => {
+            Self::BuildString { size } => -oparg + 1,
+            Self::BuildTuple { size, .. } => -oparg + 1,
+            Self::BuildList { size, .. } => -oparg + 1,
+            Self::BuildSet { size, .. } => -oparg + 1,
+            Self::BuildMap { size } => -(oparg * 2) + 1,
+            Self::DictUpdate => -1,
+            Self::DictMerge => -1,
+            Self::BuildSlice => {
                 // push 1
                 // pops either 2/3
                 // Default to Two (2 args) if arg is invalid
-                1 - (argc
-                    .try_get(arg)
-                    .unwrap_or(BuildSliceArgCount::Two)
-                    .argc()
-                    .get() as i32)
+                1 - oparg
             }
-            Self::ListAppend { .. } => -1,
-            Self::ListExtend { .. } => -1,
-            Self::SetAdd { .. } => -1,
-            Self::SetUpdate { .. } => -1,
-            Self::MapAdd { .. } => -2,
+            Self::ListAppend => -1,
+            Self::ListExtend => -1,
+            Self::SetAdd => -1,
+            Self::SetUpdate => -1,
+            Self::MapAdd => -2,
             Self::LoadBuildClass => 1,
-            Self::UnpackSequence { size } => -1 + size.get(arg) as i32,
+            Self::UnpackSequence => -1 + oparg,
             Self::UnpackEx { args } => {
-                let UnpackExArgs { before, after } = args.get(arg);
+                let UnpackExArgs { before, after } = self
+                    .oparg
+                    .expect("Opcode::UnpackEx expects to have an oparg")
+                    .expect_unpack_ex_args();
                 -1 + before as i32 + 1 + after as i32
             }
             Self::PopExcept => -1,
@@ -151,7 +153,7 @@ impl Instruction {
             Self::MatchMapping => 1,  // Push bool result
             Self::MatchSequence => 1, // Push bool result
             Self::MatchKeys => 1, // Pop 2 (subject, keys), push 3 (subject, keys_or_none, values_or_none)
-            Self::MatchClass(_) => -2,
+            Self::MatchClass => -2,
             Self::ExtendedArg => 0,
             Self::UnaryInvert => 0,
             Self::UnaryNegative => 0,
@@ -174,19 +176,19 @@ impl Instruction {
             Self::LoadLocals => 1,      // ( -- locals)
             Self::ReturnGenerator => 1, // pushes None for POP_TOP to consume
             Self::StoreSlice => -4,     // (v, container, start, stop -- )
-            Self::CopyFreeVars { .. } => 0,
+            Self::CopyFreeVars => 0,
             Self::EnterExecutor => 0,
-            Self::JumpBackwardNoInterrupt { .. } => 0,
-            Self::JumpBackward { .. } => 0,
-            Self::JumpForward { .. } => 0,
-            Self::LoadFastCheck(_) => 0,
-            Self::LoadFastLoadFast { .. } => 2,
-            Self::LoadFastBorrowLoadFastBorrow { .. } => 2,
-            Self::LoadFromDictOrGlobals(_) => 0,
-            Self::MakeCell(_) => 0,
-            Self::StoreFastStoreFast { .. } => 0,
-            Self::PopJumpIfNone { .. } => -1,    // (value -- )
-            Self::PopJumpIfNotNone { .. } => -1, // (value -- )
+            Self::JumpBackwardNoInterrupt => 0,
+            Self::JumpBackward => 0,
+            Self::JumpForward => 0,
+            Self::LoadFastCheck => 0,
+            Self::LoadFastLoadFast => 2,
+            Self::LoadFastBorrowLoadFastBorrow => 2,
+            Self::LoadFromDictOrGlobals => 0,
+            Self::MakeCell => 0,
+            Self::StoreFastStoreFast => 0,
+            Self::PopJumpIfNone => -1,    // (value -- )
+            Self::PopJumpIfNotNone => -1, // (value -- )
             Self::BinaryOpAddFloat => 0,
             Self::BinaryOpAddInt => 0,
             Self::BinaryOpAddUnicode => 0,
@@ -295,9 +297,12 @@ impl Instruction {
             Self::BuildTemplate => -1,
             // BuildInterpolation: pops [value, expr_str, format_spec?], pushes [interpolation]
             // has_format_spec is bit 0 of oparg
-            Self::BuildInterpolation { oparg } => {
-                let has_format_spec = oparg.get(arg) & 1 != 0;
-                if has_format_spec { -2 } else { -1 }
+            Self::BuildInterpolation => {
+                if oparg & 1 != 0 {
+                    -2
+                } else {
+                    -1
+                }
             }
         }
     }
@@ -355,7 +360,7 @@ impl Instruction {
             };
 
         match self {
-            Self::BinaryOp { op } => write!(f, "{:pad$}({})", "BINARY_OP", op.get(arg)),
+            Self::BinaryOp => write!(f, "{:pad$}({})", "BINARY_OP", op.get(arg)),
             Self::BuildList { size } => w!(BUILD_LIST, size),
             Self::BuildMap { size } => w!(BUILD_MAP, size),
             Self::BuildSet { size } => w!(BUILD_SET, size),
@@ -370,7 +375,7 @@ impl Instruction {
             Self::CheckEgMatch => w!(CHECK_EG_MATCH),
             Self::CheckExcMatch => w!(CHECK_EXC_MATCH),
             Self::CleanupThrow => w!(CLEANUP_THROW),
-            Self::CompareOp { op } => w!(COMPARE_OP, ?op),
+            Self::CompareOp => w!(COMPARE_OP, ?op),
             Self::ContainsOp(inv) => w!(CONTAINS_OP, ?inv),
             Self::ConvertValue { oparg } => write!(f, "{:pad$}{}", "CONVERT_VALUE", oparg.get(arg)),
             Self::Copy { index } => w!(COPY, index),
@@ -498,28 +503,26 @@ pub struct PseudoInstruction {
 }
 
 impl PseudoInstruction {
-
     fn stack_effect(&self) -> i32 {
         match self {
             Self::AnnotationsPlaceholder => 0,
-            Self::Jump { .. } => 0,
-            Self::JumpIfFalse { .. } => 0, // peek, don't pop: COPY + TO_BOOL + POP_JUMP_IF_FALSE
-            Self::JumpIfTrue { .. } => 0,  // peek, don't pop: COPY + TO_BOOL + POP_JUMP_IF_TRUE
-            Self::JumpNoInterrupt { .. } => 0,
-            Self::LoadClosure(_) => 1,
+            Self::Jump => 0,
+            Self::JumpIfFalse => 0, // peek, don't pop: COPY + TO_BOOL + POP_JUMP_IF_FALSE
+            Self::JumpIfTrue => 0,  // peek, don't pop: COPY + TO_BOOL + POP_JUMP_IF_TRUE
+            Self::JumpNoInterrupt => 0,
+            Self::LoadClosure => 1,
             Self::PopBlock => 0,
             Self::SetupCleanup => 0,
             Self::SetupFinally => 0,
             Self::SetupWith => 0,
-            Self::StoreFastMaybeNull(_) => -1,
-            Self::LoadAttrMethod { .. } => 1, // pop obj, push method + self_or_null
-            Self::LoadSuperMethod { .. } => -3 + 2, // pop 3, push [method, self_or_null]
-            Self::LoadZeroSuperAttr { .. } => -3 + 1, // pop 3, push [attr]
-            Self::LoadZeroSuperMethod { .. } => -3 + 2, // pop 3, push [method, self_or_null]
+            Self::StoreFastMaybeNull => -1,
+            Self::LoadAttrMethod => 1, // pop obj, push method + self_or_null
+            Self::LoadSuperMethod => -3 + 2, // pop 3, push [method, self_or_null]
+            Self::LoadZeroSuperAttr => -3 + 1, // pop 3, push [attr]
+            Self::LoadZeroSuperMethod => -3 + 2, // pop 3, push [method, self_or_null]
         }
     }
 }
-
 
 #[derive(Clone, Copy, Debug)]
 pub enum AnyInstruction {
@@ -539,7 +542,6 @@ impl From<PseudoInstruction> for AnyInstruction {
     }
 }
 
-
 macro_rules! inst_either {
     (fn $name:ident ( &self $(, $arg:ident : $arg_ty:ty )* ) -> $ret:ty ) => {
         fn $name(&self $(, $arg : $arg_ty )* ) -> $ret {
@@ -552,8 +554,7 @@ macro_rules! inst_either {
 }
 
 impl InstructionMetadata for AnyInstruction {
-
-    inst_either!(fn stack_effect(&self, arg: OpArg) -> i32);
+    inst_either!(fn stack_effect(&self) -> i32);
 
     inst_either!(fn fmt_dis(
         &self,
@@ -602,7 +603,4 @@ impl AnyInstruction {
         self.pseudo()
             .expect("Expected Instruction::Pseudo, found Instruction::Real")
     }
-        Self::Pseudo(value)
-    }
-        }
-
+}
