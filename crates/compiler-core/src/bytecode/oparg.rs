@@ -568,56 +568,6 @@ pub enum RaiseKind {
     ReraiseFromStack = 3,
 }
 
-<<<<<<< HEAD
-op_arg_enum!(
-    /// Intrinsic function for CALL_INTRINSIC_1
-    #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-    #[repr(u8)]
-    pub enum IntrinsicFunction1 {
-        // Invalid = 0,
-        Print = 1,
-        /// Import * operation
-        ImportStar = 2,
-        /// Convert StopIteration to RuntimeError in async context
-        StopIterationError = 3,
-        AsyncGenWrap = 4,
-        UnaryPositive = 5,
-        /// Convert list to tuple
-        ListToTuple = 6,
-        /// Type parameter related
-        TypeVar = 7,
-        ParamSpec = 8,
-        TypeVarTuple = 9,
-        /// Generic subscript for PEP 695
-        SubscriptGeneric = 10,
-        TypeAlias = 11,
-    }
-);
-||||||| parent of 6598518de (Save)
-op_arg_enum!(
-    /// Intrinsic function for CALL_INTRINSIC_1
-    #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-    #[repr(u8)]
-    pub enum IntrinsicFunction1 {
-        // Invalid = 0,
-        Print = 1,
-        /// Import * operation
-        ImportStar = 2,
-        // StopIterationError = 3,
-        // AsyncGenWrap = 4,
-        UnaryPositive = 5,
-        /// Convert list to tuple
-        ListToTuple = 6,
-        /// Type parameter related
-        TypeVar = 7,
-        ParamSpec = 8,
-        TypeVarTuple = 9,
-        /// Generic subscript for PEP 695
-        SubscriptGeneric = 10,
-        TypeAlias = 11,
-    }
-);
-=======
 /// Intrinsic function for CALL_INTRINSIC_1
 #[derive(Clone, Copy, Debug, IntoPrimitive, TryFromPrimitive)]
 #[num_enum(error_type(name = MarshalError, constructor = MarshalError::new_invalid_bytecode))]
@@ -627,8 +577,9 @@ pub enum IntrinsicFunction1 {
     Print = 1,
     /// Import * operation
     ImportStar = 2,
-    // StopIterationError = 3,
-    // AsyncGenWrap = 4,
+    /// Convert StopIteration to RuntimeError in async context
+    StopIterationError = 3,
+    AsyncGenWrap = 4,
     UnaryPositive = 5,
     /// Convert list to tuple
     ListToTuple = 6,
@@ -640,7 +591,6 @@ pub enum IntrinsicFunction1 {
     SubscriptGeneric = 10,
     TypeAlias = 11,
 }
->>>>>>> 6598518de (Save)
 
 /// Intrinsic function for CALL_INTRINSIC_2
 #[derive(Clone, Copy, Debug, IntoPrimitive, TryFromPrimitive)]

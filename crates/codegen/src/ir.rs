@@ -86,7 +86,8 @@ impl ops::IndexMut<BlockIdx> for Vec<Block> {
 
 #[derive(Clone, Copy, Debug)]
 pub struct InstructionInfo {
-    pub instr: Instruction,
+    pub instr: AnyInstruction,
+    pub arg: OpArg,
     pub target: BlockIdx,
     pub location: SourceLocation,
     pub end_location: SourceLocation,
@@ -497,13 +498,7 @@ impl CodeInfo {
                     );
                 }
                 depth = new_depth;
-<<<<<<< HEAD
                 if instr.is_scope_exit() || instr.is_unconditional_jump() {
-||||||| parent of c2cb683c7 (Save)
-                if instr.unconditional_branch() {
-=======
-                if instr.is_unconditional_jump() {
->>>>>>> c2cb683c7 (Save)
                     continue 'process_blocks;
                 }
             }
