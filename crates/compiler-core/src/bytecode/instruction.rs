@@ -1128,6 +1128,18 @@ impl AnyInstruction {
     }
 }
 
+pub trait StackEffect {
+    /// How many items this instruction is popping from the stack.
+    fn num_popped(&self, oparg: u32) -> u32;
+
+    /// How many items this instruction is pushinng on the stack.
+    fn num_pushed(&self, oparg: u32) -> u32;
+
+    /// What effect this instruction has on the stack.
+    /// Negative values means that the instruction is popping more items than it pushes.
+    fn stack_effect(&self, oparg: OpArg) -> i32 {}
+}
+
 pub trait InstructionMetadata {
     /// Gets the label stored inside this instruction, if it exists.
     fn label_arg(&self) -> Option<Arg<Label>>;
