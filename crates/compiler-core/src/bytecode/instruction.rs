@@ -1023,7 +1023,10 @@ impl StackEffect for Instruction {
             Self::LoadFastLoadFast { .. } => 2,
             Self::LoadFromDictOrDeref(_) => 1,
             Self::LoadFromDictOrGlobals(_) => 1,
-            Self::LoadGlobal(_) => 1 + (oparg & 1),
+            Self::LoadGlobal(_) => {
+                // TODO: Differs from CPython `1 + (oparg & 1)`
+                1
+            }
             Self::LoadGlobalBuiltin => 1 + (oparg & 1),
             Self::LoadGlobalModule => 1 + (oparg & 1),
             Self::LoadLocals => 1,

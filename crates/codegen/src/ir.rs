@@ -9,7 +9,7 @@ use rustpython_compiler_core::{
     bytecode::{
         AnyInstruction, Arg, CodeFlags, CodeObject, CodeUnit, CodeUnits, ConstantData,
         ExceptionTableEntry, InstrDisplayContext, Instruction, InstructionMetadata, Label, OpArg,
-        PseudoInstruction, PyCodeLocationInfoKind, encode_exception_table,
+        PseudoInstruction, PyCodeLocationInfoKind, StackEffect, encode_exception_table,
     },
     varint::{write_signed_varint, write_varint},
 };
@@ -714,7 +714,7 @@ impl CodeInfo {
             let block = &self.blocks[block_idx];
             for ins in &block.instructions {
                 let instr = &ins.instr;
-                let effect = instr.stack_effect(ins.arg);
+                let effect = instr.stack_effect(ins.arg.into());
                 if DEBUG {
                     let display_arg = if ins.target == BlockIdx::NULL {
                         ins.arg
