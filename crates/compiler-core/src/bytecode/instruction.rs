@@ -836,11 +836,7 @@ pub trait StackEffect {
 
     /// What effect this instruction has on the stack.
     /// Negative values means that the instruction is popping more items than it pushes.
-    fn stack_effect(&self, oparg: u32) -> i32
-    where
-        Self: core::fmt::Debug,
-    {
-        //dbg!(&self);
+    fn stack_effect(&self, oparg: u32) -> i32 {
         i32::try_from(self.num_pushed(oparg)).expect("Tried to push more than `i32::MAX` items")
             - i32::try_from(self.num_popped(oparg))
                 .expect("Tried to pop more than `i32::MAX` items")
@@ -873,6 +869,43 @@ pub trait InstructionMetadata: StackEffect {
 
 impl StackEffect for Instruction {
     fn num_pushed(&self, oparg: u32) -> u32 {
+        match self {
+            Self::BinaryOp { .. }
+            | Self::BinarySlice { .. }
+            | Self::BuildMap { .. }
+            | Self::BuildTuple { .. }
+            | Self::Call { .. }
+            | Self::CompareOp { .. }
+            | Self::Copy { .. }
+            | Self::IsOp(_)
+            | Self::LoadAttr { .. }
+            | Self::LoadBuildClass
+            | Self::LoadConst { .. }
+            | Self::LoadFast(_)
+            | Self::LoadGlobal(_)
+            | Self::LoadName(_)
+            | Self::LoadSmallInt { .. }
+            | Self::MakeFunction { .. }
+            | Self::Nop
+            | Self::PopJumpIfFalse { .. }
+            | Self::PopJumpIfNone { .. }
+            | Self::PopJumpIfNotNone { .. }
+            | Self::PopJumpIfTrue { .. }
+            | Self::PopTop
+            | Self::PushExcInfo
+            | Self::PushNull
+            | Self::RaiseVarargs { .. }
+            | Self::Resume { .. }
+            | Self::ReturnValue { .. }
+            | Self::SetFunctionAttribute { .. }
+            | Self::StoreAttr { .. }
+            | Self::StoreFast(_)
+            | Self::StoreName(_)
+            | Self::UnpackSequence { .. } => {}
+
+            _ => panic!("{self:?}"),
+        }
+
         match self {
             Self::BinaryOp { .. } => 1,
             Self::BinaryOpAddFloat => 1,
@@ -1065,7 +1098,10 @@ impl StackEffect for Instruction {
             Self::Resume { .. } => 0,
             Self::ResumeCheck => 0,
             Self::ReturnGenerator => 1,
-            Self::ReturnValue => 1,
+            Self::ReturnValue => {
+                // TODO: Differs from CPython: `1`
+                0
+            }
             Self::Send { .. } => 2,
             Self::SendGen => 1,
             Self::SetAdd { .. } => 1 + (oparg - 1),
@@ -1077,7 +1113,7 @@ impl StackEffect for Instruction {
             Self::StoreAttrSlot => 0,
             Self::StoreAttrWithHint => 0,
             Self::StoreDeref(_) => 0,
-            Self::StoreFast { .. } => 0,
+            Self::StoreFast(_) => 0,
             Self::StoreFastLoadFast { .. } => 1,
             Self::StoreFastStoreFast { .. } => 0,
             Self::StoreGlobal(_) => 0,
