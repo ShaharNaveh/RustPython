@@ -836,9 +836,14 @@ pub trait StackEffect {
 
     /// What effect this instruction has on the stack.
     /// Negative values means that the instruction is popping more items than it pushes.
-    fn stack_effect(&self, oparg: u32) -> i32 {
-        i32::try_from(self.num_pushed(oparg) - self.num_popped(oparg))
-            .expect("Stack effect does not fit in a i32")
+    fn stack_effect(&self, oparg: u32) -> i32
+    where
+        Self: core::fmt::Debug,
+    {
+        //dbg!(&self);
+        i32::try_from(self.num_pushed(oparg)).expect("Tried to push more than `i32::MAX` items")
+            - i32::try_from(self.num_popped(oparg))
+                .expect("Tried to pop more than `i32::MAX` items")
     }
 }
 
@@ -1286,7 +1291,15 @@ impl StackEffect for Instruction {
             Self::PopTop => 1,
             Self::PushExcInfo => 1,
             Self::PushNull => 0,
-            Self::RaiseVarargs { .. } => oparg,
+            Self::RaiseVarargs { kind } => {
+                // TODO: Differs from CPython: `oparg`
+                match kind.get(oparg.into()) {
+                    RaiseKind::BareRaise => 0,
+                    RaiseKind::Raise => 1,
+                    RaiseKind::RaiseCause => 2,
+                    RaiseKind::ReraiseFromStack => 1,
+                }
+            }
             Self::Reraise { .. } => 1 + oparg,
             Self::Reserved => 0,
             Self::Resume { .. } => 0,
