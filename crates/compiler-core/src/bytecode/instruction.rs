@@ -882,11 +882,14 @@ impl StackEffect for Instruction {
             | Self::LoadBuildClass
             | Self::LoadConst { .. }
             | Self::LoadFast(_)
+            | Self::CheckExcMatch
             | Self::LoadGlobal(_)
             | Self::LoadName(_)
             | Self::LoadSmallInt { .. }
             | Self::MakeFunction { .. }
+            | Self::CallKw { .. }
             | Self::Nop
+            | Self::PopExcept
             | Self::PopJumpIfFalse { .. }
             | Self::PopJumpIfNone { .. }
             | Self::PopJumpIfNotNone { .. }
@@ -896,6 +899,7 @@ impl StackEffect for Instruction {
             | Self::PushNull
             | Self::RaiseVarargs { .. }
             | Self::Resume { .. }
+            | Self::Swap { .. }
             | Self::ReturnValue { .. }
             | Self::SetFunctionAttribute { .. }
             | Self::StoreAttr { .. }
