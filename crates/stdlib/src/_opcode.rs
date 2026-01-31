@@ -151,7 +151,7 @@ mod _opcode {
     // prepare specialization
     #[pyattr]
     const ENABLE_SPECIALIZATION: i8 = 1;
-    #[allow(dead_code)]
+    #[pyattr]
     const ENABLE_SPECIALIZATION_FT: i8 = 1;
 
     #[derive(FromArgs)]
@@ -198,7 +198,7 @@ mod _opcode {
         let opcode = Opcode::try_from_pyint(args.opcode, vm)?;
 
         let _ = jump; // Python API accepts jump but it's not used
-        Ok(opcode.stack_effect(oparg.into()))
+        Ok(opcode.stack_effect(oparg))
     }
 
     #[pyfunction]

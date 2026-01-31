@@ -6,15 +6,16 @@ pub(crate) use _winapi::module_def;
 #[pymodule]
 mod _winapi {
     use crate::{
-        PyObjectRef, PyResult, TryFromObject, VirtualMachine,
+        Py, PyObjectRef, PyPayload, PyResult, TryFromObject, VirtualMachine,
         builtins::PyStrRef,
-        common::windows::ToWideString,
+        common::{lock::PyMutex, windows::ToWideString},
         convert::{ToPyException, ToPyResult},
         function::{ArgMapping, ArgSequence, OptionalArg},
+        types::Constructor,
         windows::{WinHandle, WindowsSysResult},
     };
     use std::ptr::{null, null_mut};
-    use windows_sys::Win32::Foundation::{INVALID_HANDLE_VALUE, MAX_PATH};
+    use windows_sys::Win32::Foundation::{HANDLE, INVALID_HANDLE_VALUE, MAX_PATH};
 
     #[pyattr]
     use windows_sys::Win32::{
@@ -31,19 +32,57 @@ mod _winapi {
             LCMAP_TRADITIONAL_CHINESE, LCMAP_UPPERCASE,
         },
         Storage::FileSystem::{
-            COPY_FILE_ALLOW_DECRYPTED_DESTINATION, COPY_FILE_COPY_SYMLINK,
-            COPY_FILE_FAIL_IF_EXISTS, COPY_FILE_NO_BUFFERING, COPY_FILE_NO_OFFLOAD,
-            COPY_FILE_OPEN_SOURCE_FOR_WRITE, COPY_FILE_REQUEST_COMPRESSED_TRAFFIC,
-            COPY_FILE_REQUEST_SECURITY_PRIVILEGES, COPY_FILE_RESTARTABLE,
-            COPY_FILE_RESUME_FROM_PAUSE, COPYFILE2_CALLBACK_CHUNK_FINISHED,
-            COPYFILE2_CALLBACK_CHUNK_STARTED, COPYFILE2_CALLBACK_ERROR,
-            COPYFILE2_CALLBACK_POLL_CONTINUE, COPYFILE2_CALLBACK_STREAM_FINISHED,
-            COPYFILE2_CALLBACK_STREAM_STARTED, COPYFILE2_PROGRESS_CANCEL,
-            COPYFILE2_PROGRESS_CONTINUE, COPYFILE2_PROGRESS_PAUSE, COPYFILE2_PROGRESS_QUIET,
-            COPYFILE2_PROGRESS_STOP, FILE_FLAG_FIRST_PIPE_INSTANCE, FILE_FLAG_OVERLAPPED,
-            FILE_GENERIC_READ, FILE_GENERIC_WRITE, FILE_TYPE_CHAR, FILE_TYPE_DISK, FILE_TYPE_PIPE,
-            FILE_TYPE_REMOTE, FILE_TYPE_UNKNOWN, OPEN_EXISTING, PIPE_ACCESS_DUPLEX,
-            PIPE_ACCESS_INBOUND, SYNCHRONIZE,
+            COPY_FILE_ALLOW_DECRYPTED_DESTINATION,
+            COPY_FILE_COPY_SYMLINK,
+            COPY_FILE_FAIL_IF_EXISTS,
+            COPY_FILE_NO_BUFFERING,
+            COPY_FILE_NO_OFFLOAD,
+            COPY_FILE_OPEN_SOURCE_FOR_WRITE,
+            COPY_FILE_REQUEST_COMPRESSED_TRAFFIC,
+            COPY_FILE_REQUEST_SECURITY_PRIVILEGES,
+            COPY_FILE_RESTARTABLE,
+            COPY_FILE_RESUME_FROM_PAUSE,
+            COPYFILE2_CALLBACK_CHUNK_FINISHED,
+            COPYFILE2_CALLBACK_CHUNK_STARTED,
+            COPYFILE2_CALLBACK_ERROR,
+            COPYFILE2_CALLBACK_POLL_CONTINUE,
+            COPYFILE2_CALLBACK_STREAM_FINISHED,
+            COPYFILE2_CALLBACK_STREAM_STARTED,
+            COPYFILE2_PROGRESS_CANCEL,
+            COPYFILE2_PROGRESS_CONTINUE,
+            COPYFILE2_PROGRESS_PAUSE,
+            COPYFILE2_PROGRESS_QUIET,
+            COPYFILE2_PROGRESS_STOP,
+            CREATE_ALWAYS,
+            // CreateFile constants
+            CREATE_NEW,
+            FILE_ATTRIBUTE_NORMAL,
+            FILE_FLAG_BACKUP_SEMANTICS,
+            FILE_FLAG_DELETE_ON_CLOSE,
+            FILE_FLAG_FIRST_PIPE_INSTANCE,
+            FILE_FLAG_NO_BUFFERING,
+            FILE_FLAG_OPEN_REPARSE_POINT,
+            FILE_FLAG_OVERLAPPED,
+            FILE_FLAG_POSIX_SEMANTICS,
+            FILE_FLAG_RANDOM_ACCESS,
+            FILE_FLAG_SEQUENTIAL_SCAN,
+            FILE_FLAG_WRITE_THROUGH,
+            FILE_GENERIC_READ,
+            FILE_GENERIC_WRITE,
+            FILE_SHARE_DELETE,
+            FILE_SHARE_READ,
+            FILE_SHARE_WRITE,
+            FILE_TYPE_CHAR,
+            FILE_TYPE_DISK,
+            FILE_TYPE_PIPE,
+            FILE_TYPE_REMOTE,
+            FILE_TYPE_UNKNOWN,
+            OPEN_ALWAYS,
+            OPEN_EXISTING,
+            PIPE_ACCESS_DUPLEX,
+            PIPE_ACCESS_INBOUND,
+            SYNCHRONIZE,
+            TRUNCATE_EXISTING,
         },
         System::{
             Console::{STD_ERROR_HANDLE, STD_INPUT_HANDLE, STD_OUTPUT_HANDLE},
@@ -55,6 +94,7 @@ mod _winapi {
                 SEC_LARGE_PAGES, SEC_NOCACHE, SEC_RESERVE, SEC_WRITECOMBINE,
             },
             Pipes::{
+                NMPWAIT_NOWAIT, NMPWAIT_USE_DEFAULT_WAIT, NMPWAIT_WAIT_FOREVER,
                 PIPE_READMODE_MESSAGE, PIPE_TYPE_MESSAGE, PIPE_UNLIMITED_INSTANCES, PIPE_WAIT,
             },
             SystemServices::LOCALE_NAME_MAX_LENGTH,
@@ -76,6 +116,42 @@ mod _winapi {
     #[pyfunction]
     fn CloseHandle(handle: WinHandle) -> WindowsSysResult<i32> {
         WindowsSysResult(unsafe { windows_sys::Win32::Foundation::CloseHandle(handle.0) })
+    }
+
+    /// CreateFile - Create or open a file or I/O device.
+    #[pyfunction]
+    #[allow(clippy::too_many_arguments)]
+    fn CreateFile(
+        file_name: PyStrRef,
+        desired_access: u32,
+        share_mode: u32,
+        _security_attributes: PyObjectRef, // Always NULL (0)
+        creation_disposition: u32,
+        flags_and_attributes: u32,
+        _template_file: PyObjectRef, // Always NULL (0)
+        vm: &VirtualMachine,
+    ) -> PyResult<WinHandle> {
+        use windows_sys::Win32::Storage::FileSystem::CreateFileW;
+
+        let file_name_wide = file_name.as_wtf8().to_wide_with_nul();
+
+        let handle = unsafe {
+            CreateFileW(
+                file_name_wide.as_ptr(),
+                desired_access,
+                share_mode,
+                null(),
+                creation_disposition,
+                flags_and_attributes,
+                null_mut(),
+            )
+        };
+
+        if handle == INVALID_HANDLE_VALUE {
+            return Err(vm.new_last_os_error());
+        }
+
+        Ok(WinHandle(handle))
     }
 
     #[pyfunction]
@@ -484,6 +560,48 @@ mod _winapi {
     }
 
     #[pyfunction]
+    fn WaitForMultipleObjects(
+        handle_seq: ArgSequence<isize>,
+        wait_all: bool,
+        milliseconds: u32,
+        vm: &VirtualMachine,
+    ) -> PyResult<u32> {
+        use windows_sys::Win32::Foundation::WAIT_FAILED;
+        use windows_sys::Win32::System::Threading::WaitForMultipleObjects as WinWaitForMultipleObjects;
+
+        let handles: Vec<HANDLE> = handle_seq
+            .into_vec()
+            .into_iter()
+            .map(|h| h as HANDLE)
+            .collect();
+
+        if handles.is_empty() {
+            return Err(vm.new_value_error("handle_seq must not be empty".to_owned()));
+        }
+
+        if handles.len() > 64 {
+            return Err(
+                vm.new_value_error("WaitForMultipleObjects supports at most 64 handles".to_owned())
+            );
+        }
+
+        let ret = unsafe {
+            WinWaitForMultipleObjects(
+                handles.len() as u32,
+                handles.as_ptr(),
+                if wait_all { 1 } else { 0 },
+                milliseconds,
+            )
+        };
+
+        if ret == WAIT_FAILED {
+            Err(vm.new_last_os_error())
+        } else {
+            Ok(ret)
+        }
+    }
+
+    #[pyfunction]
     fn GetExitCodeProcess(h: WinHandle, vm: &VirtualMachine) -> PyResult<u32> {
         unsafe {
             let mut ec = std::mem::MaybeUninit::uninit();
@@ -685,6 +803,229 @@ mod _winapi {
         }
 
         Ok(WinHandle(handle))
+    }
+
+    // ==================== Overlapped class ====================
+    // Used for asynchronous I/O operations (ConnectNamedPipe, ReadFile, WriteFile)
+
+    #[pyattr]
+    #[pyclass(name = "Overlapped", module = "_winapi")]
+    #[derive(Debug, PyPayload)]
+    struct Overlapped {
+        inner: PyMutex<OverlappedInner>,
+    }
+
+    struct OverlappedInner {
+        overlapped: windows_sys::Win32::System::IO::OVERLAPPED,
+        handle: HANDLE,
+        pending: bool,
+        completed: bool,
+        read_buffer: Option<Vec<u8>>,
+    }
+
+    impl std::fmt::Debug for OverlappedInner {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("OverlappedInner")
+                .field("handle", &self.handle)
+                .field("pending", &self.pending)
+                .field("completed", &self.completed)
+                .finish()
+        }
+    }
+
+    unsafe impl Sync for OverlappedInner {}
+    unsafe impl Send for OverlappedInner {}
+
+    #[pyclass(with(Constructor))]
+    impl Overlapped {
+        fn new_with_handle(handle: HANDLE) -> Self {
+            use windows_sys::Win32::System::Threading::CreateEventW;
+
+            let event = unsafe { CreateEventW(null(), 1, 0, null()) };
+            let mut overlapped: windows_sys::Win32::System::IO::OVERLAPPED =
+                unsafe { std::mem::zeroed() };
+            overlapped.hEvent = event;
+
+            Overlapped {
+                inner: PyMutex::new(OverlappedInner {
+                    overlapped,
+                    handle,
+                    pending: false,
+                    completed: false,
+                    read_buffer: None,
+                }),
+            }
+        }
+
+        #[pymethod]
+        fn GetOverlappedResult(&self, wait: bool, vm: &VirtualMachine) -> PyResult<u32> {
+            use windows_sys::Win32::Foundation::{ERROR_IO_PENDING, GetLastError};
+            use windows_sys::Win32::System::IO::GetOverlappedResult;
+
+            let mut inner = self.inner.lock();
+
+            // If operation was already completed synchronously (e.g., ERROR_PIPE_CONNECTED),
+            // return immediately without calling GetOverlappedResult
+            if inner.completed && !inner.pending {
+                return Ok(0);
+            }
+
+            let mut transferred: u32 = 0;
+
+            let ret = unsafe {
+                GetOverlappedResult(
+                    inner.handle,
+                    &inner.overlapped,
+                    &mut transferred,
+                    if wait { 1 } else { 0 },
+                )
+            };
+
+            if ret == 0 {
+                let err = unsafe { GetLastError() };
+                if err == ERROR_IO_PENDING {
+                    return Err(std::io::Error::from_raw_os_error(err as i32).to_pyexception(vm));
+                }
+                return Err(std::io::Error::from_raw_os_error(err as i32).to_pyexception(vm));
+            }
+
+            inner.completed = true;
+            inner.pending = false;
+            Ok(transferred)
+        }
+
+        #[pymethod]
+        fn getbuffer(&self, vm: &VirtualMachine) -> PyResult<Option<PyObjectRef>> {
+            let inner = self.inner.lock();
+            if !inner.completed {
+                return Err(vm.new_value_error("operation not completed".to_owned()));
+            }
+            Ok(inner
+                .read_buffer
+                .as_ref()
+                .map(|buf| vm.ctx.new_bytes(buf.clone()).into()))
+        }
+
+        #[pymethod]
+        fn cancel(&self, vm: &VirtualMachine) -> PyResult<()> {
+            use windows_sys::Win32::System::IO::CancelIoEx;
+
+            let inner = self.inner.lock();
+            if !inner.pending {
+                return Ok(());
+            }
+
+            let ret = unsafe { CancelIoEx(inner.handle, &inner.overlapped) };
+            if ret == 0 {
+                let err = unsafe { windows_sys::Win32::Foundation::GetLastError() };
+                // ERROR_NOT_FOUND means operation already completed
+                if err != windows_sys::Win32::Foundation::ERROR_NOT_FOUND {
+                    return Err(std::io::Error::from_raw_os_error(err as i32).to_pyexception(vm));
+                }
+            }
+            Ok(())
+        }
+
+        #[pygetset]
+        fn event(&self) -> isize {
+            let inner = self.inner.lock();
+            inner.overlapped.hEvent as isize
+        }
+    }
+
+    impl Constructor for Overlapped {
+        type Args = ();
+
+        fn py_new(
+            _cls: &Py<crate::builtins::PyType>,
+            _args: Self::Args,
+            _vm: &VirtualMachine,
+        ) -> PyResult<Self> {
+            Ok(Overlapped::new_with_handle(null_mut()))
+        }
+    }
+
+    impl Drop for OverlappedInner {
+        fn drop(&mut self) {
+            use windows_sys::Win32::Foundation::CloseHandle;
+            if !self.overlapped.hEvent.is_null() {
+                unsafe { CloseHandle(self.overlapped.hEvent) };
+            }
+        }
+    }
+
+    /// ConnectNamedPipe - Wait for a client to connect to a named pipe
+    #[derive(FromArgs)]
+    struct ConnectNamedPipeArgs {
+        #[pyarg(positional)]
+        handle: WinHandle,
+        #[pyarg(named, optional)]
+        overlapped: OptionalArg<bool>,
+    }
+
+    #[pyfunction]
+    fn ConnectNamedPipe(args: ConnectNamedPipeArgs, vm: &VirtualMachine) -> PyResult<PyObjectRef> {
+        use windows_sys::Win32::Foundation::{
+            ERROR_IO_PENDING, ERROR_PIPE_CONNECTED, GetLastError,
+        };
+
+        let handle = args.handle;
+        let use_overlapped = args.overlapped.unwrap_or(false);
+
+        if use_overlapped {
+            // Overlapped (async) mode
+            let ov = Overlapped::new_with_handle(handle.0);
+
+            let ret = {
+                let mut inner = ov.inner.lock();
+                unsafe {
+                    windows_sys::Win32::System::Pipes::ConnectNamedPipe(
+                        handle.0,
+                        &mut inner.overlapped,
+                    )
+                }
+            };
+
+            if ret != 0 {
+                // Connected immediately
+                let mut inner = ov.inner.lock();
+                inner.completed = true;
+            } else {
+                let err = unsafe { GetLastError() };
+                match err {
+                    ERROR_IO_PENDING => {
+                        let mut inner = ov.inner.lock();
+                        inner.pending = true;
+                    }
+                    ERROR_PIPE_CONNECTED => {
+                        // Client was already connected
+                        let mut inner = ov.inner.lock();
+                        inner.completed = true;
+                    }
+                    _ => {
+                        return Err(
+                            std::io::Error::from_raw_os_error(err as i32).to_pyexception(vm)
+                        );
+                    }
+                }
+            }
+
+            Ok(ov.into_pyobject(vm))
+        } else {
+            // Synchronous mode
+            let ret = unsafe {
+                windows_sys::Win32::System::Pipes::ConnectNamedPipe(handle.0, null_mut())
+            };
+
+            if ret == 0 {
+                let err = unsafe { GetLastError() };
+                if err != ERROR_PIPE_CONNECTED {
+                    return Err(std::io::Error::from_raw_os_error(err as i32).to_pyexception(vm));
+                }
+            }
+
+            Ok(vm.ctx.none())
+        }
     }
 
     /// Helper for GetShortPathName and GetLongPathName

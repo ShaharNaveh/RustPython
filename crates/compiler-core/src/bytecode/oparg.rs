@@ -412,6 +412,12 @@ impl From<u32> for OpArg {
     }
 }
 
+impl From<OpArg> for u32 {
+    fn from(value: OpArg) -> Self {
+        value.0
+    }
+}
+
 #[derive(Default, Copy, Clone)]
 #[repr(transparent)]
 pub struct OpArgState {
@@ -824,6 +830,38 @@ impl fmt::Display for SpecialMethod {
             Self::AExit => "__aexit__",
         };
         write!(f, "{method_name}")
+    }
+}
+
+op_arg_enum!(
+    /// Common constants for LOAD_COMMON_CONSTANT opcode.
+    /// pycore_opcode_utils.h CONSTANT_*
+    #[repr(u8)]
+    #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+    pub enum CommonConstant {
+        /// `AssertionError` exception type
+        AssertionError = 0,
+        /// `NotImplementedError` exception type
+        NotImplementedError = 1,
+        /// Built-in `tuple` type
+        BuiltinTuple = 2,
+        /// Built-in `all` function
+        BuiltinAll = 3,
+        /// Built-in `any` function
+        BuiltinAny = 4,
+    }
+);
+
+impl fmt::Display for CommonConstant {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let name = match self {
+            Self::AssertionError => "AssertionError",
+            Self::NotImplementedError => "NotImplementedError",
+            Self::BuiltinTuple => "tuple",
+            Self::BuiltinAll => "all",
+            Self::BuiltinAny => "any",
+        };
+        write!(f, "{name}")
     }
 }
 

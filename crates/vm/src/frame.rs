@@ -83,6 +83,7 @@ pub struct Frame {
 
     // member
     pub trace_lines: PyMutex<bool>,
+    pub trace_opcodes: PyMutex<bool>,
     pub temporary_refs: PyMutex<Vec<PyObjectRef>>,
 }
 
@@ -169,6 +170,7 @@ impl Frame {
             state: PyMutex::new(state),
             trace: PyMutex::new(vm.ctx.none()),
             trace_lines: PyMutex::new(true),
+            trace_opcodes: PyMutex::new(false),
             temporary_refs: PyMutex::new(vec![]),
         }
     }
@@ -618,7 +620,27 @@ impl ExecutingFrame<'_> {
 
         match instruction {
             Instruction::BinaryOp { op } => self.execute_bin_op(vm, op.get(arg)),
-
+            // TODO: In CPython, this does in-place unicode concatenation when
+            // refcount is 1. Falls back to regular iadd for now.
+            Instruction::BinaryOpInplaceAddUnicode => {
+                self.execute_bin_op(vm, bytecode::BinaryOperator::InplaceAdd)
+            }
+            Instruction::BinarySlice => {
+                // Stack: [container, start, stop] -> [result]
+                let stop = self.pop_value();
+                let start = self.pop_value();
+                let container = self.pop_value();
+                let slice: PyObjectRef = PySlice {
+                    start: Some(start),
+                    stop,
+                    step: None,
+                }
+                .into_ref(&vm.ctx)
+                .into();
+                let result = container.get_item(&*slice, vm)?;
+                self.push_value(result);
+                Ok(None)
+            }
             Instruction::BuildList { size } => {
                 let sz = size.get(arg) as usize;
                 let elements = self.pop_multiple(sz).collect();
@@ -785,6 +807,10 @@ impl ExecutingFrame<'_> {
                 }
                 let value = self.state.stack[stack_len - idx].clone();
                 self.push_value_opt(value);
+                Ok(None)
+            }
+            Instruction::CopyFreeVars { .. } => {
+                // Free vars are already set up at frame creation time in RustPython
                 Ok(None)
             }
             Instruction::DeleteAttr { idx } => self.delete_attr(vm, idx.get(arg)),
@@ -1001,54 +1027,47 @@ impl ExecutingFrame<'_> {
                 debug_assert_eq!(orig_stack_len + 1, self.state.stack.len());
                 Ok(None)
             }
-            Instruction::GetAwaitable => {
-                use crate::protocol::PyIter;
+            Instruction::GetAwaitable { arg: oparg } => {
+                let iterable = self.pop_value();
 
-                let awaited_obj = self.pop_value();
-                let awaitable = if let Some(coro) = awaited_obj.downcast_ref::<PyCoroutine>() {
-                    // _PyGen_yf() check - detect if coroutine is already being awaited elsewhere
-                    if coro.as_coro().frame().yield_from_target().is_some() {
-                        return Err(
-                            vm.new_runtime_error("coroutine is being awaited already".to_owned())
-                        );
+                let iter = match crate::coroutine::get_awaitable_iter(iterable.clone(), vm) {
+                    Ok(iter) => iter,
+                    Err(e) => {
+                        // _PyEval_FormatAwaitableError: override error for async with
+                        // when the type doesn't have __await__
+                        let oparg_val = oparg.get(arg);
+                        if vm
+                            .get_method(iterable.clone(), identifier!(vm, __await__))
+                            .is_none()
+                        {
+                            if oparg_val == 1 {
+                                return Err(vm.new_type_error(format!(
+                                    "'async with' received an object from __aenter__ \
+                                     that does not implement __await__: {}",
+                                    iterable.class().name()
+                                )));
+                            } else if oparg_val == 2 {
+                                return Err(vm.new_type_error(format!(
+                                    "'async with' received an object from __aexit__ \
+                                     that does not implement __await__: {}",
+                                    iterable.class().name()
+                                )));
+                            }
+                        }
+                        return Err(e);
                     }
-                    awaited_obj
-                } else if awaited_obj
-                    .downcast_ref::<PyGenerator>()
-                    .is_some_and(|generator| {
-                        generator
-                            .as_coro()
-                            .frame()
-                            .code
-                            .flags
-                            .contains(bytecode::CodeFlags::ITERABLE_COROUTINE)
-                    })
-                {
-                    // Generator with CO_ITERABLE_COROUTINE flag can be awaited
-                    // (e.g., generators decorated with @types.coroutine)
-                    awaited_obj
-                } else {
-                    let await_method = vm.get_method_or_type_error(
-                        awaited_obj.clone(),
-                        identifier!(vm, __await__),
-                        || {
-                            format!(
-                                "object {} can't be used in 'await' expression",
-                                awaited_obj.class().name(),
-                            )
-                        },
-                    )?;
-                    let result = await_method.call((), vm)?;
-                    // Check that __await__ returned an iterator
-                    if !PyIter::check(&result) {
-                        return Err(vm.new_type_error(format!(
-                            "__await__() returned non-iterator of type '{}'",
-                            result.class().name()
-                        )));
-                    }
-                    result
                 };
-                self.push_value(awaitable);
+
+                // Check if coroutine is already being awaited
+                if let Some(coro) = iter.downcast_ref::<PyCoroutine>()
+                    && coro.as_coro().frame().yield_from_target().is_some()
+                {
+                    return Err(
+                        vm.new_runtime_error("coroutine is being awaited already".to_owned())
+                    );
+                }
+
+                self.push_value(iter);
                 Ok(None)
             }
             Instruction::GetIter => {
@@ -1157,13 +1176,24 @@ impl ExecutingFrame<'_> {
                 Ok(None)
             }
             Instruction::LoadFromDictOrDeref(i) => {
+                // Pop dict from stack (locals or classdict depending on context)
+                let class_dict = self.pop_value();
                 let i = i.get(arg) as usize;
                 let name = if i < self.code.cellvars.len() {
                     self.code.cellvars[i]
                 } else {
                     self.code.freevars[i - self.code.cellvars.len()]
                 };
-                let value = self.locals.mapping().subscript(name, vm).ok();
+                // Only treat KeyError as "not found", propagate other exceptions
+                let value = if let Some(dict_obj) = class_dict.downcast_ref::<PyDict>() {
+                    dict_obj.get_item_opt(name, vm)?
+                } else {
+                    match class_dict.get_item(name, vm) {
+                        Ok(v) => Some(v),
+                        Err(e) if e.fast_isinstance(vm.ctx.exceptions.key_error) => None,
+                        Err(e) => return Err(e),
+                    }
+                };
                 self.push_value(match value {
                     Some(v) => v,
                     None => self.cells_frees[i]
@@ -1197,6 +1227,22 @@ impl ExecutingFrame<'_> {
             }
             Instruction::LoadConst { idx } => {
                 self.push_value(self.code.constants[idx.get(arg) as usize].clone().into());
+                Ok(None)
+            }
+            Instruction::LoadCommonConstant { idx } => {
+                use bytecode::CommonConstant;
+                let value = match idx.get(arg) {
+                    CommonConstant::AssertionError => {
+                        vm.ctx.exceptions.assertion_error.to_owned().into()
+                    }
+                    CommonConstant::NotImplementedError => {
+                        vm.ctx.exceptions.not_implemented_error.to_owned().into()
+                    }
+                    CommonConstant::BuiltinTuple => vm.ctx.types.tuple_type.to_owned().into(),
+                    CommonConstant::BuiltinAll => vm.builtins.get_attr("all", vm)?,
+                    CommonConstant::BuiltinAny => vm.builtins.get_attr("any", vm)?,
+                };
+                self.push_value(value);
                 Ok(None)
             }
             Instruction::LoadSmallInt { idx } => {
@@ -1239,6 +1285,103 @@ impl ExecutingFrame<'_> {
                     .take()
                     .unwrap_or_else(|| vm.ctx.none());
                 self.push_value(x);
+                Ok(None)
+            }
+            Instruction::LoadFastCheck(idx) => {
+                // Same as LoadFast but explicitly checks for unbound locals
+                // (LoadFast in RustPython already does this check)
+                let idx = idx.get(arg) as usize;
+                let x = self.fastlocals.lock()[idx].clone().ok_or_else(|| {
+                    vm.new_exception_msg(
+                        vm.ctx.exceptions.unbound_local_error.to_owned(),
+                        format!(
+                            "local variable '{}' referenced before assignment",
+                            self.code.varnames[idx]
+                        ),
+                    )
+                })?;
+                self.push_value(x);
+                Ok(None)
+            }
+            Instruction::LoadFastLoadFast { arg: packed } => {
+                // Load two local variables at once
+                // oparg encoding: (idx1 << 4) | idx2
+                let oparg = packed.get(arg);
+                let idx1 = (oparg >> 4) as usize;
+                let idx2 = (oparg & 15) as usize;
+                let fastlocals = self.fastlocals.lock();
+                let x1 = fastlocals[idx1].clone().ok_or_else(|| {
+                    vm.new_exception_msg(
+                        vm.ctx.exceptions.unbound_local_error.to_owned(),
+                        format!(
+                            "local variable '{}' referenced before assignment",
+                            self.code.varnames[idx1]
+                        ),
+                    )
+                })?;
+                let x2 = fastlocals[idx2].clone().ok_or_else(|| {
+                    vm.new_exception_msg(
+                        vm.ctx.exceptions.unbound_local_error.to_owned(),
+                        format!(
+                            "local variable '{}' referenced before assignment",
+                            self.code.varnames[idx2]
+                        ),
+                    )
+                })?;
+                drop(fastlocals);
+                self.push_value(x1);
+                self.push_value(x2);
+                Ok(None)
+            }
+            // TODO: Implement true borrow optimization (skip Arc::clone).
+            // CPython's LOAD_FAST_BORROW uses PyStackRef_Borrow to avoid refcount
+            // increment for values that are consumed within the same basic block.
+            // Possible approaches:
+            // - Store raw pointers with careful lifetime management
+            // - Add a "borrowed" variant to stack slots
+            // - Use arena allocation for short-lived stack values
+            // Currently this just clones like LoadFast.
+            Instruction::LoadFastBorrow(idx) => {
+                let idx = idx.get(arg) as usize;
+                let x = self.fastlocals.lock()[idx].clone().ok_or_else(|| {
+                    vm.new_exception_msg(
+                        vm.ctx.exceptions.unbound_local_error.to_owned(),
+                        format!(
+                            "local variable '{}' referenced before assignment",
+                            self.code.varnames[idx]
+                        ),
+                    )
+                })?;
+                self.push_value(x);
+                Ok(None)
+            }
+            // TODO: Same as LoadFastBorrow - implement true borrow optimization.
+            Instruction::LoadFastBorrowLoadFastBorrow { arg: packed } => {
+                let oparg = packed.get(arg);
+                let idx1 = (oparg >> 4) as usize;
+                let idx2 = (oparg & 15) as usize;
+                let fastlocals = self.fastlocals.lock();
+                let x1 = fastlocals[idx1].clone().ok_or_else(|| {
+                    vm.new_exception_msg(
+                        vm.ctx.exceptions.unbound_local_error.to_owned(),
+                        format!(
+                            "local variable '{}' referenced before assignment",
+                            self.code.varnames[idx1]
+                        ),
+                    )
+                })?;
+                let x2 = fastlocals[idx2].clone().ok_or_else(|| {
+                    vm.new_exception_msg(
+                        vm.ctx.exceptions.unbound_local_error.to_owned(),
+                        format!(
+                            "local variable '{}' referenced before assignment",
+                            self.code.varnames[idx2]
+                        ),
+                    )
+                })?;
+                drop(fastlocals);
+                self.push_value(x1);
+                self.push_value(x2);
                 Ok(None)
             }
             Instruction::LoadGlobal(idx) => {
@@ -1294,6 +1437,10 @@ impl ExecutingFrame<'_> {
                 Ok(None)
             }
             Instruction::MakeFunction => self.execute_make_function(vm),
+            Instruction::MakeCell(_) => {
+                // Cell creation is handled at frame creation time in RustPython
+                Ok(None)
+            }
             Instruction::MapAdd { i } => {
                 let value = self.pop_value();
                 let key = self.pop_value();
@@ -1515,6 +1662,12 @@ impl ExecutingFrame<'_> {
                 Ok(None)
             }
             Instruction::Nop => Ok(None),
+            // NOT_TAKEN is a branch prediction hint - functionally a NOP
+            Instruction::NotTaken => Ok(None),
+            // Instrumented version of NOT_TAKEN - NOP without monitoring
+            Instruction::InstrumentedNotTaken => Ok(None),
+            // CACHE is used by adaptive interpreter for inline caching - NOP for us
+            Instruction::Cache => Ok(None),
             Instruction::ReturnGenerator => {
                 // In RustPython, generators/coroutines are created in function.rs
                 // before the frame starts executing. The RETURN_GENERATOR instruction
@@ -1718,6 +1871,21 @@ impl ExecutingFrame<'_> {
                 self.push_value(load_value);
                 Ok(None)
             }
+            Instruction::StoreFastStoreFast { arg: packed } => {
+                // Store two values to two local variables at once
+                // STORE_FAST idx1 executes first: pops TOS -> locals[idx1]
+                // STORE_FAST idx2 executes second: pops new TOS -> locals[idx2]
+                // oparg encoding: (idx1 << 4) | idx2
+                let oparg = packed.get(arg);
+                let idx1 = (oparg >> 4) as usize;
+                let idx2 = (oparg & 15) as usize;
+                let value1 = self.pop_value(); // TOS -> idx1
+                let value2 = self.pop_value(); // second -> idx2
+                let mut fastlocals = self.fastlocals.lock();
+                fastlocals[idx1] = Some(value1);
+                fastlocals[idx2] = Some(value2);
+                Ok(None)
+            }
             Instruction::StoreGlobal(idx) => {
                 let value = self.pop_value();
                 self.globals
@@ -1728,6 +1896,22 @@ impl ExecutingFrame<'_> {
                 let name = self.code.names[idx.get(arg) as usize];
                 let value = self.pop_value();
                 self.locals.mapping().ass_subscript(name, Some(value), vm)?;
+                Ok(None)
+            }
+            Instruction::StoreSlice => {
+                // Stack: [value, container, start, stop] -> []
+                let stop = self.pop_value();
+                let start = self.pop_value();
+                let container = self.pop_value();
+                let value = self.pop_value();
+                let slice: PyObjectRef = PySlice {
+                    start: Some(start),
+                    stop,
+                    step: None,
+                }
+                .into_ref(&vm.ctx)
+                .into();
+                container.set_item(&*slice, value, vm)?;
                 Ok(None)
             }
             Instruction::StoreSubscr => self.execute_store_subscript(vm),

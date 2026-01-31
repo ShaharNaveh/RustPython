@@ -14,12 +14,171 @@ import re
 import shelve
 import subprocess
 
-from update_lib.io_utils import read_python_files, safe_parse_ast, safe_read_text
+from update_lib.file_utils import (
+    _dircmp_is_same,
+    compare_dir_contents,
+    compare_file_contents,
+    compare_paths,
+    construct_lib_path,
+    cpython_to_local_path,
+    read_python_files,
+    resolve_module_path,
+    resolve_test_path,
+    safe_parse_ast,
+    safe_read_text,
+)
+
+# === Import parsing utilities ===
+
+
+def _extract_top_level_code(content: str) -> str:
+    """Extract only top-level code from Python content for faster parsing."""
+    def_idx = content.find("\ndef ")
+    class_idx = content.find("\nclass ")
+
+    indices = [i for i in (def_idx, class_idx) if i != -1]
+    if indices:
+        content = content[: min(indices)]
+    return content.rstrip("\n")
+
+
+_FROM_TEST_IMPORT_RE = re.compile(r"^from test import (.+)", re.MULTILINE)
+_FROM_TEST_DOT_RE = re.compile(r"^from test\.(\w+)", re.MULTILINE)
+_IMPORT_TEST_DOT_RE = re.compile(r"^import test\.(\w+)", re.MULTILINE)
+
+
+def parse_test_imports(content: str) -> set[str]:
+    """Parse test file content and extract test package dependencies."""
+    content = _extract_top_level_code(content)
+    imports = set()
+
+    for match in _FROM_TEST_IMPORT_RE.finditer(content):
+        import_list = match.group(1)
+        for part in import_list.split(","):
+            name = part.split()[0].strip()
+            if name and name not in ("support", "__init__"):
+                imports.add(name)
+
+    for match in _FROM_TEST_DOT_RE.finditer(content):
+        dep = match.group(1)
+        if dep not in ("support", "__init__"):
+            imports.add(dep)
+
+    for match in _IMPORT_TEST_DOT_RE.finditer(content):
+        dep = match.group(1)
+        if dep not in ("support", "__init__"):
+            imports.add(dep)
+
+    return imports
+
+
+_IMPORT_RE = re.compile(r"^import\s+(\w[\w.]*)", re.MULTILINE)
+_FROM_IMPORT_RE = re.compile(r"^from\s+(\w[\w.]*)\s+import", re.MULTILINE)
+
+
+def parse_lib_imports(content: str) -> set[str]:
+    """Parse library file and extract all imported module names."""
+    imports = set()
+
+    for match in _IMPORT_RE.finditer(content):
+        imports.add(match.group(1))
+
+    for match in _FROM_IMPORT_RE.finditer(content):
+        imports.add(match.group(1))
+
+    return imports
+
+
+# === TODO marker utilities ===
+
+TODO_MARKER = "TODO: RUSTPYTHON"
+
+
+def filter_rustpython_todo(content: str) -> str:
+    """Remove lines containing RustPython TODO markers."""
+    lines = content.splitlines(keepends=True)
+    filtered = [line for line in lines if TODO_MARKER not in line]
+    return "".join(filtered)
+
+
+def count_rustpython_todo(content: str) -> int:
+    """Count lines containing RustPython TODO markers."""
+    return sum(1 for line in content.splitlines() if TODO_MARKER in line)
+
+
+def count_todo_in_path(path: pathlib.Path) -> int:
+    """Count RustPython TODO markers in a file or directory of .py files."""
+    if path.is_file():
+        content = safe_read_text(path)
+        return count_rustpython_todo(content) if content else 0
+
+    total = 0
+    for _, content in read_python_files(path):
+        total += count_rustpython_todo(content)
+    return total
+
+
+# === Test utilities ===
+
+
+def _get_cpython_test_path(test_name: str, cpython_prefix: str) -> pathlib.Path | None:
+    """Return the CPython test path for a test name, or None if missing."""
+    cpython_path = resolve_test_path(test_name, cpython_prefix, prefer="dir")
+    return cpython_path if cpython_path.exists() else None
+
+
+def _get_local_test_path(
+    cpython_test_path: pathlib.Path, lib_prefix: str
+) -> pathlib.Path:
+    """Return the local Lib/test path matching a CPython test path."""
+    return pathlib.Path(lib_prefix) / "test" / cpython_test_path.name
+
+
+def is_test_tracked(test_name: str, cpython_prefix: str, lib_prefix: str) -> bool:
+    """Check if a test exists in the local Lib/test."""
+    cpython_path = _get_cpython_test_path(test_name, cpython_prefix)
+    if cpython_path is None:
+        return True
+    local_path = _get_local_test_path(cpython_path, lib_prefix)
+    return local_path.exists()
+
+
+def is_test_up_to_date(test_name: str, cpython_prefix: str, lib_prefix: str) -> bool:
+    """Check if a test is up-to-date, ignoring RustPython TODO markers."""
+    cpython_path = _get_cpython_test_path(test_name, cpython_prefix)
+    if cpython_path is None:
+        return True
+
+    local_path = _get_local_test_path(cpython_path, lib_prefix)
+    if not local_path.exists():
+        return False
+
+    if cpython_path.is_file():
+        return compare_file_contents(
+            cpython_path, local_path, local_filter=filter_rustpython_todo
+        )
+
+    return compare_dir_contents(
+        cpython_path, local_path, local_filter=filter_rustpython_todo
+    )
+
+
+def count_test_todos(test_name: str, lib_prefix: str) -> int:
+    """Count RustPython TODO markers in a test file/directory."""
+    local_dir = pathlib.Path(lib_prefix) / "test" / test_name
+    local_file = pathlib.Path(lib_prefix) / "test" / f"{test_name}.py"
+
+    if local_dir.exists():
+        return count_todo_in_path(local_dir)
+    if local_file.exists():
+        return count_todo_in_path(local_file)
+    return 0
+
 
 # === Cross-process cache using shelve ===
 
 
-def _get_cpython_version(cpython_prefix: str = "cpython") -> str:
+def _get_cpython_version(cpython_prefix: str) -> str:
     """Get CPython version from git tag for cache namespace."""
     try:
         result = subprocess.run(
@@ -50,8 +209,6 @@ def clear_import_graph_caches() -> None:
         globals()["_lib_import_graph_cache"].clear()
 
 
-from update_lib.path import construct_lib_path, resolve_module_path
-
 # Manual dependency table for irregular cases
 # Format: "name" -> {"lib": [...], "test": [...], "data": [...], "hard_deps": [...]}
 # - lib: override default path (default: name.py or name/)
@@ -60,7 +217,7 @@ DEPENDENCIES = {
     # regrtest is in Lib/test/libregrtest/, not Lib/libregrtest/
     "regrtest": {
         "lib": ["test/libregrtest"],
-        "test": ["test/test_regrtest"],
+        "test": ["test_regrtest"],
         "data": ["test/regrtestdata"],
     },
     # Rust-implemented modules (no lib file, only test)
@@ -68,63 +225,89 @@ DEPENDENCIES = {
         "lib": [],
         "hard_deps": ["_pylong.py"],
         "test": [
-            "test/test_int.py",
-            "test/test_long.py",
+            "test_int.py",
+            "test_long.py",
         ],
     },
     "exception": {
         "lib": [],
         "test": [
-            "test/test_exceptions.py",
-            "test/test_baseexception.py",
-            "test/test_except_star.py",
-            "test/test_exception_group.py",
-            "test/test_exception_hierarchy.py",
-            "test/test_exception_variations.py",
+            "test_exceptions.py",
+            "test_baseexception.py",
+            "test_except_star.py",
+            "test_exception_group.py",
+            "test_exception_hierarchy.py",
+            "test_exception_variations.py",
         ],
     },
     "dict": {
         "lib": [],
         "test": [
-            "test/test_dict.py",
-            "test/test_dictcomps.py",
-            "test/test_dictviews.py",
-            "test/test_userdict.py",
+            "test_dict.py",
+            "test_dictcomps.py",
+            "test_dictviews.py",
+            "test_userdict.py",
         ],
     },
     "list": {
         "lib": [],
         "test": [
-            "test/test_list.py",
-            "test/test_listcomps.py",
-            "test/test_userlist.py",
+            "test_list.py",
+            "test_listcomps.py",
+            "test_userlist.py",
         ],
+    },
+    "__future__": {
+        "test": [
+            "test___future__.py",
+            "test_future_stmt.py",
+        ],
+    },
+    "site": {
+        "hard_deps": ["_sitebuiltins.py"],
+    },
+    "opcode": {
+        "hard_deps": ["_opcode_metadata.py"],
+        "test": [
+            "test_opcode.py",
+            "test__opcode.py",
+            "test_opcodes.py",
+        ],
+    },
+    "pickle": {
+        "hard_deps": ["_compat_pickle.py"],
+    },
+    "re": {
+        "hard_deps": ["sre_compile.py", "sre_constants.py", "sre_parse.py"],
+    },
+    "weakref": {
+        "hard_deps": ["_weakrefset.py"],
     },
     "codecs": {
         "test": [
-            "test/test_codecs.py",
-            "test/test_codeccallbacks.py",
-            "test/test_codecencodings_cn.py",
-            "test/test_codecencodings_hk.py",
-            "test/test_codecencodings_iso2022.py",
-            "test/test_codecencodings_jp.py",
-            "test/test_codecencodings_kr.py",
-            "test/test_codecencodings_tw.py",
-            "test/test_codecmaps_cn.py",
-            "test/test_codecmaps_hk.py",
-            "test/test_codecmaps_jp.py",
-            "test/test_codecmaps_kr.py",
-            "test/test_codecmaps_tw.py",
-            "test/test_charmapcodec.py",
-            "test/test_multibytecodec.py",
+            "test_codecs.py",
+            "test_codeccallbacks.py",
+            "test_codecencodings_cn.py",
+            "test_codecencodings_hk.py",
+            "test_codecencodings_iso2022.py",
+            "test_codecencodings_jp.py",
+            "test_codecencodings_kr.py",
+            "test_codecencodings_tw.py",
+            "test_codecmaps_cn.py",
+            "test_codecmaps_hk.py",
+            "test_codecmaps_jp.py",
+            "test_codecmaps_kr.py",
+            "test_codecmaps_tw.py",
+            "test_charmapcodec.py",
+            "test_multibytecodec.py",
         ],
     },
     # Non-pattern hard_deps (can't be auto-detected)
     "ast": {
         "hard_deps": ["_ast_unparse.py"],
         "test": [
-            "test/test_ast.py",
-            "test/test_unparse.py",
+            "test_ast.py",
+            "test_unparse.py",
         ],
     },
     # Data directories
@@ -139,210 +322,238 @@ DEPENDENCIES = {
         "lib": ["test/support"],
         "data": ["test/wheeldata"],
         "test": [
-            "test/test_support.py",
-            "test/test_script_helper.py",
+            "test_support.py",
+            "test_script_helper.py",
         ],
     },
     # test_htmlparser tests html.parser
     "html": {
-        "test": ["test/test_html.py", "test/test_htmlparser.py"],
+        "hard_deps": ["_markupbase.py"],
+        "test": ["test_html.py", "test_htmlparser.py"],
     },
     "xml": {
         "test": [
-            "test/test_xml_etree.py",
-            "test/test_xml_etree_c.py",
-            "test/test_minidom.py",
-            "test/test_pulldom.py",
-            "test/test_pyexpat.py",
-            "test/test_sax.py",
+            "test_xml_etree.py",
+            "test_xml_etree_c.py",
+            "test_minidom.py",
+            "test_pulldom.py",
+            "test_pyexpat.py",
+            "test_sax.py",
         ],
     },
     "multiprocessing": {
         "test": [
-            "test/test_multiprocessing_fork",
-            "test/test_multiprocessing_forkserver",
-            "test/test_multiprocessing_spawn",
+            "test_multiprocessing_fork",
+            "test_multiprocessing_forkserver",
+            "test_multiprocessing_spawn",
         ],
     },
     "urllib": {
         "test": [
-            "test/test_urllib.py",
-            "test/test_urllib2.py",
-            "test/test_urllib2_localnet.py",
-            "test/test_urllib2net.py",
-            "test/test_urllibnet.py",
-            "test/test_urlparse.py",
-            "test/test_urllib_response.py",
-            "test/test_robotparser.py",
+            "test_urllib.py",
+            "test_urllib2.py",
+            "test_urllib2_localnet.py",
+            "test_urllib2net.py",
+            "test_urllibnet.py",
+            "test_urlparse.py",
+            "test_urllib_response.py",
+            "test_robotparser.py",
         ],
     },
     "collections": {
         "test": [
-            "test/test_collections.py",
-            "test/test_deque.py",
-            "test/test_defaultdict.py",
-            "test/test_ordered_dict.py",
+            "test_collections.py",
+            "test_deque.py",
+            "test_defaultdict.py",
+            "test_ordered_dict.py",
         ],
     },
     "http": {
         "test": [
-            "test/test_httplib.py",
-            "test/test_http_cookiejar.py",
-            "test/test_http_cookies.py",
-            "test/test_httpservers.py",
+            "test_httplib.py",
+            "test_http_cookiejar.py",
+            "test_http_cookies.py",
+            "test_httpservers.py",
         ],
     },
     "unicode": {
         "lib": [],
         "test": [
-            "test/test_unicode_file.py",
-            "test/test_unicode_file_functions.py",
-            "test/test_unicode_identifiers.py",
-            "test/test_unicodedata.py",
+            "test_unicodedata.py",
+            "test_unicode_file.py",
+            "test_unicode_file_functions.py",
+            "test_unicode_identifiers.py",
+            "test_ucn.py",
         ],
     },
     "typing": {
         "test": [
-            "test/test_typing.py",
-            "test/test_type_aliases.py",
-            "test/test_type_annotations.py",
-            "test/test_type_params.py",
-            "test/test_genericalias.py",
+            "test_typing.py",
+            "test_type_aliases.py",
+            "test_type_annotations.py",
+            "test_type_params.py",
+            "test_genericalias.py",
         ],
     },
     "unpack": {
         "lib": [],
         "test": [
-            "test/test_unpack.py",
-            "test/test_unpack_ex.py",
+            "test_unpack.py",
+            "test_unpack_ex.py",
         ],
     },
     "zipimport": {
         "test": [
-            "test/test_zipimport.py",
-            "test/test_zipimport_support.py",
+            "test_zipimport.py",
+            "test_zipimport_support.py",
         ],
     },
     "time": {
         "lib": [],
         "test": [
-            "test/test_time.py",
-            "test/test_strftime.py",
+            "test_time.py",
+            "test_strftime.py",
         ],
     },
     "sys": {
         "lib": [],
         "test": [
-            "test/test_sys.py",
-            "test/test_syslog.py",
-            "test/test_sys_setprofile.py",
-            "test/test_sys_settrace.py",
+            "test_sys.py",
+            "test_syslog.py",
+            "test_sys_setprofile.py",
+            "test_sys_settrace.py",
         ],
     },
     "str": {
         "lib": [],
         "test": [
-            "test/test_str.py",
-            "test/test_fstring.py",
-            "test/test_string_literals.py",
+            "test_str.py",
+            "test_fstring.py",
+            "test_string_literals.py",
         ],
     },
     "thread": {
         "lib": [],
         "test": [
-            "test/test_thread.py",
-            "test/test_thread_local_bytecode.py",
-            "test/test_threadsignals.py",
+            "test_thread.py",
+            "test_thread_local_bytecode.py",
+            "test_threadsignals.py",
         ],
     },
     "threading": {
+        "hard_deps": ["_threading_local.py"],
         "test": [
-            "test/test_threading.py",
-            "test/test_threadedtempfile.py",
-            "test/test_threading_local.py",
+            "test_threading.py",
+            "test_threadedtempfile.py",
+            "test_threading_local.py",
         ],
     },
     "class": {
         "lib": [],
         "test": [
-            "test/test_class.py",
-            "test/test_genericclass.py",
-            "test/test_subclassinit.py",
+            "test_class.py",
+            "test_genericclass.py",
+            "test_subclassinit.py",
         ],
     },
     "generator": {
         "lib": [],
         "test": [
-            "test/test_generators.py",
-            "test/test_genexps.py",
-            "test/test_generator_stop.py",
-            "test/test_yield_from.py",
+            "test_generators.py",
+            "test_genexps.py",
+            "test_generator_stop.py",
+            "test_yield_from.py",
         ],
     },
     "descr": {
         "lib": [],
         "test": [
-            "test/test_descr.py",
-            "test/test_descrtut.py",
+            "test_descr.py",
+            "test_descrtut.py",
         ],
     },
     "contextlib": {
         "test": [
-            "test/test_contextlib.py",
-            "test/test_contextlib_async.py",
+            "test_contextlib.py",
+            "test_contextlib_async.py",
         ],
     },
     "io": {
         "test": [
-            "test/test_io.py",
-            "test/test_bufio.py",
-            "test/test_fileio.py",
-            "test/test_memoryio.py",
+            "test_io.py",
+            "test_bufio.py",
+            "test_fileio.py",
+            "test_memoryio.py",
         ],
     },
     "dbm": {
         "test": [
-            "test/test_dbm.py",
-            "test/test_dbm_gnu.py",
-            "test/test_dbm_ndbm.py",
+            "test_dbm.py",
+            "test_dbm_gnu.py",
+            "test_dbm_ndbm.py",
         ],
     },
     "datetime": {
+        "hard_deps": ["_strptime.py"],
         "test": [
-            "test/test_datetime.py",
-            "test/test_strptime.py",
+            "test_datetime.py",
+            "test_strptime.py",
+        ],
+    },
+    "concurrent": {
+        "test": [
+            "test_concurrent_futures",
+        ],
+    },
+    "locale": {
+        "test": [
+            "test_locale.py",
+            "test__locale.py",
+        ],
+    },
+    "numbers": {
+        "test": [
+            "test_numbers.py",
+            "test_abstract_numbers.py",
         ],
     },
     "file": {
         "lib": [],
         "test": [
-            "test/test_file.py",
-            "test/test_largefile.py",
+            "test_file.py",
+            "test_largefile.py",
         ],
     },
     "fcntl": {
         "lib": [],
         "test": [
-            "test/test_fcntl.py",
-            "test/test_ioctl.py",
+            "test_fcntl.py",
+            "test_ioctl.py",
+        ],
+    },
+    "select": {
+        "lib": [],
+        "test": [
+            "test_select.py",
+            "test_poll.py",
         ],
     },
     "xmlrpc": {
         "test": [
-            "test/test_xmlrpc.py",
-            "test/test_docxmlrpc.py",
+            "test_xmlrpc.py",
+            "test_docxmlrpc.py",
         ],
     },
     "ctypes": {
         "test": [
-            "test/test_ctypes",
-            "test/test_stable_abi_ctypes.py",
+            "test_ctypes",
+            "test_stable_abi_ctypes.py",
         ],
     },
 }
 
 
-def resolve_hard_dep_parent(name: str, cpython_prefix: str = "cpython") -> str | None:
+def resolve_hard_dep_parent(name: str, cpython_prefix: str) -> str | None:
     """Resolve a hard_dep name to its parent module.
 
     Only returns a parent if the file is actually tracked:
@@ -387,6 +598,30 @@ def resolve_hard_dep_parent(name: str, cpython_prefix: str = "cpython") -> str |
             parent_dir.exists() and (parent_dir / "__init__.py").exists()
         ):
             return parent
+
+    return None
+
+
+def resolve_test_to_lib(test_name: str) -> str | None:
+    """Resolve a test name to its library group from DEPENDENCIES.
+
+    Args:
+        test_name: Test name with or without test_ prefix (e.g., "test_urllib2" or "urllib2")
+
+    Returns:
+        Library name if test belongs to a group, None otherwise
+    """
+    # Normalize: add test_ prefix if not present
+    if not test_name.startswith("test_"):
+        test_name = f"test_{test_name}"
+
+    for lib_name, dep_info in DEPENDENCIES.items():
+        tests = dep_info.get("test", [])
+        for test_path in tests:
+            # test_path is like "test_urllib2.py" or "test_multiprocessing_fork"
+            path_stem = test_path[:-3] if test_path.endswith(".py") else test_path
+            if path_stem == test_name:
+                return lib_name
 
     return None
 
@@ -476,9 +711,7 @@ TEST_DEPENDENCIES = {
 
 
 @functools.cache
-def get_lib_paths(
-    name: str, cpython_prefix: str = "cpython"
-) -> tuple[pathlib.Path, ...]:
+def get_lib_paths(name: str, cpython_prefix: str) -> tuple[pathlib.Path, ...]:
     """Get all library paths for a module.
 
     Args:
@@ -510,10 +743,35 @@ def get_lib_paths(
     return tuple(paths)
 
 
+def get_all_hard_deps(name: str, cpython_prefix: str) -> list[str]:
+    """Get all hard_deps for a module (explicit + auto-detected).
+
+    Args:
+        name: Module name (e.g., "decimal", "datetime")
+        cpython_prefix: CPython directory prefix
+
+    Returns:
+        List of hard_dep names (without .py extension)
+    """
+    dep_info = DEPENDENCIES.get(name, {})
+    hard_deps = set()
+
+    # Explicit hard_deps from DEPENDENCIES
+    for hd in dep_info.get("hard_deps", []):
+        # Remove .py extension if present
+        hard_deps.add(hd[:-3] if hd.endswith(".py") else hd)
+
+    # Auto-detect _py{module}.py or _py_{module}.py patterns
+    for pattern in [f"_py{name}.py", f"_py_{name}.py"]:
+        auto_path = construct_lib_path(cpython_prefix, pattern)
+        if auto_path.exists():
+            hard_deps.add(auto_path.stem)
+
+    return sorted(hard_deps)
+
+
 @functools.cache
-def get_test_paths(
-    name: str, cpython_prefix: str = "cpython"
-) -> tuple[pathlib.Path, ...]:
+def get_test_paths(name: str, cpython_prefix: str) -> tuple[pathlib.Path, ...]:
     """Get all test paths for a module.
 
     Args:
@@ -525,107 +783,16 @@ def get_test_paths(
     """
     if name in DEPENDENCIES and "test" in DEPENDENCIES[name]:
         return tuple(
-            construct_lib_path(cpython_prefix, p) for p in DEPENDENCIES[name]["test"]
+            construct_lib_path(cpython_prefix, f"test/{p}")
+            for p in DEPENDENCIES[name]["test"]
         )
 
     # Default: try directory first, then file
     return (resolve_module_path(f"test/test_{name}", cpython_prefix, prefer="dir"),)
 
 
-def _extract_top_level_code(content: str) -> str:
-    """Extract only top-level code from Python content for faster parsing.
-
-    Cuts at first function/class definition since imports come before them.
-    """
-    # Find first function or class definition
-    def_idx = content.find("\ndef ")
-    class_idx = content.find("\nclass ")
-
-    # Use the earlier of the two (if found)
-    indices = [i for i in (def_idx, class_idx) if i != -1]
-    if indices:
-        content = content[: min(indices)]
-    return content.rstrip("\n")
-
-
-_FROM_TEST_IMPORT_RE = re.compile(r"^from test import (.+)", re.MULTILINE)
-_FROM_TEST_DOT_RE = re.compile(r"^from test\.(\w+)", re.MULTILINE)
-_IMPORT_TEST_DOT_RE = re.compile(r"^import test\.(\w+)", re.MULTILINE)
-
-
-def parse_test_imports(content: str) -> set[str]:
-    """Parse test file content and extract test package dependencies.
-
-    Uses regex for speed - only matches top-level imports.
-
-    Args:
-        content: Python file content
-
-    Returns:
-        Set of module names imported from test package
-    """
-    content = _extract_top_level_code(content)
-    imports = set()
-
-    # Match "from test import foo, bar, baz"
-    for match in _FROM_TEST_IMPORT_RE.finditer(content):
-        import_list = match.group(1)
-        # Parse "foo, bar as b, baz" -> ["foo", "bar", "baz"]
-        for part in import_list.split(","):
-            name = part.split()[0].strip()  # Handle "foo as f"
-            if name and name not in ("support", "__init__"):
-                imports.add(name)
-
-    # Match "from test.foo import ..." -> depends on foo
-    for match in _FROM_TEST_DOT_RE.finditer(content):
-        dep = match.group(1)
-        if dep not in ("support", "__init__"):
-            imports.add(dep)
-
-    # Match "import test.foo" -> depends on foo
-    for match in _IMPORT_TEST_DOT_RE.finditer(content):
-        dep = match.group(1)
-        if dep not in ("support", "__init__"):
-            imports.add(dep)
-
-    return imports
-
-
-# Match "import foo.bar" - module name must start with word char (not dot)
-_IMPORT_RE = re.compile(r"^import\s+(\w[\w.]*)", re.MULTILINE)
-# Match "from foo.bar import" - exclude relative imports (from . or from ..)
-_FROM_IMPORT_RE = re.compile(r"^from\s+(\w[\w.]*)\s+import", re.MULTILINE)
-
-
-def parse_lib_imports(content: str) -> set[str]:
-    """Parse library file and extract all imported module names.
-
-    Uses regex for speed - only matches top-level imports (no leading whitespace).
-    Returns full module paths (e.g., "collections.abc" not just "collections").
-
-    Args:
-        content: Python file content
-
-    Returns:
-        Set of imported module names (full paths)
-    """
-    # Note: Don't truncate content here - some stdlib files have imports after
-    # the first def/class (e.g., _pydecimal.py has `import contextvars` at line 343)
-    imports = set()
-
-    # Match "import foo.bar" at line start
-    for match in _IMPORT_RE.finditer(content):
-        imports.add(match.group(1))
-
-    # Match "from foo.bar import ..." at line start
-    for match in _FROM_IMPORT_RE.finditer(content):
-        imports.add(match.group(1))
-
-    return imports
-
-
 @functools.cache
-def get_all_imports(name: str, cpython_prefix: str = "cpython") -> frozenset[str]:
+def get_all_imports(name: str, cpython_prefix: str) -> frozenset[str]:
     """Get all imports from a library file.
 
     Args:
@@ -647,7 +814,7 @@ def get_all_imports(name: str, cpython_prefix: str = "cpython") -> frozenset[str
 
 
 @functools.cache
-def get_soft_deps(name: str, cpython_prefix: str = "cpython") -> frozenset[str]:
+def get_soft_deps(name: str, cpython_prefix: str) -> frozenset[str]:
     """Get soft dependencies by parsing imports from library file.
 
     Args:
@@ -670,7 +837,7 @@ def get_soft_deps(name: str, cpython_prefix: str = "cpython") -> frozenset[str]:
 
 
 @functools.cache
-def get_rust_deps(name: str, cpython_prefix: str = "cpython") -> frozenset[str]:
+def get_rust_deps(name: str, cpython_prefix: str) -> frozenset[str]:
     """Get Rust/C dependencies (imports that don't exist in cpython/Lib/).
 
     Args:
@@ -685,30 +852,29 @@ def get_rust_deps(name: str, cpython_prefix: str = "cpython") -> frozenset[str]:
     return frozenset(all_imports - soft_deps)
 
 
-def _dircmp_is_same(dcmp) -> bool:
-    """Recursively check if two directories are identical.
+def is_path_synced(
+    cpython_path: pathlib.Path,
+    cpython_prefix: str,
+    lib_prefix: str,
+) -> bool:
+    """Check if a CPython path is synced with local.
 
     Args:
-        dcmp: filecmp.dircmp object
+        cpython_path: Path in CPython directory
+        cpython_prefix: CPython directory prefix
+        lib_prefix: Local Lib directory prefix
 
     Returns:
-        True if directories are identical (including subdirectories)
+        True if synced, False otherwise
     """
-    if dcmp.diff_files or dcmp.left_only or dcmp.right_only:
+    local_path = cpython_to_local_path(cpython_path, cpython_prefix, lib_prefix)
+    if local_path is None:
         return False
-
-    # Recursively check subdirectories
-    for subdir in dcmp.subdirs.values():
-        if not _dircmp_is_same(subdir):
-            return False
-
-    return True
+    return compare_paths(cpython_path, local_path)
 
 
 @functools.cache
-def is_up_to_date(
-    name: str, cpython_prefix: str = "cpython", lib_prefix: str = "Lib"
-) -> bool:
+def is_up_to_date(name: str, cpython_prefix: str, lib_prefix: str) -> bool:
     """Check if a module is up-to-date by comparing files.
 
     Args:
@@ -719,8 +885,6 @@ def is_up_to_date(
     Returns:
         True if all files match, False otherwise
     """
-    import filecmp
-
     lib_paths = get_lib_paths(name, cpython_prefix)
 
     found_any = False
@@ -735,17 +899,8 @@ def is_up_to_date(
         rel_path = cpython_path.relative_to(cpython_prefix)
         local_path = pathlib.Path(lib_prefix) / rel_path.relative_to("Lib")
 
-        if not local_path.exists():
+        if not compare_paths(cpython_path, local_path):
             return False
-
-        if cpython_path.is_file():
-            if not filecmp.cmp(cpython_path, local_path, shallow=False):
-                return False
-        else:
-            # Directory comparison (recursive)
-            dcmp = filecmp.dircmp(cpython_path, local_path)
-            if not _dircmp_is_same(dcmp):
-                return False
 
     if not found_any:
         dep_info = DEPENDENCIES.get(name, {})
@@ -889,7 +1044,7 @@ def _build_test_import_graph(
     # Cross-process cache (only for standard Lib/test directory)
     use_file_cache = _is_standard_lib_path(cache_key)
     if use_file_cache:
-        version = _get_cpython_version()
+        version = _get_cpython_version("cpython")
         shelve_key = f"test_import_graph:{version}"
         try:
             with shelve.open(_get_cache_path()) as db:
@@ -950,7 +1105,7 @@ def _build_test_import_graph(
 _lib_import_graph_cache: dict[str, dict[str, set[str]]] = {}
 
 
-def _build_lib_import_graph(lib_prefix: str = "Lib") -> dict[str, set[str]]:
+def _build_lib_import_graph(lib_prefix: str) -> dict[str, set[str]]:
     """Build import graph for Lib modules (full module paths like urllib.request).
 
     Uses cross-process shelve cache based on CPython version.
@@ -968,7 +1123,7 @@ def _build_lib_import_graph(lib_prefix: str = "Lib") -> dict[str, set[str]]:
     # Cross-process cache (only for standard Lib directory)
     use_file_cache = _is_standard_lib_path(lib_prefix)
     if use_file_cache:
-        version = _get_cpython_version()
+        version = _get_cpython_version("cpython")
         shelve_key = f"lib_import_graph:{version}"
         try:
             with shelve.open(_get_cache_path()) as db:
@@ -1106,7 +1261,7 @@ _BLOCKLIST_MODULES = frozenset(
 
 def find_dependent_tests_tree(
     module_name: str,
-    lib_prefix: str = "Lib",
+    lib_prefix: str,
     max_depth: int = 1,
     _depth: int = 0,
     _visited_tests: set[str] | None = None,

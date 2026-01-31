@@ -16,7 +16,7 @@ import sys
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 
 
-def get_all_modules(cpython_prefix: str = "cpython") -> list[str]:
+def get_all_modules(cpython_prefix: str) -> list[str]:
     """Get all top-level module names from cpython/Lib/.
 
     Includes private modules (_*) that are not hard_deps of other modules.
@@ -46,12 +46,9 @@ def get_all_modules(cpython_prefix: str = "cpython") -> list[str]:
         else:
             continue
 
-        # Skip private modules that are hard_deps of other modules
-        # e.g., _pydatetime is a hard_dep of datetime, so skip it
-        if (
-            name.startswith("_")
-            and resolve_hard_dep_parent(name, cpython_prefix) is not None
-        ):
+        # Skip modules that are hard_deps of other modules
+        # e.g., _pydatetime is a hard_dep of datetime, pydoc_data is a hard_dep of pydoc
+        if resolve_hard_dep_parent(name, cpython_prefix) is not None:
             continue
 
         modules.add(name)
@@ -66,6 +63,7 @@ def format_deps_tree(
     *,
     name: str | None = None,
     soft_deps: set[str] | None = None,
+    hard_deps: set[str] | None = None,
     _depth: int = 0,
     _visited: set[str] | None = None,
     _indent: str = "",
@@ -78,6 +76,7 @@ def format_deps_tree(
         max_depth: Maximum recursion depth
         name: Module name (used to compute deps if soft_deps not provided)
         soft_deps: Pre-computed soft dependencies (optional)
+        hard_deps: Hard dependencies to show under the module (root level only)
         _depth: Current depth (internal)
         _visited: Already visited modules (internal)
         _indent: Current indentation (internal)
@@ -103,7 +102,7 @@ def format_deps_tree(
 
     soft_deps = sorted(soft_deps)
 
-    if not soft_deps:
+    if not soft_deps and not hard_deps:
         return lines
 
     # Separate up-to-date and outdated modules
@@ -136,6 +135,14 @@ def format_deps_tree(
         lines.append(f"{_indent}- [ ] {dep}{native_suffix}")
         _visited.add(dep)
 
+        # Show hard_deps under this module (only at root level, i.e., when hard_deps is provided)
+        if hard_deps and dep in soft_deps:
+            for hd in sorted(hard_deps):
+                hd_up_to_date = is_up_to_date(hd, cpython_prefix, lib_prefix)
+                hd_marker = "[x]" if hd_up_to_date else "[ ]"
+                lines.append(f"{_indent}  - {hd_marker} {hd}")
+            hard_deps = None  # Only show once
+
         # Recurse if within depth limit
         if _depth < max_depth - 1:
             lines.extend(
@@ -163,8 +170,8 @@ def format_deps_tree(
 
 def format_deps(
     name: str,
-    cpython_prefix: str = "cpython",
-    lib_prefix: str = "Lib",
+    cpython_prefix: str,
+    lib_prefix: str,
     max_depth: int = 10,
     _visited: set[str] | None = None,
 ) -> list[str]:
@@ -182,9 +189,12 @@ def format_deps(
     """
     from update_lib.deps import (
         DEPENDENCIES,
+        count_test_todos,
         find_dependent_tests_tree,
         get_lib_paths,
         get_test_paths,
+        is_path_synced,
+        is_test_up_to_date,
         resolve_hard_dep_parent,
     )
 
@@ -200,7 +210,7 @@ def format_deps(
         name = module_name
 
     # Resolve hard_dep to parent module (e.g., pydoc_data -> pydoc)
-    parent = resolve_hard_dep_parent(name)
+    parent = resolve_hard_dep_parent(name, cpython_prefix)
     if parent:
         lines.append(f"(redirecting {name} -> {parent})")
         name = parent
@@ -209,29 +219,50 @@ def format_deps(
     lib_paths = get_lib_paths(name, cpython_prefix)
     existing_lib_paths = [p for p in lib_paths if p.exists()]
     for p in existing_lib_paths:
-        lines.append(f"[+] lib: {p}")
+        synced = is_path_synced(p, cpython_prefix, lib_prefix)
+        marker = "[x]" if synced else "[ ]"
+        lines.append(f"{marker} lib: {p}")
 
     # test paths (only show existing)
     test_paths = get_test_paths(name, cpython_prefix)
     existing_test_paths = [p for p in test_paths if p.exists()]
     for p in existing_test_paths:
-        lines.append(f"[+] test: {p}")
+        test_name = p.stem if p.is_file() else p.name
+        synced = is_test_up_to_date(test_name, cpython_prefix, lib_prefix)
+        marker = "[x]" if synced else "[ ]"
+        todo_count = count_test_todos(test_name, lib_prefix)
+        todo_suffix = f" (TODO: {todo_count})" if todo_count > 0 else ""
+        lines.append(f"{marker} test: {p}{todo_suffix}")
 
     # If no lib or test paths exist, module doesn't exist
     if not existing_lib_paths and not existing_test_paths:
         lines.append(f"(module '{name}' not found)")
         return lines
 
-    # hard_deps (from DEPENDENCIES table)
+    # Collect all hard_deps (explicit from DEPENDENCIES + implicit from lib_paths)
     dep_info = DEPENDENCIES.get(name, {})
-    hard_deps = dep_info.get("hard_deps", [])
-    if hard_deps:
-        lines.append(f"packages: {hard_deps}")
+    explicit_hard_deps = dep_info.get("hard_deps", [])
+
+    # Get implicit hard_deps from lib_paths (e.g., _pydecimal.py for decimal)
+    all_hard_deps = set()
+    for hd in explicit_hard_deps:
+        # Remove .py extension if present
+        all_hard_deps.add(hd[:-3] if hd.endswith(".py") else hd)
+
+    for p in existing_lib_paths:
+        dep_name = p.stem if p.is_file() else p.name
+        if dep_name != name:  # Skip the main module itself
+            all_hard_deps.add(dep_name)
 
     lines.append("\ndependencies:")
     lines.extend(
         format_deps_tree(
-            cpython_prefix, lib_prefix, max_depth, soft_deps={name}, _visited=_visited
+            cpython_prefix,
+            lib_prefix,
+            max_depth,
+            soft_deps={name},
+            _visited=_visited,
+            hard_deps=all_hard_deps,
         )
     )
 
@@ -244,8 +275,8 @@ def format_deps(
 
 def _format_dependent_tests_tree(
     tree: dict,
-    cpython_prefix: str = "cpython",
-    lib_prefix: str = "Lib",
+    cpython_prefix: str,
+    lib_prefix: str,
     indent: str = "",
 ) -> list[str]:
     """Format dependent tests tree for display."""
@@ -314,14 +345,18 @@ def _resolve_module_name(
         get_lib_paths,
         get_test_paths,
         resolve_hard_dep_parent,
+        resolve_test_to_lib,
     )
 
-    # Resolve test_ prefix
+    # Resolve test to library group (e.g., test_urllib2 -> urllib)
     if name.startswith("test_"):
+        lib_group = resolve_test_to_lib(name)
+        if lib_group:
+            return [lib_group]
         name = name[5:]
 
     # Resolve hard_dep to parent
-    parent = resolve_hard_dep_parent(name)
+    parent = resolve_hard_dep_parent(name, cpython_prefix)
     if parent:
         return [parent]
 
@@ -350,8 +385,8 @@ def _resolve_module_name(
 
 def show_deps(
     names: list[str],
-    cpython_prefix: str = "cpython",
-    lib_prefix: str = "Lib",
+    cpython_prefix: str,
+    lib_prefix: str,
     max_depth: int = 10,
 ) -> None:
     """Show all dependency information for modules."""

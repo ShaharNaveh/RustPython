@@ -31,9 +31,10 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 
-from update_lib.io_utils import safe_read_text
-from update_lib.path import (
+from update_lib.deps import get_test_paths
+from update_lib.file_utils import (
     construct_lib_path,
+    get_cpython_dir,
     get_module_name,
     get_test_files,
     is_lib_path,
@@ -41,6 +42,7 @@ from update_lib.path import (
     lib_to_test_path,
     parse_lib_path,
     resolve_module_path,
+    safe_read_text,
 )
 
 
@@ -54,7 +56,7 @@ def collect_original_methods(
         - For file: set of (class_name, method_name) or None if file doesn't exist
         - For directory: dict mapping file path to set of methods, or None if dir doesn't exist
     """
-    from update_lib.auto_mark import extract_test_methods
+    from update_lib.cmd_auto_mark import extract_test_methods
 
     if not lib_path.exists():
         return None
@@ -90,8 +92,8 @@ def quick(
         verbose: Print progress messages
         skip_build: Skip cargo build, use pre-built binary
     """
-    from update_lib.auto_mark import auto_mark_directory, auto_mark_file
-    from update_lib.migrate import patch_directory, patch_file
+    from update_lib.cmd_auto_mark import auto_mark_directory, auto_mark_file
+    from update_lib.cmd_migrate import patch_directory, patch_file
 
     # Determine lib_path and whether to migrate
     if is_lib_path(src_path):
@@ -173,22 +175,6 @@ def quick(
             print(f"Removed expectedFailure from {num_removed} tests")
 
 
-def get_cpython_dir(src_path: pathlib.Path) -> pathlib.Path:
-    """Extract cpython directory from source path.
-
-    Example:
-        cpython/Lib/dataclasses.py -> cpython
-        /some/path/cpython/Lib/foo.py -> /some/path/cpython
-    """
-    path_str = str(src_path).replace("\\", "/")
-    lib_marker = "/Lib/"
-    if lib_marker in path_str:
-        idx = path_str.index(lib_marker)
-        return pathlib.Path(path_str[:idx])
-    # Shortcut case: assume "cpython"
-    return pathlib.Path("cpython")
-
-
 def get_cpython_version(cpython_dir: pathlib.Path) -> str:
     """Get CPython version from git tag."""
     import subprocess
@@ -206,7 +192,7 @@ def get_cpython_version(cpython_dir: pathlib.Path) -> str:
 def git_commit(
     name: str,
     lib_path: pathlib.Path | None,
-    test_path: pathlib.Path | None,
+    test_paths: list[pathlib.Path] | pathlib.Path | None,
     cpython_dir: pathlib.Path,
     verbose: bool = True,
 ) -> bool:
@@ -215,7 +201,7 @@ def git_commit(
     Args:
         name: Module name (e.g., "dataclasses")
         lib_path: Path to library file/directory (or None)
-        test_path: Path to test file/directory (or None)
+        test_paths: Path(s) to test file/directory (or None)
         cpython_dir: Path to cpython directory
         verbose: Print progress messages
 
@@ -224,12 +210,19 @@ def git_commit(
     """
     import subprocess
 
+    # Normalize test_paths to list
+    if test_paths is None:
+        test_paths = []
+    elif isinstance(test_paths, pathlib.Path):
+        test_paths = [test_paths]
+
     # Stage changes
     paths_to_add = []
     if lib_path and lib_path.exists():
         paths_to_add.append(str(lib_path))
-    if test_path and test_path.exists():
-        paths_to_add.append(str(test_path))
+    for test_path in test_paths:
+        if test_path and test_path.exists():
+            paths_to_add.append(str(test_path))
 
     if not paths_to_add:
         return False
@@ -298,6 +291,12 @@ def _expand_shortcut(path: pathlib.Path) -> pathlib.Path:
 
     # Library shortcut: foo -> cpython/Lib/foo
     resolved = resolve_module_path(name, "cpython", prefer="file")
+    if resolved.exists():
+        return resolved
+
+    # Extension module shortcut: winreg -> cpython/Lib/test/test_winreg
+    # For C/Rust extension modules that have no Python source but have tests
+    resolved = resolve_module_path(f"test/test_{name}", "cpython", prefer="dir")
     if resolved.exists():
         return resolved
 
@@ -370,23 +369,46 @@ def main(argv: list[str] | None = None) -> int:
             lib_file_path = parse_lib_path(src_path)
 
             if args.copy:
-                from update_lib.copy_lib import copy_lib
+                from update_lib.cmd_copy_lib import copy_lib
 
                 copy_lib(src_path)
 
-            # Convert to test path
-            src_path = lib_to_test_path(original_src)
-            if not src_path.exists():
-                print(f"Warning: Test path does not exist: {src_path}")
-                # Skip test processing, but continue with commit
-                src_path = None
+            # Get all test paths from DEPENDENCIES (or fall back to default)
+            module_name = get_module_name(original_src)
+            cpython_dir = get_cpython_dir(original_src)
+            test_src_paths = get_test_paths(module_name, str(cpython_dir))
 
-        if src_path is not None:
+            # Fall back to default test path if DEPENDENCIES has no entry
+            if not test_src_paths:
+                default_test = lib_to_test_path(original_src)
+                if default_test.exists():
+                    test_src_paths = (default_test,)
+
+            # Process all test paths
+            test_paths_for_commit = []
+            for test_src in test_src_paths:
+                if not test_src.exists():
+                    print(f"Warning: Test path does not exist: {test_src}")
+                    continue
+
+                test_lib_path = parse_lib_path(test_src)
+                test_paths_for_commit.append(test_lib_path)
+
+                quick(
+                    test_src,
+                    no_migrate=not args.migrate,
+                    no_auto_mark=not args.auto_mark,
+                    mark_failure=args.mark_failure,
+                    skip_build=not args.build,
+                )
+
+            test_paths = test_paths_for_commit
+        else:
+            # It's a test path - process single test
             test_path = (
                 parse_lib_path(src_path) if not is_lib_path(src_path) else src_path
             )
 
-            # Process the test path
             quick(
                 src_path,
                 no_migrate=not args.migrate,
@@ -394,12 +416,13 @@ def main(argv: list[str] | None = None) -> int:
                 mark_failure=args.mark_failure,
                 skip_build=not args.build,
             )
+            test_paths = [test_path]
 
         # Step 3: Git commit
         if args.commit:
             cpython_dir = get_cpython_dir(original_src)
             git_commit(
-                get_module_name(original_src), lib_file_path, test_path, cpython_dir
+                get_module_name(original_src), lib_file_path, test_paths, cpython_dir
             )
 
         return 0
@@ -411,7 +434,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     except Exception as e:
         # Handle TestRunError with a clean message
-        from update_lib.auto_mark import TestRunError
+        from update_lib.cmd_auto_mark import TestRunError
 
         if isinstance(e, TestRunError):
             print(f"Error: {e}", file=sys.stderr)

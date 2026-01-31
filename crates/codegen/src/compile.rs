@@ -36,6 +36,51 @@ use rustpython_compiler_core::{
 };
 use rustpython_wtf8::Wtf8Buf;
 
+/// Extension trait for `ast::Expr` to add constant checking methods
+trait ExprExt {
+    /// Check if an expression is a constant literal
+    fn is_constant(&self) -> bool;
+
+    /// Check if a slice expression has all constant elements
+    fn is_constant_slice(&self) -> bool;
+
+    /// Check if we should use BINARY_SLICE/STORE_SLICE optimization
+    fn should_use_slice_optimization(&self) -> bool;
+}
+
+impl ExprExt for ast::Expr {
+    fn is_constant(&self) -> bool {
+        matches!(
+            self,
+            ast::Expr::NumberLiteral(_)
+                | ast::Expr::StringLiteral(_)
+                | ast::Expr::BytesLiteral(_)
+                | ast::Expr::NoneLiteral(_)
+                | ast::Expr::BooleanLiteral(_)
+                | ast::Expr::EllipsisLiteral(_)
+        )
+    }
+
+    fn is_constant_slice(&self) -> bool {
+        match self {
+            ast::Expr::Slice(s) => {
+                let lower_const =
+                    s.lower.is_none() || s.lower.as_deref().is_some_and(|e| e.is_constant());
+                let upper_const =
+                    s.upper.is_none() || s.upper.as_deref().is_some_and(|e| e.is_constant());
+                let step_const =
+                    s.step.is_none() || s.step.as_deref().is_some_and(|e| e.is_constant());
+                lower_const && upper_const && step_const
+            }
+            _ => false,
+        }
+    }
+
+    fn should_use_slice_optimization(&self) -> bool {
+        !self.is_constant_slice() && matches!(self, ast::Expr::Slice(s) if s.step.is_none())
+    }
+}
+
 const MAXBLOCKS: usize = 20;
 
 #[derive(Debug, Clone, Copy)]
@@ -425,39 +470,25 @@ impl Compiler {
         }
     }
 
-    /// Check if the slice is a two-element slice (no step)
-    // = is_two_element_slice
-    const fn is_two_element_slice(slice: &ast::Expr) -> bool {
-        matches!(slice, ast::Expr::Slice(s) if s.step.is_none())
-    }
-
-    /// Compile a slice expression
-    // = compiler_slice
-    fn compile_slice(&mut self, s: &ast::ExprSlice) -> CompileResult<BuildSliceArgCount> {
-        // Compile lower
+    /// Compile just start and stop of a slice (for BINARY_SLICE/STORE_SLICE)
+    // = codegen_slice_two_parts
+    fn compile_slice_two_parts(&mut self, s: &ast::ExprSlice) -> CompileResult<()> {
+        // Compile lower (or None)
         if let Some(lower) = &s.lower {
             self.compile_expression(lower)?;
         } else {
             self.emit_load_const(ConstantData::None);
         }
 
-        // Compile upper
+        // Compile upper (or None)
         if let Some(upper) = &s.upper {
             self.compile_expression(upper)?;
         } else {
             self.emit_load_const(ConstantData::None);
         }
 
-        Ok(match &s.step {
-            Some(step) => {
-                // Compile step if present
-                self.compile_expression(step)?;
-                BuildSliceArgCount::Three
-            }
-            None => BuildSliceArgCount::Two,
-        })
+        Ok(())
     }
-
     /// Compile a subscript expression
     // = compiler_subscript
     fn compile_subscript(
@@ -480,27 +511,20 @@ impl Compiler {
         // VISIT(c, expr, e->v.Subscript.value)
         self.compile_expression(value)?;
 
-        // Handle two-element slice (for Load/Store, not Del)
-        if Self::is_two_element_slice(slice) && !matches!(ctx, ast::ExprContext::Del) {
-            let argc = match slice {
-                ast::Expr::Slice(s) => self.compile_slice(s)?,
+        // Handle two-element non-constant slice with BINARY_SLICE/STORE_SLICE
+        if slice.should_use_slice_optimization() && !matches!(ctx, ast::ExprContext::Del) {
+            match slice {
+                ast::Expr::Slice(s) => self.compile_slice_two_parts(s)?,
                 _ => unreachable!(
-                    "is_two_element_slice should only return true for ast::Expr::Slice"
+                    "should_use_slice_optimization should only return true for ast::Expr::Slice"
                 ),
             };
             match ctx {
                 ast::ExprContext::Load => {
-                    emit!(self, Instruction::BuildSlice { argc });
-                    emit!(
-                        self,
-                        Instruction::BinaryOp {
-                            op: BinaryOperator::Subscr
-                        }
-                    );
+                    emit!(self, Instruction::BinarySlice);
                 }
                 ast::ExprContext::Store => {
-                    emit!(self, Instruction::BuildSlice { argc });
-                    emit!(self, Instruction::StoreSubscr);
+                    emit!(self, Instruction::StoreSlice);
                 }
                 _ => unreachable!(),
             }
@@ -973,12 +997,6 @@ impl Compiler {
         key: usize, // In RustPython, we use the index in symbol_table_stack as key
         lineno: u32,
     ) -> CompileResult<()> {
-        // Create location
-        let location = SourceLocation {
-            line: OneIndexed::new(lineno as usize).unwrap_or(OneIndexed::MIN),
-            character_offset: OneIndexed::MIN,
-        };
-
         // Allocate a new compiler unit
 
         // In Rust, we'll create the structure directly
@@ -1124,40 +1142,50 @@ impl Compiler {
             self.set_qualname();
         }
 
-        // Emit RESUME instruction
-        let _resume_loc = if scope_type == CompilerScope::Module {
-            // Module scope starts with lineno 0
-            SourceLocation {
-                line: OneIndexed::MIN,
-                character_offset: OneIndexed::MIN,
-            }
-        } else {
-            location
-        };
+        // Emit RESUME (handles async preamble and module lineno 0)
+        // CPython: LOCATION(lineno, lineno, 0, 0), then loc.lineno = 0 for module
+        self.emit_resume_for_scope(scope_type, lineno);
 
-        // Set the source range for the RESUME instruction
-        // For now, just use an empty range at the beginning
-        self.current_source_range = TextRange::default();
+        Ok(())
+    }
 
+    /// Emit RESUME instruction with proper handling for async preamble and module lineno.
+    /// codegen_enter_scope equivalent for RESUME emission.
+    fn emit_resume_for_scope(&mut self, scope_type: CompilerScope, lineno: u32) {
         // For async functions/coroutines, emit RETURN_GENERATOR + POP_TOP before RESUME
         if scope_type == CompilerScope::AsyncFunction {
             emit!(self, Instruction::ReturnGenerator);
             emit!(self, Instruction::PopTop);
         }
 
-        emit!(
-            self,
-            Instruction::Resume {
-                arg: bytecode::ResumeType::AtFuncStart as u32
+        // CPython: LOCATION(lineno, lineno, 0, 0)
+        // Module scope: loc.lineno = 0 (before the first line)
+        let lineno_override = if scope_type == CompilerScope::Module {
+            Some(0)
+        } else {
+            None
+        };
+
+        // Use lineno for location (col = 0 as in CPython)
+        let location = SourceLocation {
+            line: OneIndexed::new(lineno as usize).unwrap_or(OneIndexed::MIN),
+            character_offset: OneIndexed::MIN, // col = 0
+        };
+        let end_location = location; // end_lineno = lineno, end_col = 0
+        let except_handler = self.current_except_handler();
+
+        self.current_block().instructions.push(ir::InstructionInfo {
+            instr: Instruction::Resume {
+                arg: OpArgMarker::marker(),
             }
-        );
-
-        if scope_type == CompilerScope::Module {
-            // This would be loc.lineno = -1 in CPython
-            // We handle this differently in RustPython
-        }
-
-        Ok(())
+            .into(),
+            arg: OpArg(bytecode::ResumeType::AtFuncStart as u32),
+            target: BlockIdx::NULL,
+            location,
+            end_location,
+            except_handler,
+            lineno_override,
+        });
     }
 
     fn push_output(
@@ -1269,8 +1297,12 @@ impl Compiler {
         emit!(self, Instruction::PopJumpIfFalse { target: body_block });
 
         // Raise NotImplementedError
-        let not_implemented_error = self.name("NotImplementedError");
-        emit!(self, Instruction::LoadGlobal(not_implemented_error));
+        emit!(
+            self,
+            Instruction::LoadCommonConstant {
+                idx: bytecode::CommonConstant::NotImplementedError
+            }
+        );
         emit!(
             self,
             Instruction::RaiseVarargs {
@@ -1433,7 +1465,7 @@ impl Compiler {
 
                 // For async with, await the result
                 if matches!(info.fb_type, FBlockType::AsyncWith) {
-                    emit!(self, Instruction::GetAwaitable);
+                    emit!(self, Instruction::GetAwaitable { arg: 2 });
                     self.emit_load_const(ConstantData::None);
                     self.compile_yield_from_sequence(true)?;
                 }
@@ -1722,6 +1754,8 @@ impl Compiler {
         self.future_annotations = symbol_table.future_annotations;
         self.symbol_table_stack.push(symbol_table);
 
+        self.emit_resume_for_scope(CompilerScope::Module, 1);
+
         let (doc, statements) = split_doc(&body.body, &self.opts);
         if let Some(value) = doc {
             self.emit_load_const(ConstantData::Str {
@@ -1766,6 +1800,8 @@ impl Compiler {
         // Set future_annotations from symbol table (detected during symbol table scan)
         self.future_annotations = symbol_table.future_annotations;
         self.symbol_table_stack.push(symbol_table);
+
+        self.emit_resume_for_scope(CompilerScope::Module, 1);
 
         // Handle annotations based on future_annotations flag
         if Self::find_ann(body) {
@@ -1830,6 +1866,7 @@ impl Compiler {
         symbol_table: SymbolTable,
     ) -> CompileResult<()> {
         self.symbol_table_stack.push(symbol_table);
+        self.emit_resume_for_scope(CompilerScope::Module, 1);
 
         self.compile_statements(body)?;
 
@@ -1859,6 +1896,8 @@ impl Compiler {
         symbol_table: SymbolTable,
     ) -> CompileResult<()> {
         self.symbol_table_stack.push(symbol_table);
+        self.emit_resume_for_scope(CompilerScope::Module, 1);
+
         self.compile_expression(&expression.body)?;
         self.emit_return_value();
         Ok(())
@@ -2009,8 +2048,14 @@ impl Compiler {
 
                 let op = match usage {
                     NameUsage::Load => {
-                        // Special case for class scope
+                        // ClassBlock (not inlined comp): LOAD_LOCALS first, then LOAD_FROM_DICT_OR_DEREF
                         if self.ctx.in_class && !self.ctx.in_func() {
+                            emit!(self, Instruction::LoadLocals);
+                            Instruction::LoadFromDictOrDeref
+                        // can_see_class_scope: LOAD_DEREF(__classdict__) first
+                        } else if can_see_class_scope {
+                            let classdict_idx = self.get_free_var_index("__classdict__")?;
+                            self.emit_arg(classdict_idx, Instruction::LoadDeref);
                             Instruction::LoadFromDictOrDeref
                         } else {
                             Instruction::LoadDeref
@@ -2345,8 +2390,12 @@ impl Compiler {
                     let after_block = self.new_block();
                     self.compile_jump_if(test, true, after_block)?;
 
-                    let assertion_error = self.name("AssertionError");
-                    emit!(self, Instruction::LoadGlobal(assertion_error));
+                    emit!(
+                        self,
+                        Instruction::LoadCommonConstant {
+                            idx: bytecode::CommonConstant::AssertionError
+                        }
+                    );
                     emit!(self, Instruction::PushNull);
                     match msg {
                         Some(e) => {
@@ -2599,7 +2648,7 @@ impl Compiler {
 
         // Get the current symbol table
         let key = self.symbol_table_stack.len() - 1;
-        let lineno = expr.range().start().to_u32();
+        let lineno = self.get_source_line_number().get().to_u32();
 
         // Enter scope with the type parameter name
         self.enter_scope(name, CompilerScope::TypeParams, key, lineno)?;
@@ -3326,11 +3375,9 @@ impl Compiler {
             // ADDOP_I(c, loc, COPY, 1);
             // ADDOP_JUMP(c, loc, POP_JUMP_IF_NONE, no_match);
             emit!(self, Instruction::Copy { index: 1 });
-            self.emit_load_const(ConstantData::None);
-            emit!(self, Instruction::IsOp(bytecode::Invert::No)); // is None?
             emit!(
                 self,
-                Instruction::PopJumpIfTrue {
+                Instruction::PopJumpIfNone {
                     target: no_match_block
                 }
             );
@@ -3455,11 +3502,9 @@ impl Compiler {
         // Stack: [prev_exc, result, result]
 
         // POP_JUMP_IF_NOT_NONE reraise
-        self.emit_load_const(ConstantData::None);
-        emit!(self, Instruction::IsOp(bytecode::Invert::Yes)); // is not None?
         emit!(
             self,
-            Instruction::PopJumpIfTrue {
+            Instruction::PopJumpIfNotNone {
                 target: reraise_block
             }
         );
@@ -4728,7 +4773,7 @@ impl Compiler {
             // bound_aenter is already bound, call with NULL self_or_null
             emit!(self, Instruction::PushNull); // [bound_aexit, bound_aenter, NULL]
             emit!(self, Instruction::Call { nargs: 0 }); // [bound_aexit, awaitable]
-            emit!(self, Instruction::GetAwaitable);
+            emit!(self, Instruction::GetAwaitable { arg: 1 });
             self.emit_load_const(ConstantData::None);
             self.compile_yield_from_sequence(true)?;
         } else {
@@ -4809,7 +4854,7 @@ impl Compiler {
         self.emit_load_const(ConstantData::None);
         emit!(self, Instruction::Call { nargs: 3 });
         if is_async {
-            emit!(self, Instruction::GetAwaitable);
+            emit!(self, Instruction::GetAwaitable { arg: 2 });
             self.emit_load_const(ConstantData::None);
             self.compile_yield_from_sequence(true)?;
         }
@@ -4854,7 +4899,7 @@ impl Compiler {
         emit!(self, Instruction::WithExceptStart);
 
         if is_async {
-            emit!(self, Instruction::GetAwaitable);
+            emit!(self, Instruction::GetAwaitable { arg: 2 });
             self.emit_load_const(ConstantData::None);
             self.compile_yield_from_sequence(true)?;
         }
@@ -6696,7 +6741,7 @@ impl Compiler {
                     return Err(self.error(CodegenErrorType::InvalidAwait));
                 }
                 self.compile_expression(value)?;
-                emit!(self, Instruction::GetAwaitable);
+                emit!(self, Instruction::GetAwaitable { arg: 0 });
                 self.emit_load_const(ConstantData::None);
                 self.compile_yield_from_sequence(true)?;
             }
@@ -7471,7 +7516,7 @@ impl Compiler {
         // Call just created <listcomp> function:
         emit!(self, Instruction::Call { nargs: 1 });
         if is_async_list_set_dict_comprehension {
-            emit!(self, Instruction::GetAwaitable);
+            emit!(self, Instruction::GetAwaitable { arg: 0 });
             self.emit_load_const(ConstantData::None);
             self.compile_yield_from_sequence(true)?;
         }
@@ -7736,6 +7781,7 @@ impl Compiler {
             location,
             end_location,
             except_handler,
+            lineno_override: None,
         });
     }
 
@@ -7760,18 +7806,6 @@ impl Compiler {
     }
 
     fn emit_load_const(&mut self, constant: ConstantData) {
-        // Use LOAD_SMALL_INT for integers in small int cache range (-5..=256)
-        // Still add to co_consts for compatibility (CPython does this too)
-        if let ConstantData::Integer { ref value } = constant
-            && let Some(small_int) = value.to_i32()
-            && (-5..=256).contains(&small_int)
-        {
-            // Add to co_consts even though we use LOAD_SMALL_INT
-            let _idx = self.arg_constant(constant);
-            // Store as u32 (two's complement for negative values)
-            self.emit_arg(small_int as u32, |idx| Instruction::LoadSmallInt { idx });
-            return;
-        }
         let idx = self.arg_constant(constant);
         self.emit_arg(idx, |idx| Instruction::LoadConst { idx })
     }
@@ -7957,7 +7991,7 @@ impl Compiler {
                     emit!(self, Instruction::Call { nargs: 3 });
 
                     if is_async {
-                        emit!(self, Instruction::GetAwaitable);
+                        emit!(self, Instruction::GetAwaitable { arg: 2 });
                         self.emit_load_const(ConstantData::None);
                         self.compile_yield_from_sequence(true)?;
                     }
