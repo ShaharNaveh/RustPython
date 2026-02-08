@@ -28,6 +28,7 @@ pub use crate::bytecode::{
 
 mod instruction;
 mod oparg;
+mod opcode;
 
 /// Exception table entry for zero-cost exception handling
 /// Format: (start, size, target, depth<<1|lasti)
