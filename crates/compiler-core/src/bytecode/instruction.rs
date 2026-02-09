@@ -26,3 +26,15 @@ pub enum AnyInstruction {
     Real(Instruction),
     Pseudo(PseudoInstruction),
 }
+
+impl From<Instruction> for AnyInstruction {
+    fn from(value: Instruction) -> Self {
+        Self::Real(value)
+    }
+}
+
+impl From<PseudoInstruction> for AnyInstruction {
+    fn from(value: PseudoInstruction) -> Self {
+        Self::Pseudo(value)
+    }
+}

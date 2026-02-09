@@ -23,8 +23,6 @@ use num_complex::Complex;
 use num_traits::{Num, ToPrimitive};
 use ruff_python_ast as ast;
 use ruff_text_size::{Ranged, TextRange, TextSize};
-use std::collections::HashSet;
-
 use rustpython_compiler_core::{
     Mode, OneIndexed, PositionEncoding, SourceFile, SourceLocation,
     bytecode::{
@@ -211,7 +209,7 @@ enum ComprehensionType {
 }
 
 fn validate_duplicate_params(params: &ast::Parameters) -> Result<(), CodegenErrorType> {
-    let mut seen_params = HashSet::new();
+    let mut seen_params = IndexSet::default();
     for param in params {
         let param_name = param.name().as_str();
         if !seen_params.insert(param_name) {
@@ -1165,7 +1163,7 @@ impl Compiler {
                 arg: OpArgMarker::marker(),
             }
             .into(),
-            arg: OpArg(u32::from(bytecode::ResumeType::AtFuncStart)),
+            arg: OpArg::new(u32::from(bytecode::ResumeType::AtFuncStart)),
             target: BlockIdx::NULL,
             location,
             end_location,
@@ -2065,11 +2063,19 @@ impl Compiler {
                     let idx = self.name(&name.name);
                     emit!(self, Instruction::ImportName { idx });
                     if let Some(alias) = &name.asname {
-                        for part in name.name.split('.').skip(1) {
+                        let parts: Vec<&str> = name.name.split('.').skip(1).collect();
+                        for (i, part) in parts.iter().enumerate() {
                             let idx = self.name(part);
-                            self.emit_load_attr(idx);
+                            emit!(self, Instruction::ImportFrom { idx });
+                            if i < parts.len() - 1 {
+                                emit!(self, Instruction::Swap { index: 2 });
+                                emit!(self, Instruction::PopTop);
+                            }
                         }
-                        self.store_name(alias.as_str())?
+                        self.store_name(alias.as_str())?;
+                        if !parts.is_empty() {
+                            emit!(self, Instruction::PopTop);
+                        }
                     } else {
                         self.store_name(name.name.split('.').next().unwrap())?
                     }
@@ -5524,13 +5530,13 @@ impl Compiler {
                 "too many sub-patterns in mapping pattern".to_string(),
             )));
         }
-        #[allow(clippy::cast_possible_truncation)]
-        let size = size as u32; // checked right before
+        #[allow(clippy::cast_possible_truncation, reason = "checked right before")]
+        let size = size as u32;
 
         // Step 2: If we have keys to match
         if size > 0 {
             // Validate and compile keys
-            let mut seen = HashSet::new();
+            let mut seen = IndexSet::default();
             for key in keys {
                 let is_attribute = matches!(key, ast::Expr::Attribute(_));
                 let is_literal = matches!(
@@ -7397,7 +7403,7 @@ impl Compiler {
         let return_none = init_collection.is_none();
         // Create empty object of proper type:
         if let Some(init_collection) = init_collection {
-            self._emit(init_collection, OpArg(0), BlockIdx::NULL)
+            self._emit(init_collection, OpArg::new(0), BlockIdx::NULL)
         }
 
         let mut loop_labels = vec![];
@@ -7593,7 +7599,7 @@ impl Compiler {
         // Step 4: Create the collection (list/set/dict)
         // For generator expressions, init_collection is None
         if let Some(init_collection) = init_collection {
-            self._emit(init_collection, OpArg(0), BlockIdx::NULL);
+            self._emit(init_collection, OpArg::new(0), BlockIdx::NULL);
             // SWAP to get iterator on top
             emit!(self, Instruction::Swap { index: 2 });
         }
@@ -7767,7 +7773,7 @@ impl Compiler {
     }
 
     fn emit_no_arg<I: Into<AnyInstruction>>(&mut self, ins: I) {
-        self._emit(ins, OpArg::null(), BlockIdx::NULL)
+        self._emit(ins, OpArg::NULL, BlockIdx::NULL)
     }
 
     fn emit_arg<A: OpArgType, T: EmitArg<A>, I: Into<AnyInstruction>>(
@@ -8455,7 +8461,7 @@ impl EmitArg<bytecode::Label> for BlockIdx {
         self,
         f: impl FnOnce(OpArgMarker<bytecode::Label>) -> I,
     ) -> (AnyInstruction, OpArg, BlockIdx) {
-        (f(OpArgMarker::marker()).into(), OpArg::null(), self)
+        (f(OpArgMarker::marker()).into(), OpArg::NULL, self)
     }
 }
 
