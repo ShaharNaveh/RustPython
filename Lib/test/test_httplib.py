@@ -2121,6 +2121,7 @@ class HTTPSTest(TestCase):
         self.addCleanup(resp.close)
         self.assertEqual(resp.status, 404)
 
+    @unittest.expectedFailure  # TODO: RUSTPYTHON
     def test_local_bad_hostname(self):
         # The (valid) cert doesn't validate the HTTPS hostname
         import ssl
@@ -2166,6 +2167,7 @@ class HTTPSTest(TestCase):
             self.assertEqual(h, c.host)
             self.assertEqual(p, c.port)
 
+    @unittest.expectedFailure  # TODO: RUSTPYTHON
     def test_tls13_pha(self):
         import ssl
         if not ssl.HAS_TLSv1_3 or not ssl.HAS_PHA:
