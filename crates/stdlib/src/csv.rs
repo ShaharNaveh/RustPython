@@ -155,6 +155,7 @@ mod _csv {
             })
         }
     }
+
     fn parse_quotechar_from_obj(vm: &VirtualMachine, obj: &PyObject) -> PyResult<Option<u8>> {
         match_class!(match obj.get_attr("quotechar", vm)? {
             s @ PyStr => {
@@ -168,10 +169,13 @@ mod _csv {
             _n @ PyNone => {
                 Ok(None)
             }
-            _ => {
+            attr => {
                 Err(vm.new_exception_msg(
                     super::_csv::error(vm),
-                    r#""quotechar" must be a unicode character or None, not int"#.to_owned(),
+                    format!(
+                        r#""quotechar" must be a unicode character or None, not {}"#,
+                        attr.class()
+                    ),
                 ))
             }
         })
