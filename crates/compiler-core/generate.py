@@ -5,7 +5,10 @@ import pathlib
 import subprocess
 import sys
 
+import tomllib
+
 CRATE_ROOT = pathlib.Path(__file__).parent
+CONF_FILE = CRATE_ROOT / "instructions.toml"
 OUTPUT_PATH = CRATE_ROOT / "src" / "bytecode" / "generated.rs"
 
 
@@ -17,6 +20,8 @@ sys.path.append(str(_cases_generator_path))
 
 import analyzer
 from generators_common import DEFAULT_INPUT
+
+ANALYSIS = analyzer.analyze_files([DEFAULT_INPUT])
 
 
 def rustfmt(code: str) -> str:
@@ -182,9 +187,8 @@ class PseudoOpcode(OpcodeMeta):
 
 
 def main():
-    analysis = analyzer.analyze_files([DEFAULT_INPUT])
-    opcodes = Opcode(analysis)
-    pseudo_opcodes = PseudoOpcode(analysis)
+    opcodes = Opcode(ANALYSIS)
+    pseudo_opcodes = PseudoOpcode(ANALYSIS)
 
     code = f"""
 	use core::fmt;

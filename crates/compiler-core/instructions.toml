@@ -1,0 +1,23 @@
+[Instruction.CONTAINS_OP]
+oparg = { type = "oparg::Invert" }
+
+[Instruction.IS_OP]
+oparg = { type = "oparg::Invert" }
+
+[Instruction.BUILD_LIST]
+oparg = { name = "size", type = "u32" }
+
+[Instruction.BUILD_TUPLE]
+oparg = { name = "size", type = "u32" }
+
+[Instruction.BUILD_STRING]
+oparg = { name = "size", type = "u32" }
+
+[Instruction.BUILD_MAP]
+oparg = { name = "size", type = "u32" }
+
+[Instruction.IMPORT_FROM]
+oparg = { name = "idx", type = "oparg::NameIdx" }
+
+[Instruction.LOAD_COMMON_CONSTANT]
+oparg = { name = "idx", type = "oparg::CommonConstant" }
