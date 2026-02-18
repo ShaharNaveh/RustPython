@@ -1,4 +1,3 @@
-
 use core::fmt;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

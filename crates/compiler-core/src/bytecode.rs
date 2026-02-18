@@ -15,6 +15,7 @@ use num_complex::Complex64;
 use rustpython_wtf8::{Wtf8, Wtf8Buf};
 
 pub use crate::bytecode::{
+    generated::{Opcode, PseudoOpcode},
     instruction::{
         AnyInstruction, Arg, Instruction, InstructionMetadata, PseudoInstruction, StackEffect,
     },
@@ -26,6 +27,7 @@ pub use crate::bytecode::{
     },
 };
 
+mod generated;
 mod instruction;
 mod oparg;
 
