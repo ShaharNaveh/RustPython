@@ -32,6 +32,10 @@ class Instr:
         return self._inner.name.title().replace("_", "")
 
     @property
+    def cpython_name(self) -> str:
+        return self._inner.name
+
+    @property
     def match_arm(self) -> str:
         return f"Self::{self.name}"
 
@@ -105,6 +109,23 @@ class OpcodeMeta(metaclass=abc.ABCMeta):
         }}
         """
 
+    @property
+    def impl_display(self) -> str:
+        arms = ",\n".join(
+            f'{instr.match_arm} => "{instr.cpython_name}"' for instr in self
+        )
+
+        return f"""
+		impl fmt::Display for {self.enum_name} {{
+			fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {{
+                let name = match self {{
+                    {arms}
+                }};
+				write!(f, "{{name}}")
+			}}
+		}}
+        """
+
     def _build_has_attr_fn(self, fn_attr: str, prop_attr: str, doc_flag: str):
         arms = "|".join(
             inst.match_arm for inst in self if getattr(inst.properties, prop_attr)
@@ -166,6 +187,9 @@ def main():
     pseudo_opcodes = PseudoOpcode(analysis)
 
     code = f"""
+	use core::fmt;
+
+
     {opcodes.rust_code}
 
     {pseudo_opcodes.rust_code}
