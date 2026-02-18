@@ -28,32 +28,19 @@ def rustfmt(code: str) -> str:
     return subprocess.check_output(["rustfmt", "--emit=stdout"], input=code, text=True)
 
 
-@dataclasses.dataclass(frozen=True, slots=True)
+@dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class Instr:
-    _inner: "analyzer.Instruction | analyzer.PseudoInstruction"
+    name: str
+    cpython_name: str
+    opcode: int
+    properties: analyzer.Properties
 
     @property
-    def name(self) -> str:
-        return self._inner.name.title().replace("_", "")
-
-    @property
-    def cpython_name(self) -> str:
-        return self._inner.name
-
-    @property
-    def match_arm(self) -> str:
-        return f"Self::{self.name}"
-
-    @property
-    def opcode(self) -> int:
-        return self._inner.opcode
-
-    @property
-    def properties(self):
-        return self._inner.properties
+    def is_pseudo(self) -> bool:
+        return self.opcode > 255
 
     def __lt__(self, other) -> bool:
-        return self._inner.opcode < other._inner.opcode
+        return self.opcode < other.opcode
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
