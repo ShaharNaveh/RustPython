@@ -216,7 +216,7 @@ def generate_instruction_enum(name: str, instructions: tuple[Instr, ...]) -> str
     from_opcode_impl = f"""
     impl From<{name}> for {opcode_enum} {{
         fn from(value: {name}) -> Self {{
-            self.opcode()
+            value.opcode()
         }}
     }}
     """

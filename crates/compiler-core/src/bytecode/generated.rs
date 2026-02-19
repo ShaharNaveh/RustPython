@@ -1784,7 +1784,7 @@ impl Instruction {
 
 impl From<Instruction> for Opcode {
     fn from(value: Instruction) -> Self {
-        self.opcode()
+        value.opcode()
     }
 }
 
@@ -1843,6 +1843,6 @@ impl PseudoInstruction {
 
 impl From<PseudoInstruction> for PseudoOpcode {
     fn from(value: PseudoInstruction) -> Self {
-        self.opcode()
+        value.opcode()
     }
 }
