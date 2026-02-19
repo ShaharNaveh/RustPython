@@ -1,0 +1,12 @@
+import pathlib
+import re
+
+TARGET = pathlib.Path(__file__).parent / "z.rs"
+data = TARGET.read_text()
+
+entires = re.split(r",\s*(?://[^\n]*)?\s*(?=[A-Za-z_][A-Za-z0-9_]*)", data)
+for entry in map(str.strip, entries):
+    if entry=="r":
+        continue
+    print(entry)
+
