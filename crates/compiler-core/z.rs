@@ -209,8 +209,7 @@
     StoreDeref(Arg<NameIdx>) = 111,
     StoreFast(Arg<NameIdx>) = 112,
     StoreFastLoadFast {
-        store_idx: Arg<NameIdx>,
-        load_idx: Arg<NameIdx>,
+        var_nums: Arg<StoreFastLoadFast>,
     } = 113,
     StoreFastStoreFast {
         arg: Arg<u32>,

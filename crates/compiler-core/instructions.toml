@@ -1,23 +1,984 @@
-[Instruction.CONTAINS_OP]
+[Cache]
+opcode = 0
+cpython_name = "CACHE"
+
+[BinarySlice]
+opcode = 1
+cpython_name = "BINARY_SLICE"
+
+[BuildTemplate]
+opcode = 2
+cpython_name = "BUILD_TEMPLATE"
+
+[BinaryOpInplaceAddUnicode]
+opcode = 3
+cpython_name = "BINARY_OP_INPLACE_ADD_UNICODE"
+
+[CallFunctionEx]
+opcode = 4
+cpython_name = "CALL_FUNCTION_EX"
+
+[CheckEgMatch]
+opcode = 5
+cpython_name = "CHECK_EG_MATCH"
+
+[CheckExcMatch]
+opcode = 6
+cpython_name = "CHECK_EXC_MATCH"
+
+[CleanupThrow]
+opcode = 7
+cpython_name = "CLEANUP_THROW"
+
+[DeleteSubscr]
+opcode = 8
+cpython_name = "DELETE_SUBSCR"
+
+[EndFor]
+opcode = 9
+cpython_name = "END_FOR"
+
+[EndSend]
+opcode = 10
+cpython_name = "END_SEND"
+
+[ExitInitCheck]
+opcode = 11
+cpython_name = "EXIT_INIT_CHECK"
+
+[FormatSimple]
+opcode = 12
+cpython_name = "FORMAT_SIMPLE"
+
+[FormatWithSpec]
+opcode = 13
+cpython_name = "FORMAT_WITH_SPEC"
+
+[GetAIter]
+opcode = 14
+cpython_name = "GET_A_ITER"
+
+[GetANext]
+opcode = 15
+cpython_name = "GET_A_NEXT"
+
+[GetIter]
+opcode = 16
+cpython_name = "GET_ITER"
+
+[Reserved]
+opcode = 17
+cpython_name = "RESERVED"
+
+[GetLen]
+opcode = 18
+cpython_name = "GET_LEN"
+
+[GetYieldFromIter]
+opcode = 19
+cpython_name = "GET_YIELD_FROM_ITER"
+
+[InterpreterExit]
+opcode = 20
+cpython_name = "INTERPRETER_EXIT"
+
+[LoadBuildClass]
+opcode = 21
+cpython_name = "LOAD_BUILD_CLASS"
+
+[LoadLocals]
+opcode = 22
+cpython_name = "LOAD_LOCALS"
+
+[MakeFunction]
+opcode = 23
+cpython_name = "MAKE_FUNCTION"
+
+[MatchKeys]
+opcode = 24
+cpython_name = "MATCH_KEYS"
+
+[MatchMapping]
+opcode = 25
+cpython_name = "MATCH_MAPPING"
+
+[MatchSequence]
+opcode = 26
+cpython_name = "MATCH_SEQUENCE"
+
+[Nop]
+opcode = 27
+cpython_name = "NOP"
+
+[NotTaken]
+opcode = 28
+cpython_name = "NOT_TAKEN"
+
+[PopExcept]
+opcode = 29
+cpython_name = "POP_EXCEPT"
+
+[PopIter]
+opcode = 30
+cpython_name = "POP_ITER"
+
+[PopTop]
+opcode = 31
+cpython_name = "POP_TOP"
+
+[PushExcInfo]
+opcode = 32
+cpython_name = "PUSH_EXC_INFO"
+
+[PushNull]
+opcode = 33
+cpython_name = "PUSH_NULL"
+
+[ReturnGenerator]
+opcode = 34
+cpython_name = "RETURN_GENERATOR"
+
+[ReturnValue]
+opcode = 35
+cpython_name = "RETURN_VALUE"
+
+[SetupAnnotations]
+opcode = 36
+cpython_name = "SETUP_ANNOTATIONS"
+
+[StoreSlice]
+opcode = 37
+cpython_name = "STORE_SLICE"
+
+[StoreSubscr]
+opcode = 38
+cpython_name = "STORE_SUBSCR"
+
+[ToBool]
+opcode = 39
+cpython_name = "TO_BOOL"
+
+[UnaryInvert]
+opcode = 40
+cpython_name = "UNARY_INVERT"
+
+[UnaryNegative]
+opcode = 41
+cpython_name = "UNARY_NEGATIVE"
+
+[UnaryNot]
+opcode = 42
+cpython_name = "UNARY_NOT"
+
+[WithExceptStart]
+opcode = 43
+cpython_name = "WITH_EXCEPT_START"
+
+[BinaryOp]
+opcode = 44
+cpython_name = "BINARY_OP"
+oparg = { name = "op", type = "oparg::BinaryOperator" }
+
+[BuildInterpolation]
+opcode = 45
+cpython_name = "BUILD_INTERPOLATION"
+oparg = { name = "oparg", type = "u32" }
+
+[BuildList]
+opcode = 46
+cpython_name = "BUILD_LIST"
+oparg = { name = "size", type = "u32" }
+
+[BuildMap]
+opcode = 47
+cpython_name = "BUILD_MAP"
+oparg = { name = "size", type = "u32" }
+
+[BuildSet]
+opcode = 48
+cpython_name = "BUILD_SET"
+oparg = { name = "size", type = "u32" }
+
+[BuildSlice]
+opcode = 49
+cpython_name = "BUILD_SLICE"
+oparg = { name = "argc", type = "oparg::BuildSliceArgCount" }
+
+[BuildString]
+opcode = 50
+cpython_name = "BUILD_STRING"
+oparg = { name = "size", type = "u32" }
+
+[BuildTuple]
+opcode = 51
+cpython_name = "BUILD_TUPLE"
+oparg = { name = "size", type = "u32" }
+
+[Call]
+opcode = 52
+cpython_name = "CALL"
+oparg = { name = "nargs", type = "u32" }
+
+[CallIntrinsic1]
+opcode = 53
+cpython_name = "CALL_INTRINSIC1"
+oparg = { name = "func", type = "oparg::IntrinsicFunction1" }
+
+[CallIntrinsic2]
+opcode = 54
+cpython_name = "CALL_INTRINSIC2"
+oparg = { name = "func", type = "oparg::IntrinsicFunction2" }
+
+[CallKw]
+opcode = 55
+cpython_name = "CALL_KW"
+oparg = { name = "nargs", type = "u32" }
+
+[CompareOp]
+opcode = 56
+cpython_name = "COMPARE_OP"
+oparg = { name = "op", type = "oparg::ComparisonOperator" }
+
+[ContainsOp]
+opcode = 57
+cpython_name = "CONTAINS_OP"
 oparg = { type = "oparg::Invert" }
 
-[Instruction.IS_OP]
-oparg = { type = "oparg::Invert" }
+[ConvertValue]
+opcode = 58
+cpython_name = "CONVERT_VALUE"
+oparg = { name = "oparg", type = "oparg::ConvertValueOparg" }
 
-[Instruction.BUILD_LIST]
-oparg = { name = "size", type = "u32" }
+[Copy]
+opcode = 59
+cpython_name = "COPY"
+oparg = { name = "index", type = "u32" }
 
-[Instruction.BUILD_TUPLE]
-oparg = { name = "size", type = "u32" }
+[CopyFreeVars]
+opcode = 60
+cpython_name = "COPY_FREE_VARS"
+oparg = { name = "count", type = "u32" }
 
-[Instruction.BUILD_STRING]
-oparg = { name = "size", type = "u32" }
-
-[Instruction.BUILD_MAP]
-oparg = { name = "size", type = "u32" }
-
-[Instruction.IMPORT_FROM]
+[DeleteAttr]
+opcode = 61
+cpython_name = "DELETE_ATTR"
 oparg = { name = "idx", type = "oparg::NameIdx" }
 
-[Instruction.LOAD_COMMON_CONSTANT]
+[DeleteDeref]
+opcode = 62
+cpython_name = "DELETE_DEREF"
+oparg = { type = "oparg::NameIdx" }
+
+[DeleteFast]
+opcode = 63
+cpython_name = "DELETE_FAST"
+oparg = { type = "oparg::NameIdx" }
+
+[DeleteGlobal]
+opcode = 64
+cpython_name = "DELETE_GLOBAL"
+oparg = { type = "oparg::NameIdx" }
+
+[DeleteName]
+opcode = 65
+cpython_name = "DELETE_NAME"
+oparg = { type = "oparg::NameIdx" }
+
+[DictMerge]
+opcode = 66
+cpython_name = "DICT_MERGE"
+oparg = { name = "index", type = "u32" }
+
+[DictUpdate]
+opcode = 67
+cpython_name = "DICT_UPDATE"
+oparg = { name = "index", type = "u32" }
+
+[EndAsyncFor]
+opcode = 68
+cpython_name = "END_ASYNC_FOR"
+
+[ExtendedArg]
+opcode = 69
+cpython_name = "EXTENDED_ARG"
+
+[ForIter]
+opcode = 70
+cpython_name = "FOR_ITER"
+oparg = { name = "target", type = "oparg::Label" }
+
+[GetAwaitable]
+opcode = 71
+cpython_name = "GET_AWAITABLE"
+oparg = { name = "arg", type = "u32" }
+
+[ImportFrom]
+opcode = 72
+cpython_name = "IMPORT_FROM"
+oparg = { name = "idx", type = "oparg::NameIdx" }
+
+[ImportName]
+opcode = 73
+cpython_name = "IMPORT_NAME"
+oparg = { name = "idx", type = "oparg::NameIdx" }
+
+[IsOp]
+opcode = 74
+cpython_name = "IS_OP"
+oparg = { type = "oparg::Invert" }
+
+[JumpBackward]
+opcode = 75
+cpython_name = "JUMP_BACKWARD"
+oparg = { name = "target", type = "oparg::Label" }
+
+[JumpBackwardNoInterrupt]
+opcode = 76
+cpython_name = "JUMP_BACKWARD_NO_INTERRUPT"
+oparg = { name = "target", type = "oparg::Label" }
+
+[JumpForward]
+opcode = 77
+cpython_name = "JUMP_FORWARD"
+oparg = { name = "target", type = "oparg::Label" }
+
+[ListAppend]
+opcode = 78
+cpython_name = "LIST_APPEND"
+oparg = { name = "i", type = "u32" }
+
+[ListExtend]
+opcode = 79
+cpython_name = "LIST_EXTEND"
+oparg = { name = "i", type = "u32" }
+
+[LoadAttr]
+opcode = 80
+cpython_name = "LOAD_ATTR"
+oparg = { name = "idx", type = "oparg::LoadAttr" }
+
+[LoadCommonConstant]
+opcode = 81
+cpython_name = "LOAD_COMMON_CONSTANT"
 oparg = { name = "idx", type = "oparg::CommonConstant" }
+
+[LoadConst]
+opcode = 82
+cpython_name = "LOAD_CONST"
+oparg = { name = "idx", type = "u32" }
+
+[LoadDeref]
+opcode = 83
+cpython_name = "LOAD_DEREF"
+oparg = { type = "oparg::NameIdx" }
+
+[LoadFast]
+opcode = 84
+cpython_name = "LOAD_FAST"
+oparg = { type = "oparg::NameIdx" }
+
+[LoadFastAndClear]
+opcode = 85
+cpython_name = "LOAD_FAST_AND_CLEAR"
+oparg = { type = "oparg::NameIdx" }
+
+[LoadFastBorrow]
+opcode = 86
+cpython_name = "LOAD_FAST_BORROW"
+oparg = { type = "oparg::NameIdx" }
+
+[LoadFastBorrowLoadFastBorrow]
+opcode = 87
+cpython_name = "LOAD_FAST_BORROW_LOAD_FAST_BORROW"
+oparg = { name = "arg", type = "u32" }
+
+[LoadFastCheck]
+opcode = 88
+cpython_name = "LOAD_FAST_CHECK"
+oparg = { type = "oparg::NameIdx" }
+
+[LoadFastLoadFast]
+opcode = 89
+cpython_name = "LOAD_FAST_LOAD_FAST"
+oparg = { name = "arg", type = "u32" }
+
+[LoadFromDictOrDeref]
+opcode = 90
+cpython_name = "LOAD_FROM_DICT_OR_DEREF"
+oparg = { type = "oparg::NameIdx" }
+
+[LoadFromDictOrGlobals]
+opcode = 91
+cpython_name = "LOAD_FROM_DICT_OR_GLOBALS"
+oparg = { type = "oparg::NameIdx" }
+
+[LoadGlobal]
+opcode = 92
+cpython_name = "LOAD_GLOBAL"
+oparg = { type = "oparg::NameIdx" }
+
+[LoadName]
+opcode = 93
+cpython_name = "LOAD_NAME"
+oparg = { type = "oparg::NameIdx" }
+
+[LoadSmallInt]
+opcode = 94
+cpython_name = "LOAD_SMALL_INT"
+oparg = { name = "idx", type = "u32" }
+
+[LoadSpecial]
+opcode = 95
+cpython_name = "LOAD_SPECIAL"
+oparg = { name = "method", type = "oparg::SpecialMethod" }
+
+[LoadSuperAttr]
+opcode = 96
+cpython_name = "LOAD_SUPER_ATTR"
+oparg = { name = "arg", type = "oparg::LoadSuperAttr" }
+
+[MakeCell]
+opcode = 97
+cpython_name = "MAKE_CELL"
+oparg = { type = "oparg::NameIdx" }
+
+[MapAdd]
+opcode = 98
+cpython_name = "MAP_ADD"
+oparg = { name = "i", type = "u32" }
+
+[MatchClass]
+opcode = 99
+cpython_name = "MATCH_CLASS"
+oparg = { type = "u32" }
+
+[PopJumpIfFalse]
+opcode = 100
+cpython_name = "POP_JUMP_IF_FALSE"
+oparg = { name = "target", type = "oparg::Label" }
+
+[PopJumpIfNone]
+opcode = 101
+cpython_name = "POP_JUMP_IF_NONE"
+oparg = { name = "target", type = "oparg::Label" }
+
+[PopJumpIfNotNone]
+opcode = 102
+cpython_name = "POP_JUMP_IF_NOT_NONE"
+oparg = { name = "target", type = "oparg::Label" }
+
+[PopJumpIfTrue]
+opcode = 103
+cpython_name = "POP_JUMP_IF_TRUE"
+oparg = { name = "target", type = "oparg::Label" }
+
+[RaiseVarargs]
+opcode = 104
+cpython_name = "RAISE_VARARGS"
+oparg = { name = "kind", type = "oparg::RaiseKind" }
+
+[Reraise]
+opcode = 105
+cpython_name = "RERAISE"
+oparg = { name = "depth", type = "u32" }
+
+[Send]
+opcode = 106
+cpython_name = "SEND"
+oparg = { name = "target", type = "oparg::Label" }
+
+[SetAdd]
+opcode = 107
+cpython_name = "SET_ADD"
+oparg = { name = "i", type = "u32" }
+
+[SetFunctionAttribute]
+opcode = 108
+cpython_name = "SET_FUNCTION_ATTRIBUTE"
+oparg = { name = "attr", type = "oparg::MakeFunctionFlags" }
+
+[SetUpdate]
+opcode = 109
+cpython_name = "SET_UPDATE"
+oparg = { name = "i", type = "u32" }
+
+[StoreAttr]
+opcode = 110
+cpython_name = "STORE_ATTR"
+oparg = { name = "idx", type = "oparg::NameIdx" }
+
+[StoreDeref]
+opcode = 111
+cpython_name = "STORE_DEREF"
+oparg = { type = "oparg::NameIdx" }
+
+[StoreFast]
+opcode = 112
+cpython_name = "STORE_FAST"
+oparg = { type = "oparg::NameIdx" }
+
+[StoreFastLoadFast]
+opcode = 113
+cpython_name = "STORE_FAST_LOAD_FAST"
+oparg = { name = "var_nums", type = "oparg::StoreFastLoadFast" }
+
+[StoreFastStoreFast]
+opcode = 114
+cpython_name = "STORE_FAST_STORE_FAST"
+oparg = { name = "arg", type = "u32" }
+
+[StoreGlobal]
+opcode = 115
+cpython_name = "STORE_GLOBAL"
+oparg = { type = "oparg::NameIdx" }
+
+[StoreName]
+opcode = 116
+cpython_name = "STORE_NAME"
+oparg = { type = "oparg::NameIdx" }
+
+[Swap]
+opcode = 117
+cpython_name = "SWAP"
+oparg = { name = "index", type = "u32" }
+
+[UnpackEx]
+opcode = 118
+cpython_name = "UNPACK_EX"
+oparg = { name = "args", type = "oparg::UnpackExArgs" }
+
+[UnpackSequence]
+opcode = 119
+cpython_name = "UNPACK_SEQUENCE"
+oparg = { name = "size", type = "u32" }
+
+[YieldValue]
+opcode = 120
+cpython_name = "YIELD_VALUE"
+oparg = { name = "arg", type = "u32" }
+
+[Resume]
+opcode = 128
+cpython_name = "RESUME"
+oparg = { name = "arg", type = "u32" }
+
+[BinaryOpAddFloat]
+opcode = 129
+cpython_name = "BINARY_OP_ADD_FLOAT"
+
+[BinaryOpAddInt]
+opcode = 130
+cpython_name = "BINARY_OP_ADD_INT"
+
+[BinaryOpAddUnicode]
+opcode = 131
+cpython_name = "BINARY_OP_ADD_UNICODE"
+
+[BinaryOpExtend]
+opcode = 132
+cpython_name = "BINARY_OP_EXTEND"
+
+[BinaryOpMultiplyFloat]
+opcode = 133
+cpython_name = "BINARY_OP_MULTIPLY_FLOAT"
+
+[BinaryOpMultiplyInt]
+opcode = 134
+cpython_name = "BINARY_OP_MULTIPLY_INT"
+
+[BinaryOpSubscrDict]
+opcode = 135
+cpython_name = "BINARY_OP_SUBSCR_DICT"
+
+[BinaryOpSubscrGetitem]
+opcode = 136
+cpython_name = "BINARY_OP_SUBSCR_GETITEM"
+
+[BinaryOpSubscrListInt]
+opcode = 137
+cpython_name = "BINARY_OP_SUBSCR_LIST_INT"
+
+[BinaryOpSubscrListSlice]
+opcode = 138
+cpython_name = "BINARY_OP_SUBSCR_LIST_SLICE"
+
+[BinaryOpSubscrStrInt]
+opcode = 139
+cpython_name = "BINARY_OP_SUBSCR_STR_INT"
+
+[BinaryOpSubscrTupleInt]
+opcode = 140
+cpython_name = "BINARY_OP_SUBSCR_TUPLE_INT"
+
+[BinaryOpSubtractFloat]
+opcode = 141
+cpython_name = "BINARY_OP_SUBTRACT_FLOAT"
+
+[BinaryOpSubtractInt]
+opcode = 142
+cpython_name = "BINARY_OP_SUBTRACT_INT"
+
+[CallAllocAndEnterInit]
+opcode = 143
+cpython_name = "CALL_ALLOC_AND_ENTER_INIT"
+
+[CallBoundMethodExactArgs]
+opcode = 144
+cpython_name = "CALL_BOUND_METHOD_EXACT_ARGS"
+
+[CallBoundMethodGeneral]
+opcode = 145
+cpython_name = "CALL_BOUND_METHOD_GENERAL"
+
+[CallBuiltinClass]
+opcode = 146
+cpython_name = "CALL_BUILTIN_CLASS"
+
+[CallBuiltinFast]
+opcode = 147
+cpython_name = "CALL_BUILTIN_FAST"
+
+[CallBuiltinFastWithKeywords]
+opcode = 148
+cpython_name = "CALL_BUILTIN_FAST_WITH_KEYWORDS"
+
+[CallBuiltinO]
+opcode = 149
+cpython_name = "CALL_BUILTIN_O"
+
+[CallIsinstance]
+opcode = 150
+cpython_name = "CALL_ISINSTANCE"
+
+[CallKwBoundMethod]
+opcode = 151
+cpython_name = "CALL_KW_BOUND_METHOD"
+
+[CallKwNonPy]
+opcode = 152
+cpython_name = "CALL_KW_NON_PY"
+
+[CallKwPy]
+opcode = 153
+cpython_name = "CALL_KW_PY"
+
+[CallLen]
+opcode = 154
+cpython_name = "CALL_LEN"
+
+[CallListAppend]
+opcode = 155
+cpython_name = "CALL_LIST_APPEND"
+
+[CallMethodDescriptorFast]
+opcode = 156
+cpython_name = "CALL_METHOD_DESCRIPTOR_FAST"
+
+[CallMethodDescriptorFastWithKeywords]
+opcode = 157
+cpython_name = "CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS"
+
+[CallMethodDescriptorNoargs]
+opcode = 158
+cpython_name = "CALL_METHOD_DESCRIPTOR_NOARGS"
+
+[CallMethodDescriptorO]
+opcode = 159
+cpython_name = "CALL_METHOD_DESCRIPTOR_O"
+
+[CallNonPyGeneral]
+opcode = 160
+cpython_name = "CALL_NON_PY_GENERAL"
+
+[CallPyExactArgs]
+opcode = 161
+cpython_name = "CALL_PY_EXACT_ARGS"
+
+[CallPyGeneral]
+opcode = 162
+cpython_name = "CALL_PY_GENERAL"
+
+[CallStr1]
+opcode = 163
+cpython_name = "CALL_STR1"
+
+[CallTuple1]
+opcode = 164
+cpython_name = "CALL_TUPLE1"
+
+[CallType1]
+opcode = 165
+cpython_name = "CALL_TYPE1"
+
+[CompareOpFloat]
+opcode = 166
+cpython_name = "COMPARE_OP_FLOAT"
+
+[CompareOpInt]
+opcode = 167
+cpython_name = "COMPARE_OP_INT"
+
+[CompareOpStr]
+opcode = 168
+cpython_name = "COMPARE_OP_STR"
+
+[ContainsOpDict]
+opcode = 169
+cpython_name = "CONTAINS_OP_DICT"
+
+[ContainsOpSet]
+opcode = 170
+cpython_name = "CONTAINS_OP_SET"
+
+[ForIterGen]
+opcode = 171
+cpython_name = "FOR_ITER_GEN"
+
+[ForIterList]
+opcode = 172
+cpython_name = "FOR_ITER_LIST"
+
+[ForIterRange]
+opcode = 173
+cpython_name = "FOR_ITER_RANGE"
+
+[ForIterTuple]
+opcode = 174
+cpython_name = "FOR_ITER_TUPLE"
+
+[JumpBackwardJit]
+opcode = 175
+cpython_name = "JUMP_BACKWARD_JIT"
+
+[JumpBackwardNoJit]
+opcode = 176
+cpython_name = "JUMP_BACKWARD_NO_JIT"
+
+[LoadAttrClass]
+opcode = 177
+cpython_name = "LOAD_ATTR_CLASS"
+
+[LoadAttrClassWithMetaclassCheck]
+opcode = 178
+cpython_name = "LOAD_ATTR_CLASS_WITH_METACLASS_CHECK"
+
+[LoadAttrGetattributeOverridden]
+opcode = 179
+cpython_name = "LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN"
+
+[LoadAttrInstanceValue]
+opcode = 180
+cpython_name = "LOAD_ATTR_INSTANCE_VALUE"
+
+[LoadAttrMethodLazyDict]
+opcode = 181
+cpython_name = "LOAD_ATTR_METHOD_LAZY_DICT"
+
+[LoadAttrMethodNoDict]
+opcode = 182
+cpython_name = "LOAD_ATTR_METHOD_NO_DICT"
+
+[LoadAttrMethodWithValues]
+opcode = 183
+cpython_name = "LOAD_ATTR_METHOD_WITH_VALUES"
+
+[LoadAttrModule]
+opcode = 184
+cpython_name = "LOAD_ATTR_MODULE"
+
+[LoadAttrNondescriptorNoDict]
+opcode = 185
+cpython_name = "LOAD_ATTR_NONDESCRIPTOR_NO_DICT"
+
+[LoadAttrNondescriptorWithValues]
+opcode = 186
+cpython_name = "LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES"
+
+[LoadAttrProperty]
+opcode = 187
+cpython_name = "LOAD_ATTR_PROPERTY"
+
+[LoadAttrSlot]
+opcode = 188
+cpython_name = "LOAD_ATTR_SLOT"
+
+[LoadAttrWithHint]
+opcode = 189
+cpython_name = "LOAD_ATTR_WITH_HINT"
+
+[LoadConstImmortal]
+opcode = 190
+cpython_name = "LOAD_CONST_IMMORTAL"
+
+[LoadConstMortal]
+opcode = 191
+cpython_name = "LOAD_CONST_MORTAL"
+
+[LoadGlobalBuiltin]
+opcode = 192
+cpython_name = "LOAD_GLOBAL_BUILTIN"
+
+[LoadGlobalModule]
+opcode = 193
+cpython_name = "LOAD_GLOBAL_MODULE"
+
+[LoadSuperAttrAttr]
+opcode = 194
+cpython_name = "LOAD_SUPER_ATTR_ATTR"
+
+[LoadSuperAttrMethod]
+opcode = 195
+cpython_name = "LOAD_SUPER_ATTR_METHOD"
+
+[ResumeCheck]
+opcode = 196
+cpython_name = "RESUME_CHECK"
+
+[SendGen]
+opcode = 197
+cpython_name = "SEND_GEN"
+
+[StoreAttrInstanceValue]
+opcode = 198
+cpython_name = "STORE_ATTR_INSTANCE_VALUE"
+
+[StoreAttrSlot]
+opcode = 199
+cpython_name = "STORE_ATTR_SLOT"
+
+[StoreAttrWithHint]
+opcode = 200
+cpython_name = "STORE_ATTR_WITH_HINT"
+
+[StoreSubscrDict]
+opcode = 201
+cpython_name = "STORE_SUBSCR_DICT"
+
+[StoreSubscrListInt]
+opcode = 202
+cpython_name = "STORE_SUBSCR_LIST_INT"
+
+[ToBoolAlwaysTrue]
+opcode = 203
+cpython_name = "TO_BOOL_ALWAYS_TRUE"
+
+[ToBoolBool]
+opcode = 204
+cpython_name = "TO_BOOL_BOOL"
+
+[ToBoolInt]
+opcode = 205
+cpython_name = "TO_BOOL_INT"
+
+[ToBoolList]
+opcode = 206
+cpython_name = "TO_BOOL_LIST"
+
+[ToBoolNone]
+opcode = 207
+cpython_name = "TO_BOOL_NONE"
+
+[ToBoolStr]
+opcode = 208
+cpython_name = "TO_BOOL_STR"
+
+[UnpackSequenceList]
+opcode = 209
+cpython_name = "UNPACK_SEQUENCE_LIST"
+
+[UnpackSequenceTuple]
+opcode = 210
+cpython_name = "UNPACK_SEQUENCE_TUPLE"
+
+[UnpackSequenceTwoTuple]
+opcode = 211
+cpython_name = "UNPACK_SEQUENCE_TWO_TUPLE"
+
+[InstrumentedEndFor]
+opcode = 234
+cpython_name = "INSTRUMENTED_END_FOR"
+
+[InstrumentedPopIter]
+opcode = 235
+cpython_name = "INSTRUMENTED_POP_ITER"
+
+[InstrumentedEndSend]
+opcode = 236
+cpython_name = "INSTRUMENTED_END_SEND"
+
+[InstrumentedForIter]
+opcode = 237
+cpython_name = "INSTRUMENTED_FOR_ITER"
+
+[InstrumentedInstruction]
+opcode = 238
+cpython_name = "INSTRUMENTED_INSTRUCTION"
+
+[InstrumentedJumpForward]
+opcode = 239
+cpython_name = "INSTRUMENTED_JUMP_FORWARD"
+
+[InstrumentedNotTaken]
+opcode = 240
+cpython_name = "INSTRUMENTED_NOT_TAKEN"
+
+[InstrumentedPopJumpIfTrue]
+opcode = 241
+cpython_name = "INSTRUMENTED_POP_JUMP_IF_TRUE"
+
+[InstrumentedPopJumpIfFalse]
+opcode = 242
+cpython_name = "INSTRUMENTED_POP_JUMP_IF_FALSE"
+
+[InstrumentedPopJumpIfNone]
+opcode = 243
+cpython_name = "INSTRUMENTED_POP_JUMP_IF_NONE"
+
+[InstrumentedPopJumpIfNotNone]
+opcode = 244
+cpython_name = "INSTRUMENTED_POP_JUMP_IF_NOT_NONE"
+
+[InstrumentedResume]
+opcode = 245
+cpython_name = "INSTRUMENTED_RESUME"
+
+[InstrumentedReturnValue]
+opcode = 246
+cpython_name = "INSTRUMENTED_RETURN_VALUE"
+
+[InstrumentedYieldValue]
+opcode = 247
+cpython_name = "INSTRUMENTED_YIELD_VALUE"
+
+[InstrumentedEndAsyncFor]
+opcode = 248
+cpython_name = "INSTRUMENTED_END_ASYNC_FOR"
+
+[InstrumentedLoadSuperAttr]
+opcode = 249
+cpython_name = "INSTRUMENTED_LOAD_SUPER_ATTR"
+
+[InstrumentedCall]
+opcode = 250
+cpython_name = "INSTRUMENTED_CALL"
+
+[InstrumentedCallKw]
+opcode = 251
+cpython_name = "INSTRUMENTED_CALL_KW"
+
+[InstrumentedCallFunctionEx]
+opcode = 252
+cpython_name = "INSTRUMENTED_CALL_FUNCTION_EX"
+
+[InstrumentedJumpBackward]
+opcode = 253
+cpython_name = "INSTRUMENTED_JUMP_BACKWARD"
+
+[InstrumentedLine]
+opcode = 254
+cpython_name = "INSTRUMENTED_LINE"
+
+[EnterExecutor]
+opcode = 255
+cpython_name = "ENTER_EXECUTOR"
+
