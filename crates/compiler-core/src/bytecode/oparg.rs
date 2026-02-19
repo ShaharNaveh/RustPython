@@ -656,7 +656,7 @@ oparg_enum!(
     }
 );
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct UnpackExArgs {
     pub before: u8,
     pub after: u8,
@@ -683,7 +683,7 @@ impl fmt::Display for UnpackExArgs {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct LoadSuperAttr(u32);
 
 impl LoadSuperAttr {
@@ -767,7 +767,7 @@ impl From<LoadSuperAttrBuilder> for LoadSuperAttr {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct LoadAttr(u32);
 
 impl LoadAttr {

@@ -202,16 +202,18 @@ def generate_instruction_enum(name: str, instructions: tuple[Instr, ...]) -> str
 
         variants.append(f"Self::{variant}")
 
+    '''
     oparg_arms = ",\n".join(variants)
     oparg_fn = f"""
     /// Instruction's oparg.
     #[must_use]
-    pub fn oparg<T: oparg::OpargType>(self) -> Option<T> {{
+    pub fn oparg(self) -> Option<impl oparg::OpArgType> {{
         Some(match self {{
             {oparg_arms}
         }})
     }}
     """
+    '''
 
     from_opcode_impl = f"""
     impl From<{name}> for {opcode_enum} {{
@@ -227,7 +229,7 @@ def generate_instruction_enum(name: str, instructions: tuple[Instr, ...]) -> str
     impl {name} {{
         {opcode_fn}
 
-        {oparg_fn}
+        // oparg_fn
     }}
 
     {from_opcode_impl}
