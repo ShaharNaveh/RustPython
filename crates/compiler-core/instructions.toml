@@ -523,7 +523,8 @@ oparg = { type = "oparg::NameIdx" }
 [StoreFastLoadFast]
 opcode = 113
 cpython_name = "STORE_FAST_LOAD_FAST"
-oparg = { name = "var_nums", type = "oparg::StoreFastLoadFast" }
+#oparg = { name = "var_nums", type = "oparg::StoreFastLoadFast" }
+oparg = { name = "var_nums", type = "oparg::NameIdx" }
 
 [StoreFastStoreFast]
 opcode = 114

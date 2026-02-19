@@ -1194,7 +1194,7 @@ pub enum Instruction {
     StoreAttr { idx: oparg::NameIdx },
     StoreDeref(oparg::NameIdx),
     StoreFast(oparg::NameIdx),
-    StoreFastLoadFast { var_nums: oparg::StoreFastLoadFast },
+    StoreFastLoadFast { var_nums: oparg::NameIdx },
     StoreFastStoreFast { arg: u32 },
     StoreGlobal(oparg::NameIdx),
     StoreName(oparg::NameIdx),
