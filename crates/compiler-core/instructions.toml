@@ -57,11 +57,11 @@ cpython_name = "FORMAT_WITH_SPEC"
 
 [GetAIter]
 opcode = 14
-cpython_name = "GET_A_ITER"
+cpython_name = "GET_AITER"
 
 [GetANext]
 opcode = 15
-cpython_name = "GET_A_NEXT"
+cpython_name = "GET_ANEXT"
 
 [GetIter]
 opcode = 16
@@ -223,12 +223,12 @@ oparg = { name = "nargs", type = "u32" }
 
 [CallIntrinsic1]
 opcode = 53
-cpython_name = "CALL_INTRINSIC1"
+cpython_name = "CALL_INTRINSIC_1"
 oparg = { name = "func", type = "oparg::IntrinsicFunction1" }
 
 [CallIntrinsic2]
 opcode = 54
-cpython_name = "CALL_INTRINSIC2"
+cpython_name = "CALL_INTRINSIC_2"
 oparg = { name = "func", type = "oparg::IntrinsicFunction2" }
 
 [CallKw]
@@ -737,17 +737,17 @@ placeholder = true
 
 [CallStr1]
 opcode = 163
-cpython_name = "CALL_STR1"
+cpython_name = "CALL_STR_1"
 placeholder = true
 
 [CallTuple1]
 opcode = 164
-cpython_name = "CALL_TUPLE1"
+cpython_name = "CALL_TUPLE_1"
 placeholder = true
 
 [CallType1]
 opcode = 165
-cpython_name = "CALL_TYPE1"
+cpython_name = "CALL_TYPE_1"
 placeholder = true
 
 [CompareOpFloat]

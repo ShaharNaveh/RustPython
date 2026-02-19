@@ -1,3 +1,4 @@
+
 use core::fmt;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -16,8 +17,8 @@ pub enum Opcode {
     ExitInitCheck,
     FormatSimple,
     FormatWithSpec,
-    GetAiter,
-    GetAnext,
+    GetAIter,
+    GetANext,
     GetIter,
     Reserved,
     GetLen,
@@ -507,8 +508,8 @@ impl fmt::Display for Opcode {
             Self::ExitInitCheck => "EXIT_INIT_CHECK",
             Self::FormatSimple => "FORMAT_SIMPLE",
             Self::FormatWithSpec => "FORMAT_WITH_SPEC",
-            Self::GetAiter => "GET_AITER",
-            Self::GetAnext => "GET_ANEXT",
+            Self::GetAIter => "GET_AITER",
+            Self::GetANext => "GET_ANEXT",
             Self::GetIter => "GET_ITER",
             Self::Reserved => "RESERVED",
             Self::GetLen => "GET_LEN",
@@ -746,8 +747,8 @@ impl TryFrom<u8> for Opcode {
             11 => Self::ExitInitCheck,
             12 => Self::FormatSimple,
             13 => Self::FormatWithSpec,
-            14 => Self::GetAiter,
-            15 => Self::GetAnext,
+            14 => Self::GetAIter,
+            15 => Self::GetANext,
             16 => Self::GetIter,
             17 => Self::Reserved,
             18 => Self::GetLen,

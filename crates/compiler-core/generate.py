@@ -21,8 +21,6 @@ sys.path.append(str(_cases_generator_path))
 import analyzer
 from generators_common import DEFAULT_INPUT
 
-ANALYSIS = analyzer.analyze_files([DEFAULT_INPUT])
-
 
 def rustfmt(code: str) -> str:
     return subprocess.check_output(["rustfmt", "--emit=stdout"], input=code, text=True)
@@ -34,159 +32,142 @@ class Instr:
     cpython_name: str
     opcode: int
     properties: analyzer.Properties
-
-    @property
-    def is_pseudo(self) -> bool:
-        return self.opcode > 255
+    oparg: dict[str, str] | None = None
+    placeholder: bool = False
 
     def __lt__(self, other) -> bool:
         return self.opcode < other.opcode
 
 
-@dataclasses.dataclass(frozen=True, slots=True)
-class OpcodeMeta(metaclass=abc.ABCMeta):
-    _analysis: analyzer.Analysis
+def build_has_attr_fn(
+    instructions: tuple[Instr, ...], fn_attr: str, prop_attr: str, doc_flag: str
+):
+    arms = "|".join(
+        f"Self::{instr.name}"
+        for instr in instructions
+        if getattr(instr.properties, prop_attr)
+    )
 
-    @abc.abstractmethod
-    def __iter__(self) -> "Iterator[Instr]": ...
+    if arms:
+        body = f"matches!(self, {arms})"
+    else:
+        body = "false"
 
-    @property
-    def enum_name(self) -> str:
-        return type(self).__name__
+    return f"""
+    /// Whether opcode ID have '{doc_flag}' set.
+    #[must_use]
+    pub const fn has_{fn_attr}(self) -> bool {{
+        {body}
+    }}
+    """
 
-    @property
-    def rust_code(self) -> str:
-        variants = ",\n".join(instr.name for instr in self)
 
-        methods = "\n\n".join(
-            getattr(self, attr).strip()
-            for attr in sorted(dir(self))
-            if attr.startswith("fn_")
-        )
-        impls = "\n\n".join(
-            getattr(self, attr).strip()
-            for attr in sorted(dir(self))
-            if attr.startswith("impl_")
-        )
-
-        return f"""
+def generate_opcode_enum(name: str, instructions: tuple[Instr, ...]) -> str:
+    variants = ",\n".join(instr.name for instr in instructions)
+    enum_def = f"""
         #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-        pub enum {self.enum_name} {{
+        pub enum {name} {{
             {variants}
         }}
+    """
 
-        impl {self.enum_name} {{
-            {methods}
-        }}
+    num_repr = "u8" if instructions[0].opcode < 255 else "u16"
+    try_from_arms = ",\n".join(
+        f"{instr.opcode} => Self::{instr.name}" for instr in instructions
+    )
 
-        {impls}
-        """.strip()
+    try_from = f"""
+    impl TryFrom<{num_repr}> for {name} {{
+        type Error = crate::marshal::MarshalError;
 
-    @property
-    def impl_tryfrom_numeric(self) -> str:
-        num_repr = "u8" if next(iter(self)).opcode < 255 else "u16"
-        arms = ",\n".join(f"{instr.opcode} => {instr.match_arm}" for instr in self)
-
-        return f"""
-        impl TryFrom<{num_repr}> for {self.enum_name} {{
-            type Error = crate::marshal::MarshalError;
-
-            fn try_from(value: {num_repr}) -> Result<Self, Self::Error> {{
-                Ok(match value {{
-                    {arms},
-                    _ => return Err(Self::Error::InvalidBytecode)
-                }}
-                )
+        fn try_from(value: {num_repr}) -> Result<Self, Self::Error> {{
+            Ok(match value {{
+                {try_from_arms},
+                _ => return Err(Self::Error::InvalidBytecode)
             }}
+            )
         }}
-        """
+    }}
+    """
 
-    @property
-    def impl_display(self) -> str:
-        arms = ",\n".join(
-            f'{instr.match_arm} => "{instr.cpython_name}"' for instr in self
-        )
-
-        return f"""
-		impl fmt::Display for {self.enum_name} {{
-			fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {{
-                let name = match self {{
-                    {arms}
-                }};
-				write!(f, "{{name}}")
-			}}
-		}}
-        """
-
-    def _build_has_attr_fn(self, fn_attr: str, prop_attr: str, doc_flag: str):
-        arms = "|".join(
-            inst.match_arm for inst in self if getattr(inst.properties, prop_attr)
-        )
-
-        if arms:
-            body = f"matches!(self, {arms})"
-        else:
-            body = "false"
-
-        return f"""
-        /// Whether opcode ID have '{doc_flag}' set.
-        #[must_use]
-        pub const fn has_{fn_attr}(self) -> bool {{
-            {body}
+    display_arms = ",\n".join(
+        f'Self::{instr.name} => "{instr.cpython_name}"' for instr in instructions
+    )
+    display = f"""
+    impl fmt::Display for {name} {{
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {{
+            let name = match self {{
+                {display_arms}
+            }};
+            write!(f, "{{name}}")
         }}
-        """
+    }}
+    """
 
-    @property
-    def fn_has_arg(self) -> str:
-        return self._build_has_attr_fn("arg", "oparg", "HAS_ARG_FLAG")
+    has_attr_fns = "\n\n".join(
+        build_has_attr_fn(instructions, *args)
+        for args in (
+            ("arg", "oparg", "HAS_ARG_FLAG"),
+            ("const", "uses_co_consts", "HAS_CONST_FLAG"),
+            ("exc", "pure", "HAS_PURE_FLAG"),
+            ("jump", "jumps", "HAS_JUMP_FLAG"),
+            ("local", "uses_locals", "HAS_LOCAL_FLAG"),
+            ("name", "uses_co_names", "HAS_NAME_FLAG"),
+        )
+    )
 
-    @property
-    def fn_has_const(self) -> str:
-        return self._build_has_attr_fn("const", "uses_co_consts", "HAS_CONST_FLAG")
-
-    @property
-    def fn_has_exc(self) -> str:
-        return self._build_has_attr_fn("exc", "pure", "HAS_PURE_FLAG")
-
-    @property
-    def fn_has_jump(self) -> str:
-        return self._build_has_attr_fn("jump", "jumps", "HAS_JUMP_FLAG")
-
-    @property
-    def fn_has_local(self) -> str:
-        return self._build_has_attr_fn("local", "uses_locals", "HAS_LOCAL_FLAG")
-
-    @property
-    def fn_has_name(self) -> str:
-        return self._build_has_attr_fn("name", "uses_co_names", "HAS_NAME_FLAG")
+    return f"""
+    {enum_def}
 
 
-@dataclasses.dataclass(frozen=True, slots=True)
-class Opcode(OpcodeMeta):
-    def __iter__(self) -> "Iterator[Instr]":
-        yield from sorted(map(Instr, self._analysis.instructions.values()))
+    impl {name} {{
+        {has_attr_fns}
+    }}
 
+    {display}
 
-@dataclasses.dataclass(frozen=True, slots=True)
-class PseudoOpcode(OpcodeMeta):
-    def __iter__(self) -> "Iterator[Instr]":
-        yield from sorted(map(Instr, self._analysis.pseudos.values()))
+    {try_from}
+    """
 
 
 def main():
-    opcodes = Opcode(ANALYSIS)
-    pseudo_opcodes = PseudoOpcode(ANALYSIS)
+    analysis = analyzer.analyze_files([DEFAULT_INPUT])
+    conf = tomllib.loads(CONF_FILE.read_text())
 
-    code = f"""
-	use core::fmt;
+    instructions = []
+    pseudo_instructions = []
+    for name, opts in conf.items():
+        opcode = opts["opcode"]
+        is_pseudo = opcode > 255
 
+        cpython_name = opts["cpython_name"]
+        if is_pseudo:
+            properties = analysis.pseudos[cpython_name].properties
+        else:
+            properties = analysis.instructions[cpython_name].properties
 
-    {opcodes.rust_code}
+        instr = Instr(name=name, **opts, properties=properties)
 
-    {pseudo_opcodes.rust_code}
+        if is_pseudo:
+            pseudo_instructions.append(instr)
+        else:
+            instructions.append(instr)
+
+    instructions = tuple(sorted(instructions))
+    pseudo_instructions = tuple(sorted(pseudo_instructions))
+
+    opcodes_code = generate_opcode_enum("Opcode", instructions)
+    pseudo_opcodes_code = generate_opcode_enum("PseudoOpcode", pseudo_instructions)
+
+    output = f"""
+    use core::fmt;
+
+    {opcodes_code}
+
+    {pseudo_opcodes_code}
     """
 
-    OUTPUT_PATH.write_text(rustfmt(code), encoding="utf-8")
+    OUTPUT_PATH.write_text(rustfmt(output), encoding="utf-8")
 
 
 if __name__ == "__main__":
