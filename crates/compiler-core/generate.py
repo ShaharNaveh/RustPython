@@ -32,7 +32,7 @@ class Instr:
     cpython_name: str
     opcode: int
     properties: analyzer.Properties
-    oparg: dict[str, str] | None = None
+    oparg: dict[str, str] = dataclasses.field(default_factory=dict)
     placeholder: bool = False
 
     def __lt__(self, other) -> bool:
@@ -119,7 +119,6 @@ def generate_opcode_enum(name: str, instructions: tuple[Instr, ...]) -> str:
     return f"""
     {enum_def}
 
-
     impl {name} {{
         {has_attr_fns}
     }}
@@ -127,6 +126,111 @@ def generate_opcode_enum(name: str, instructions: tuple[Instr, ...]) -> str:
     {display}
 
     {try_from}
+    """
+
+
+def generate_instruction_enum(name: str, instructions: tuple[Instr, ...]) -> str:
+    enum_variants = []
+    for instr in instructions:
+        variant = instr.name
+        oparg = instr.oparg
+        oparg_name = oparg.get("name")
+        oparg_type = oparg.get("type")
+
+        if oparg_name and (not oparg_type):
+            raise ValueError(f"{instr.name} has defined an oparg name without a type")
+
+        if oparg_name and oparg_type:
+            variant += f"{{ {oparg_name}: {oparg_type}}}"
+        elif oparg_type:
+            variant += f"({oparg_type})"
+
+        variant += ","
+
+        if instr.placeholder:
+            variant += "// Placeholder"
+
+        enum_variants.append(variant)
+
+    variants = "\n".join(enum_variants)
+    enum_def = f"""
+        #[derive(Clone, Copy, Debug)]
+        pub enum {name} {{
+            {variants}
+        }}
+    """
+
+    opcode_enum = "PseudoOpcode" if instructions[0].opcode > 255 else "Opcode"
+    variants = []
+    for instr in instructions:
+        variant = instr.name
+        oparg = instr.oparg
+        oparg_name = oparg.get("name")
+        oparg_type = oparg.get("type")
+
+        if oparg_name and oparg_type:
+            variant += "{ .. }"
+        elif oparg_type:
+            variant += "(_)"
+
+        variants.append(f"Self::{variant} => {opcode_enum}::{instr.name}")
+
+    opcode_arms = ",\n".join(variants)
+    opcode_fn = f"""
+    /// Instruction's opcode.
+    #[must_use]
+    pub const fn opcode(self) -> {opcode_enum} {{
+        match self {{
+            {opcode_arms}
+        }}
+    }}
+    """
+
+    variants = []
+    for instr in instructions:
+        variant = instr.name
+        oparg = instr.oparg
+        oparg_name = oparg.get("name")
+        oparg_type = oparg.get("type")
+
+        if oparg_name and oparg_type:
+            variant += f"{{ {oparg_name} }} => {oparg_name}"
+        elif oparg_type:
+            variant += f"(oparg) => oparg"
+        else:
+            variant += "=> return None"
+
+        variants.append(f"Self::{variant}")
+
+    oparg_arms = ",\n".join(variants)
+    oparg_fn = f"""
+    /// Instruction's oparg.
+    #[must_use]
+    pub fn oparg<T: oparg::OpargType>(self) -> Option<T> {{
+        Some(match self {{
+            {oparg_arms}
+        }})
+    }}
+    """
+
+    from_opcode_impl = f"""
+    impl From<{name}> for {opcode_enum} {{
+        fn from(value: {name}) -> Self {{
+            self.opcode()
+        }}
+    }}
+    """
+
+    return f"""
+    {enum_def}
+
+    impl {name} {{
+        {opcode_fn}
+
+        {oparg_fn}
+    }}
+
+    {from_opcode_impl}
     """
 
 
@@ -159,12 +263,23 @@ def main():
     opcodes_code = generate_opcode_enum("Opcode", instructions)
     pseudo_opcodes_code = generate_opcode_enum("PseudoOpcode", pseudo_instructions)
 
+    instructions_code = generate_instruction_enum("Instruction", instructions)
+    pseudo_instructions_code = generate_instruction_enum(
+        "PseudoInstruction", pseudo_instructions
+    )
+
     output = f"""
     use core::fmt;
+
+    use super::oparg;
 
     {opcodes_code}
 
     {pseudo_opcodes_code}
+
+    {instructions_code}
+
+    {pseudo_instructions_code}
     """
 
     OUTPUT_PATH.write_text(rustfmt(output), encoding="utf-8")
