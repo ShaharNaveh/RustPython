@@ -19,7 +19,7 @@ for line in it:
 
 res = []
 for entry in entries:
-    placeholder = "Placeholder" in entry
+    placeholder = "// Placeholder" in entry
     entry = entry.split("//")[0].strip()
 
     entry, opcode = entry.split("=")
@@ -38,6 +38,8 @@ for entry in entries:
     res.append(f"[{name}]")
     res.append(f"opcode = {opcode}")
     res.append(f'cpython_name = "{cpython_name}"')
+    if placeholder:
+        res.append(f"placeholder = true")
 
     if (oparg_type is not None) and (oparg_type != "u32"):
         oparg_type = f"oparg::{oparg_type}"

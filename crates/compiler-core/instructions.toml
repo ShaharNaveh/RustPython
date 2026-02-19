@@ -45,6 +45,7 @@ cpython_name = "END_SEND"
 [ExitInitCheck]
 opcode = 11
 cpython_name = "EXIT_INIT_CHECK"
+placeholder = true
 
 [FormatSimple]
 opcode = 12
@@ -81,6 +82,7 @@ cpython_name = "GET_YIELD_FROM_ITER"
 [InterpreterExit]
 opcode = 20
 cpython_name = "INTERPRETER_EXIT"
+placeholder = true
 
 [LoadBuildClass]
 opcode = 21
@@ -335,6 +337,7 @@ oparg = { name = "target", type = "oparg::Label" }
 [JumpBackwardNoInterrupt]
 opcode = 76
 cpython_name = "JUMP_BACKWARD_NO_INTERRUPT"
+placeholder = true
 oparg = { name = "target", type = "oparg::Label" }
 
 [JumpForward]
@@ -565,420 +568,578 @@ oparg = { name = "arg", type = "u32" }
 [BinaryOpAddFloat]
 opcode = 129
 cpython_name = "BINARY_OP_ADD_FLOAT"
+placeholder = true
 
 [BinaryOpAddInt]
 opcode = 130
 cpython_name = "BINARY_OP_ADD_INT"
+placeholder = true
 
 [BinaryOpAddUnicode]
 opcode = 131
 cpython_name = "BINARY_OP_ADD_UNICODE"
+placeholder = true
 
 [BinaryOpExtend]
 opcode = 132
 cpython_name = "BINARY_OP_EXTEND"
+placeholder = true
 
 [BinaryOpMultiplyFloat]
 opcode = 133
 cpython_name = "BINARY_OP_MULTIPLY_FLOAT"
+placeholder = true
 
 [BinaryOpMultiplyInt]
 opcode = 134
 cpython_name = "BINARY_OP_MULTIPLY_INT"
+placeholder = true
 
 [BinaryOpSubscrDict]
 opcode = 135
 cpython_name = "BINARY_OP_SUBSCR_DICT"
+placeholder = true
 
 [BinaryOpSubscrGetitem]
 opcode = 136
 cpython_name = "BINARY_OP_SUBSCR_GETITEM"
+placeholder = true
 
 [BinaryOpSubscrListInt]
 opcode = 137
 cpython_name = "BINARY_OP_SUBSCR_LIST_INT"
+placeholder = true
 
 [BinaryOpSubscrListSlice]
 opcode = 138
 cpython_name = "BINARY_OP_SUBSCR_LIST_SLICE"
+placeholder = true
 
 [BinaryOpSubscrStrInt]
 opcode = 139
 cpython_name = "BINARY_OP_SUBSCR_STR_INT"
+placeholder = true
 
 [BinaryOpSubscrTupleInt]
 opcode = 140
 cpython_name = "BINARY_OP_SUBSCR_TUPLE_INT"
+placeholder = true
 
 [BinaryOpSubtractFloat]
 opcode = 141
 cpython_name = "BINARY_OP_SUBTRACT_FLOAT"
+placeholder = true
 
 [BinaryOpSubtractInt]
 opcode = 142
 cpython_name = "BINARY_OP_SUBTRACT_INT"
+placeholder = true
 
 [CallAllocAndEnterInit]
 opcode = 143
 cpython_name = "CALL_ALLOC_AND_ENTER_INIT"
+placeholder = true
 
 [CallBoundMethodExactArgs]
 opcode = 144
 cpython_name = "CALL_BOUND_METHOD_EXACT_ARGS"
+placeholder = true
 
 [CallBoundMethodGeneral]
 opcode = 145
 cpython_name = "CALL_BOUND_METHOD_GENERAL"
+placeholder = true
 
 [CallBuiltinClass]
 opcode = 146
 cpython_name = "CALL_BUILTIN_CLASS"
+placeholder = true
 
 [CallBuiltinFast]
 opcode = 147
 cpython_name = "CALL_BUILTIN_FAST"
+placeholder = true
 
 [CallBuiltinFastWithKeywords]
 opcode = 148
 cpython_name = "CALL_BUILTIN_FAST_WITH_KEYWORDS"
+placeholder = true
 
 [CallBuiltinO]
 opcode = 149
 cpython_name = "CALL_BUILTIN_O"
+placeholder = true
 
 [CallIsinstance]
 opcode = 150
 cpython_name = "CALL_ISINSTANCE"
+placeholder = true
 
 [CallKwBoundMethod]
 opcode = 151
 cpython_name = "CALL_KW_BOUND_METHOD"
+placeholder = true
 
 [CallKwNonPy]
 opcode = 152
 cpython_name = "CALL_KW_NON_PY"
+placeholder = true
 
 [CallKwPy]
 opcode = 153
 cpython_name = "CALL_KW_PY"
+placeholder = true
 
 [CallLen]
 opcode = 154
 cpython_name = "CALL_LEN"
+placeholder = true
 
 [CallListAppend]
 opcode = 155
 cpython_name = "CALL_LIST_APPEND"
+placeholder = true
 
 [CallMethodDescriptorFast]
 opcode = 156
 cpython_name = "CALL_METHOD_DESCRIPTOR_FAST"
+placeholder = true
 
 [CallMethodDescriptorFastWithKeywords]
 opcode = 157
 cpython_name = "CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS"
+placeholder = true
 
 [CallMethodDescriptorNoargs]
 opcode = 158
 cpython_name = "CALL_METHOD_DESCRIPTOR_NOARGS"
+placeholder = true
 
 [CallMethodDescriptorO]
 opcode = 159
 cpython_name = "CALL_METHOD_DESCRIPTOR_O"
+placeholder = true
 
 [CallNonPyGeneral]
 opcode = 160
 cpython_name = "CALL_NON_PY_GENERAL"
+placeholder = true
 
 [CallPyExactArgs]
 opcode = 161
 cpython_name = "CALL_PY_EXACT_ARGS"
+placeholder = true
 
 [CallPyGeneral]
 opcode = 162
 cpython_name = "CALL_PY_GENERAL"
+placeholder = true
 
 [CallStr1]
 opcode = 163
 cpython_name = "CALL_STR1"
+placeholder = true
 
 [CallTuple1]
 opcode = 164
 cpython_name = "CALL_TUPLE1"
+placeholder = true
 
 [CallType1]
 opcode = 165
 cpython_name = "CALL_TYPE1"
+placeholder = true
 
 [CompareOpFloat]
 opcode = 166
 cpython_name = "COMPARE_OP_FLOAT"
+placeholder = true
 
 [CompareOpInt]
 opcode = 167
 cpython_name = "COMPARE_OP_INT"
+placeholder = true
 
 [CompareOpStr]
 opcode = 168
 cpython_name = "COMPARE_OP_STR"
+placeholder = true
 
 [ContainsOpDict]
 opcode = 169
 cpython_name = "CONTAINS_OP_DICT"
+placeholder = true
 
 [ContainsOpSet]
 opcode = 170
 cpython_name = "CONTAINS_OP_SET"
+placeholder = true
 
 [ForIterGen]
 opcode = 171
 cpython_name = "FOR_ITER_GEN"
+placeholder = true
 
 [ForIterList]
 opcode = 172
 cpython_name = "FOR_ITER_LIST"
+placeholder = true
 
 [ForIterRange]
 opcode = 173
 cpython_name = "FOR_ITER_RANGE"
+placeholder = true
 
 [ForIterTuple]
 opcode = 174
 cpython_name = "FOR_ITER_TUPLE"
+placeholder = true
 
 [JumpBackwardJit]
 opcode = 175
 cpython_name = "JUMP_BACKWARD_JIT"
+placeholder = true
 
 [JumpBackwardNoJit]
 opcode = 176
 cpython_name = "JUMP_BACKWARD_NO_JIT"
+placeholder = true
 
 [LoadAttrClass]
 opcode = 177
 cpython_name = "LOAD_ATTR_CLASS"
+placeholder = true
 
 [LoadAttrClassWithMetaclassCheck]
 opcode = 178
 cpython_name = "LOAD_ATTR_CLASS_WITH_METACLASS_CHECK"
+placeholder = true
 
 [LoadAttrGetattributeOverridden]
 opcode = 179
 cpython_name = "LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN"
+placeholder = true
 
 [LoadAttrInstanceValue]
 opcode = 180
 cpython_name = "LOAD_ATTR_INSTANCE_VALUE"
+placeholder = true
 
 [LoadAttrMethodLazyDict]
 opcode = 181
 cpython_name = "LOAD_ATTR_METHOD_LAZY_DICT"
+placeholder = true
 
 [LoadAttrMethodNoDict]
 opcode = 182
 cpython_name = "LOAD_ATTR_METHOD_NO_DICT"
+placeholder = true
 
 [LoadAttrMethodWithValues]
 opcode = 183
 cpython_name = "LOAD_ATTR_METHOD_WITH_VALUES"
+placeholder = true
 
 [LoadAttrModule]
 opcode = 184
 cpython_name = "LOAD_ATTR_MODULE"
+placeholder = true
 
 [LoadAttrNondescriptorNoDict]
 opcode = 185
 cpython_name = "LOAD_ATTR_NONDESCRIPTOR_NO_DICT"
+placeholder = true
 
 [LoadAttrNondescriptorWithValues]
 opcode = 186
 cpython_name = "LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES"
+placeholder = true
 
 [LoadAttrProperty]
 opcode = 187
 cpython_name = "LOAD_ATTR_PROPERTY"
+placeholder = true
 
 [LoadAttrSlot]
 opcode = 188
 cpython_name = "LOAD_ATTR_SLOT"
+placeholder = true
 
 [LoadAttrWithHint]
 opcode = 189
 cpython_name = "LOAD_ATTR_WITH_HINT"
+placeholder = true
 
 [LoadConstImmortal]
 opcode = 190
 cpython_name = "LOAD_CONST_IMMORTAL"
+placeholder = true
 
 [LoadConstMortal]
 opcode = 191
 cpython_name = "LOAD_CONST_MORTAL"
+placeholder = true
 
 [LoadGlobalBuiltin]
 opcode = 192
 cpython_name = "LOAD_GLOBAL_BUILTIN"
+placeholder = true
 
 [LoadGlobalModule]
 opcode = 193
 cpython_name = "LOAD_GLOBAL_MODULE"
+placeholder = true
 
 [LoadSuperAttrAttr]
 opcode = 194
 cpython_name = "LOAD_SUPER_ATTR_ATTR"
+placeholder = true
 
 [LoadSuperAttrMethod]
 opcode = 195
 cpython_name = "LOAD_SUPER_ATTR_METHOD"
+placeholder = true
 
 [ResumeCheck]
 opcode = 196
 cpython_name = "RESUME_CHECK"
+placeholder = true
 
 [SendGen]
 opcode = 197
 cpython_name = "SEND_GEN"
+placeholder = true
 
 [StoreAttrInstanceValue]
 opcode = 198
 cpython_name = "STORE_ATTR_INSTANCE_VALUE"
+placeholder = true
 
 [StoreAttrSlot]
 opcode = 199
 cpython_name = "STORE_ATTR_SLOT"
+placeholder = true
 
 [StoreAttrWithHint]
 opcode = 200
 cpython_name = "STORE_ATTR_WITH_HINT"
+placeholder = true
 
 [StoreSubscrDict]
 opcode = 201
 cpython_name = "STORE_SUBSCR_DICT"
+placeholder = true
 
 [StoreSubscrListInt]
 opcode = 202
 cpython_name = "STORE_SUBSCR_LIST_INT"
+placeholder = true
 
 [ToBoolAlwaysTrue]
 opcode = 203
 cpython_name = "TO_BOOL_ALWAYS_TRUE"
+placeholder = true
 
 [ToBoolBool]
 opcode = 204
 cpython_name = "TO_BOOL_BOOL"
+placeholder = true
 
 [ToBoolInt]
 opcode = 205
 cpython_name = "TO_BOOL_INT"
+placeholder = true
 
 [ToBoolList]
 opcode = 206
 cpython_name = "TO_BOOL_LIST"
+placeholder = true
 
 [ToBoolNone]
 opcode = 207
 cpython_name = "TO_BOOL_NONE"
+placeholder = true
 
 [ToBoolStr]
 opcode = 208
 cpython_name = "TO_BOOL_STR"
+placeholder = true
 
 [UnpackSequenceList]
 opcode = 209
 cpython_name = "UNPACK_SEQUENCE_LIST"
+placeholder = true
 
 [UnpackSequenceTuple]
 opcode = 210
 cpython_name = "UNPACK_SEQUENCE_TUPLE"
+placeholder = true
 
 [UnpackSequenceTwoTuple]
 opcode = 211
 cpython_name = "UNPACK_SEQUENCE_TWO_TUPLE"
+placeholder = true
 
 [InstrumentedEndFor]
 opcode = 234
 cpython_name = "INSTRUMENTED_END_FOR"
+placeholder = true
 
 [InstrumentedPopIter]
 opcode = 235
 cpython_name = "INSTRUMENTED_POP_ITER"
+placeholder = true
 
 [InstrumentedEndSend]
 opcode = 236
 cpython_name = "INSTRUMENTED_END_SEND"
+placeholder = true
 
 [InstrumentedForIter]
 opcode = 237
 cpython_name = "INSTRUMENTED_FOR_ITER"
+placeholder = true
 
 [InstrumentedInstruction]
 opcode = 238
 cpython_name = "INSTRUMENTED_INSTRUCTION"
+placeholder = true
 
 [InstrumentedJumpForward]
 opcode = 239
 cpython_name = "INSTRUMENTED_JUMP_FORWARD"
+placeholder = true
 
 [InstrumentedNotTaken]
 opcode = 240
 cpython_name = "INSTRUMENTED_NOT_TAKEN"
+placeholder = true
 
 [InstrumentedPopJumpIfTrue]
 opcode = 241
 cpython_name = "INSTRUMENTED_POP_JUMP_IF_TRUE"
+placeholder = true
 
 [InstrumentedPopJumpIfFalse]
 opcode = 242
 cpython_name = "INSTRUMENTED_POP_JUMP_IF_FALSE"
+placeholder = true
 
 [InstrumentedPopJumpIfNone]
 opcode = 243
 cpython_name = "INSTRUMENTED_POP_JUMP_IF_NONE"
+placeholder = true
 
 [InstrumentedPopJumpIfNotNone]
 opcode = 244
 cpython_name = "INSTRUMENTED_POP_JUMP_IF_NOT_NONE"
+placeholder = true
 
 [InstrumentedResume]
 opcode = 245
 cpython_name = "INSTRUMENTED_RESUME"
+placeholder = true
 
 [InstrumentedReturnValue]
 opcode = 246
 cpython_name = "INSTRUMENTED_RETURN_VALUE"
+placeholder = true
 
 [InstrumentedYieldValue]
 opcode = 247
 cpython_name = "INSTRUMENTED_YIELD_VALUE"
+placeholder = true
 
 [InstrumentedEndAsyncFor]
 opcode = 248
 cpython_name = "INSTRUMENTED_END_ASYNC_FOR"
+placeholder = true
 
 [InstrumentedLoadSuperAttr]
 opcode = 249
 cpython_name = "INSTRUMENTED_LOAD_SUPER_ATTR"
+placeholder = true
 
 [InstrumentedCall]
 opcode = 250
 cpython_name = "INSTRUMENTED_CALL"
+placeholder = true
 
 [InstrumentedCallKw]
 opcode = 251
 cpython_name = "INSTRUMENTED_CALL_KW"
+placeholder = true
 
 [InstrumentedCallFunctionEx]
 opcode = 252
 cpython_name = "INSTRUMENTED_CALL_FUNCTION_EX"
+placeholder = true
 
 [InstrumentedJumpBackward]
 opcode = 253
 cpython_name = "INSTRUMENTED_JUMP_BACKWARD"
+placeholder = true
 
 [InstrumentedLine]
 opcode = 254
 cpython_name = "INSTRUMENTED_LINE"
+placeholder = true
 
 [EnterExecutor]
 opcode = 255
 cpython_name = "ENTER_EXECUTOR"
+placeholder = true
+
+[AnnotationsPlaceholder]
+opcode = 256
+cpython_name = "ANNOTATIONS_PLACEHOLDER"
+
+[Jump]
+opcode = 257
+cpython_name = "JUMP"
+oparg = { name = "target", type = "oparg::Label" }
+
+[JumpIfFalse]
+opcode = 258
+cpython_name = "JUMP_IF_FALSE"
+oparg = { name = "target", type = "oparg::Label" }
+
+[JumpIfTrue]
+opcode = 259
+cpython_name = "JUMP_IF_TRUE"
+oparg = { name = "target", type = "oparg::Label" }
+
+[JumpNoInterrupt]
+opcode = 260
+cpython_name = "JUMP_NO_INTERRUPT"
+oparg = { name = "target", type = "oparg::Label" }
+
+[LoadClosure]
+opcode = 261
+cpython_name = "LOAD_CLOSURE"
+oparg = { type = "oparg::NameIdx" }
+
+[PopBlock]
+opcode = 262
+cpython_name = "POP_BLOCK"
+
+[SetupCleanup]
+opcode = 263
+cpython_name = "SETUP_CLEANUP"
+oparg = { name = "target", type = "oparg::Label" }
+
+[SetupFinally]
+opcode = 264
+cpython_name = "SETUP_FINALLY"
+oparg = { name = "target", type = "oparg::Label" }
+
+[SetupWith]
+opcode = 265
+cpython_name = "SETUP_WITH"
+oparg = { name = "target", type = "oparg::Label" }
+
+[StoreFastMaybeNull]
+opcode = 266
+cpython_name = "STORE_FAST_MAYBE_NULL"
+oparg = { type = "oparg::NameIdx" }
 

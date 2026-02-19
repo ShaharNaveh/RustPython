@@ -336,3 +336,14 @@
     InstrumentedJumpBackward = 253,     // Placeholder
     InstrumentedLine = 254,             // Placeholder
     EnterExecutor = 255,                // Placeholder
+    AnnotationsPlaceholder = 256,
+    Jump { target: Arg<Label> } = 257,
+    JumpIfFalse { target: Arg<Label> } = 258,
+    JumpIfTrue { target: Arg<Label> } = 259,
+    JumpNoInterrupt { target: Arg<Label> } = 260,
+    LoadClosure(Arg<NameIdx>) = 261,
+    PopBlock = 262,
+    SetupCleanup { target: Arg<Label> } = 263,
+    SetupFinally { target: Arg<Label> } = 264,
+    SetupWith { target: Arg<Label> } = 265,
+    StoreFastMaybeNull(Arg<NameIdx>) = 266,
