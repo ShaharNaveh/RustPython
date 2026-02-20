@@ -16,7 +16,7 @@ pub enum Opcode {
     DeleteSubscr,
     EndFor,
     EndSend,
-    ExitInitCheck,
+    ExitInitCheck, // Placeholder
     FormatSimple,
     FormatWithSpec,
     GetAIter,
@@ -25,7 +25,7 @@ pub enum Opcode {
     Reserved,
     GetLen,
     GetYieldFromIter,
-    InterpreterExit,
+    InterpreterExit, // Placeholder
     LoadBuildClass,
     LoadLocals,
     MakeFunction,
@@ -81,7 +81,7 @@ pub enum Opcode {
     ImportName,
     IsOp,
     JumpBackward,
-    JumpBackwardNoInterrupt,
+    JumpBackwardNoInterrupt, // Placeholder
     JumpForward,
     ListAppend,
     ListExtend,
@@ -127,111 +127,111 @@ pub enum Opcode {
     UnpackSequence,
     YieldValue,
     Resume,
-    BinaryOpAddFloat,
-    BinaryOpAddInt,
-    BinaryOpAddUnicode,
-    BinaryOpExtend,
-    BinaryOpMultiplyFloat,
-    BinaryOpMultiplyInt,
-    BinaryOpSubscrDict,
-    BinaryOpSubscrGetitem,
-    BinaryOpSubscrListInt,
-    BinaryOpSubscrListSlice,
-    BinaryOpSubscrStrInt,
-    BinaryOpSubscrTupleInt,
-    BinaryOpSubtractFloat,
-    BinaryOpSubtractInt,
-    CallAllocAndEnterInit,
-    CallBoundMethodExactArgs,
-    CallBoundMethodGeneral,
-    CallBuiltinClass,
-    CallBuiltinFast,
-    CallBuiltinFastWithKeywords,
-    CallBuiltinO,
-    CallIsinstance,
-    CallKwBoundMethod,
-    CallKwNonPy,
-    CallKwPy,
-    CallLen,
-    CallListAppend,
-    CallMethodDescriptorFast,
-    CallMethodDescriptorFastWithKeywords,
-    CallMethodDescriptorNoargs,
-    CallMethodDescriptorO,
-    CallNonPyGeneral,
-    CallPyExactArgs,
-    CallPyGeneral,
-    CallStr1,
-    CallTuple1,
-    CallType1,
-    CompareOpFloat,
-    CompareOpInt,
-    CompareOpStr,
-    ContainsOpDict,
-    ContainsOpSet,
-    ForIterGen,
-    ForIterList,
-    ForIterRange,
-    ForIterTuple,
-    JumpBackwardJit,
-    JumpBackwardNoJit,
-    LoadAttrClass,
-    LoadAttrClassWithMetaclassCheck,
-    LoadAttrGetattributeOverridden,
-    LoadAttrInstanceValue,
-    LoadAttrMethodLazyDict,
-    LoadAttrMethodNoDict,
-    LoadAttrMethodWithValues,
-    LoadAttrModule,
-    LoadAttrNondescriptorNoDict,
-    LoadAttrNondescriptorWithValues,
-    LoadAttrProperty,
-    LoadAttrSlot,
-    LoadAttrWithHint,
-    LoadConstImmortal,
-    LoadConstMortal,
-    LoadGlobalBuiltin,
-    LoadGlobalModule,
-    LoadSuperAttrAttr,
-    LoadSuperAttrMethod,
-    ResumeCheck,
-    SendGen,
-    StoreAttrInstanceValue,
-    StoreAttrSlot,
-    StoreAttrWithHint,
-    StoreSubscrDict,
-    StoreSubscrListInt,
-    ToBoolAlwaysTrue,
-    ToBoolBool,
-    ToBoolInt,
-    ToBoolList,
-    ToBoolNone,
-    ToBoolStr,
-    UnpackSequenceList,
-    UnpackSequenceTuple,
-    UnpackSequenceTwoTuple,
-    InstrumentedEndFor,
-    InstrumentedPopIter,
-    InstrumentedEndSend,
-    InstrumentedForIter,
-    InstrumentedInstruction,
-    InstrumentedJumpForward,
-    InstrumentedNotTaken,
-    InstrumentedPopJumpIfTrue,
-    InstrumentedPopJumpIfFalse,
-    InstrumentedPopJumpIfNone,
-    InstrumentedPopJumpIfNotNone,
-    InstrumentedResume,
-    InstrumentedReturnValue,
-    InstrumentedYieldValue,
-    InstrumentedEndAsyncFor,
-    InstrumentedLoadSuperAttr,
-    InstrumentedCall,
-    InstrumentedCallKw,
-    InstrumentedCallFunctionEx,
-    InstrumentedJumpBackward,
-    InstrumentedLine,
-    EnterExecutor,
+    BinaryOpAddFloat,                     // Placeholder
+    BinaryOpAddInt,                       // Placeholder
+    BinaryOpAddUnicode,                   // Placeholder
+    BinaryOpExtend,                       // Placeholder
+    BinaryOpMultiplyFloat,                // Placeholder
+    BinaryOpMultiplyInt,                  // Placeholder
+    BinaryOpSubscrDict,                   // Placeholder
+    BinaryOpSubscrGetitem,                // Placeholder
+    BinaryOpSubscrListInt,                // Placeholder
+    BinaryOpSubscrListSlice,              // Placeholder
+    BinaryOpSubscrStrInt,                 // Placeholder
+    BinaryOpSubscrTupleInt,               // Placeholder
+    BinaryOpSubtractFloat,                // Placeholder
+    BinaryOpSubtractInt,                  // Placeholder
+    CallAllocAndEnterInit,                // Placeholder
+    CallBoundMethodExactArgs,             // Placeholder
+    CallBoundMethodGeneral,               // Placeholder
+    CallBuiltinClass,                     // Placeholder
+    CallBuiltinFast,                      // Placeholder
+    CallBuiltinFastWithKeywords,          // Placeholder
+    CallBuiltinO,                         // Placeholder
+    CallIsinstance,                       // Placeholder
+    CallKwBoundMethod,                    // Placeholder
+    CallKwNonPy,                          // Placeholder
+    CallKwPy,                             // Placeholder
+    CallLen,                              // Placeholder
+    CallListAppend,                       // Placeholder
+    CallMethodDescriptorFast,             // Placeholder
+    CallMethodDescriptorFastWithKeywords, // Placeholder
+    CallMethodDescriptorNoargs,           // Placeholder
+    CallMethodDescriptorO,                // Placeholder
+    CallNonPyGeneral,                     // Placeholder
+    CallPyExactArgs,                      // Placeholder
+    CallPyGeneral,                        // Placeholder
+    CallStr1,                             // Placeholder
+    CallTuple1,                           // Placeholder
+    CallType1,                            // Placeholder
+    CompareOpFloat,                       // Placeholder
+    CompareOpInt,                         // Placeholder
+    CompareOpStr,                         // Placeholder
+    ContainsOpDict,                       // Placeholder
+    ContainsOpSet,                        // Placeholder
+    ForIterGen,                           // Placeholder
+    ForIterList,                          // Placeholder
+    ForIterRange,                         // Placeholder
+    ForIterTuple,                         // Placeholder
+    JumpBackwardJit,                      // Placeholder
+    JumpBackwardNoJit,                    // Placeholder
+    LoadAttrClass,                        // Placeholder
+    LoadAttrClassWithMetaclassCheck,      // Placeholder
+    LoadAttrGetattributeOverridden,       // Placeholder
+    LoadAttrInstanceValue,                // Placeholder
+    LoadAttrMethodLazyDict,               // Placeholder
+    LoadAttrMethodNoDict,                 // Placeholder
+    LoadAttrMethodWithValues,             // Placeholder
+    LoadAttrModule,                       // Placeholder
+    LoadAttrNondescriptorNoDict,          // Placeholder
+    LoadAttrNondescriptorWithValues,      // Placeholder
+    LoadAttrProperty,                     // Placeholder
+    LoadAttrSlot,                         // Placeholder
+    LoadAttrWithHint,                     // Placeholder
+    LoadConstImmortal,                    // Placeholder
+    LoadConstMortal,                      // Placeholder
+    LoadGlobalBuiltin,                    // Placeholder
+    LoadGlobalModule,                     // Placeholder
+    LoadSuperAttrAttr,                    // Placeholder
+    LoadSuperAttrMethod,                  // Placeholder
+    ResumeCheck,                          // Placeholder
+    SendGen,                              // Placeholder
+    StoreAttrInstanceValue,               // Placeholder
+    StoreAttrSlot,                        // Placeholder
+    StoreAttrWithHint,                    // Placeholder
+    StoreSubscrDict,                      // Placeholder
+    StoreSubscrListInt,                   // Placeholder
+    ToBoolAlwaysTrue,                     // Placeholder
+    ToBoolBool,                           // Placeholder
+    ToBoolInt,                            // Placeholder
+    ToBoolList,                           // Placeholder
+    ToBoolNone,                           // Placeholder
+    ToBoolStr,                            // Placeholder
+    UnpackSequenceList,                   // Placeholder
+    UnpackSequenceTuple,                  // Placeholder
+    UnpackSequenceTwoTuple,               // Placeholder
+    InstrumentedEndFor,                   // Placeholder
+    InstrumentedPopIter,                  // Placeholder
+    InstrumentedEndSend,                  // Placeholder
+    InstrumentedForIter,                  // Placeholder
+    InstrumentedInstruction,              // Placeholder
+    InstrumentedJumpForward,              // Placeholder
+    InstrumentedNotTaken,                 // Placeholder
+    InstrumentedPopJumpIfTrue,            // Placeholder
+    InstrumentedPopJumpIfFalse,           // Placeholder
+    InstrumentedPopJumpIfNone,            // Placeholder
+    InstrumentedPopJumpIfNotNone,         // Placeholder
+    InstrumentedResume,                   // Placeholder
+    InstrumentedReturnValue,              // Placeholder
+    InstrumentedYieldValue,               // Placeholder
+    InstrumentedEndAsyncFor,              // Placeholder
+    InstrumentedLoadSuperAttr,            // Placeholder
+    InstrumentedCall,                     // Placeholder
+    InstrumentedCallKw,                   // Placeholder
+    InstrumentedCallFunctionEx,           // Placeholder
+    InstrumentedJumpBackward,             // Placeholder
+    InstrumentedLine,                     // Placeholder
+    EnterExecutor,                        // Placeholder
 }
 
 impl Opcode {
@@ -729,7 +729,6 @@ impl fmt::Display for Opcode {
         write!(f, "{name}")
     }
 }
-
 impl TryFrom<u8> for Opcode {
     type Error = crate::marshal::MarshalError;
 
@@ -1057,7 +1056,6 @@ impl fmt::Display for PseudoOpcode {
         write!(f, "{name}")
     }
 }
-
 impl TryFrom<u16> for PseudoOpcode {
     type Error = crate::marshal::MarshalError;
 
@@ -1546,8 +1544,6 @@ impl Instruction {
             Self::EnterExecutor => Opcode::EnterExecutor,
         }
     }
-
-    // oparg_fn
 }
 
 impl From<Instruction> for Opcode {
@@ -1589,8 +1585,6 @@ impl PseudoInstruction {
             Self::StoreFastMaybeNull(_) => PseudoOpcode::StoreFastMaybeNull,
         }
     }
-
-    // oparg_fn
 }
 
 impl From<PseudoInstruction> for PseudoOpcode {
