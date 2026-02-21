@@ -1939,10 +1939,7 @@ impl Instruction {
             Self::LoadFastLoadFast { .. } => (2, 0),
             Self::LoadFromDictOrDeref(_) => (1, 1),
             Self::LoadFromDictOrGlobals(_) => (1, 1),
-            Self::LoadGlobal(oparg) => {
-                let oparg = i32::try_from(u32::from(oparg)).expect("oparg does not fit in an i32");
-                (1 + (oparg & 1), 0)
-            }
+            Self::LoadGlobal(_) => (1, 0),
             Self::LoadName(_) => (1, 0),
             Self::LoadSmallInt { .. } => (1, 0),
             Self::LoadSpecial { .. } => (2, 1),

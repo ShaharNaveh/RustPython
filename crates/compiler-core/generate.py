@@ -353,7 +353,7 @@ def main():
         else:
             instruction = analysis.instructions[cpython_name]
 
-        stack_effect = opts.get("stack_effect", {})
+        stack_effect = opts.pop("stack_effect", {})
         stack = get_stack_effect(instruction)
         stack_effect.setdefault("popped", (-stack.base_offset).to_c())
         stack_effect.setdefault("pushed", (stack.logical_sp - stack.base_offset).to_c())

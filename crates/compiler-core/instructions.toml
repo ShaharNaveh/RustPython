@@ -419,6 +419,8 @@ oparg = { type = "oparg::NameIdx" }
 opcode = 92
 cpython_name = "LOAD_GLOBAL"
 oparg = { type = "oparg::NameIdx" }
+# TODO: Differs from CPython `1 + (oparg & 1)`
+stack_effect = { pushed = "1" }
 
 [LoadName]
 opcode = 93
