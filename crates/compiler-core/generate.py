@@ -52,12 +52,12 @@ class OpcodeEnumBuilder:
 
         Will include every property that starts with `fn_` or `impl_`.
         """
-        fns = "\n".join(
+        fns = "\n\n".join(
             getattr(self, attr).strip()
             for attr in sorted(dir(self))
             if attr.startswith("fn_")
         )
-        impls = "\n".join(
+        impls = "\n\n".join(
             getattr(self, attr).strip()
             for attr in sorted(dir(self))
             if attr.startswith("impl_")
@@ -101,6 +101,10 @@ class OpcodeEnumBuilder:
         """
 
     @property
+    def num_repr(self) -> str:
+        return "u8" if next(iter(self)).opcode < 255 else "u16"
+
+    @property
     def fn_has_attr(self) -> str:
         return "\n\n".join(
             self._build_has_attr_fn(*args)
@@ -117,15 +121,28 @@ class OpcodeEnumBuilder:
         )
 
     @property
+    def impl_into_numeric(self) -> str:
+        arms = ",\n".join(f"Self::{instr.name} => {instr.opcode}" for instr in self)
+
+        return f"""
+        impl From<{self.name}> for {self.num_repr} {{
+            fn from(value: {self.name}) -> Self {{
+                match value {{
+                    {arms}
+                }}
+            }}
+        }}
+        """
+
+    @property
     def impl_tryfrom_numeric(self) -> str:
-        num_repr = "u8" if next(iter(self)).opcode < 255 else "u16"
         arms = ",\n".join(f"{instr.opcode} => Self::{instr.name}" for instr in self)
 
         return f"""
-        impl TryFrom<{num_repr}> for {self.name} {{
+        impl TryFrom<{self.num_repr}> for {self.name} {{
             type Error = crate::marshal::MarshalError;
 
-            fn try_from(value: {num_repr}) -> Result<Self, Self::Error> {{
+            fn try_from(value: {self.num_repr}) -> Result<Self, Self::Error> {{
                 Ok(match value {{
                     {arms},
                     _ => return Err(Self::Error::InvalidBytecode)
@@ -193,12 +210,12 @@ class InstructionEnumBuilder:
 
         variants = "\n".join(enum_variants)
 
-        fns = "\n".join(
+        fns = "\n\n".join(
             getattr(self, attr).strip()
             for attr in sorted(dir(self))
             if attr.startswith("fn_")
         )
-        impls = "\n".join(
+        impls = "\n\n".join(
             getattr(self, attr).strip()
             for attr in sorted(dir(self))
             if attr.startswith("impl_")
@@ -256,7 +273,7 @@ class InstructionEnumBuilder:
                 value.opcode()
             }}
         }}
-    """
+        """
 
     def __iter__(self):
         yield from self.instructions
