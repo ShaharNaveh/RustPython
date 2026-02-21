@@ -20,6 +20,7 @@ sys.path.append(str(_cases_generator_path))
 
 import analyzer
 from generators_common import DEFAULT_INPUT
+from stack import get_stack_effect
 
 type Instructions = tuple["Instr", ...]
 
@@ -34,6 +35,7 @@ class Instr:
     cpython_name: str
     opcode: int
     properties: analyzer.Properties
+    stack_effect: dict[str, str]
     oparg: dict[str, str] = dataclasses.field(default_factory=dict)
     placeholder: bool = False
 
@@ -122,7 +124,9 @@ class OpcodeEnumBuilder:
 
     @property
     def impl_into_numeric(self) -> str:
-        arms = ",\n".join(f"Self::{instr.name} => {instr.opcode}" for instr in self)
+        arms = ",\n".join(
+            f"{self.name}::{instr.name} => {instr.opcode}" for instr in self
+        )
 
         return f"""
         impl From<{self.name}> for {self.num_repr} {{
@@ -239,6 +243,60 @@ class InstructionEnumBuilder:
         return "PseudoOpcode" if next(iter(self)).opcode > 255 else "Opcode"
 
     @property
+    def fn_stack_effect(self) -> str:
+        arms = ""
+        for instr in self:
+            body = f"Self::{instr.name}"
+            stack_effect = instr.stack_effect
+            popped, pushed = stack_effect["popped"], stack_effect["pushed"]
+            needs_oparg = any("oparg" in expr for expr in (popped, pushed))
+            oparg = instr.oparg
+            oparg_name = oparg.get("name")
+            oparg_type = oparg.get("type")
+            stores_oparg = oparg_type is not None
+            if stores_oparg:
+                if oparg_name and oparg_type:
+                    if needs_oparg:
+                        body += f"{{ {oparg_name} }}"
+                    else:
+                        body += "{ .. }"
+                elif oparg_type:
+                    if needs_oparg:
+                        oparg_name = "oparg"
+                        body += f"({oparg_name})"
+                    else:
+                        body += "(_)"
+
+            body += " => {\n"
+            if needs_oparg and instr.placeholder:
+                body += "let oparg = 0; // Placeholder"
+            elif needs_oparg:
+                body += f"""
+                let oparg = i32::try_from(
+                    u32::from({oparg_name})
+                ).expect("oparg does not fit in an i32");
+                """.strip()
+
+            body += f"""\n(
+            {pushed},
+            {popped}
+            )"""
+
+            body += "},\n"
+
+            arms += body
+
+        return f"""
+        pub fn stack_effect(self) -> StackEffect {{
+            let (pushed, popped) = match self {{
+                {arms}
+            }};
+
+            StackEffect::new(pushed as u32, popped as u32)
+        }}
+        """
+
+    @property
     def fn_opcode(self) -> str:
         variants = []
         for instr in self:
@@ -291,11 +349,21 @@ def main():
 
         cpython_name = opts["cpython_name"]
         if is_pseudo:
-            properties = analysis.pseudos[cpython_name].properties
+            instruction = analysis.pseudos[cpython_name]
         else:
-            properties = analysis.instructions[cpython_name].properties
+            instruction = analysis.instructions[cpython_name]
 
-        instr = Instr(name=name, **opts, properties=properties)
+        stack_effect = opts.get("stack_effect", {})
+        stack = get_stack_effect(instruction)
+        stack_effect.setdefault("popped", (-stack.base_offset).to_c())
+        stack_effect.setdefault("pushed", (stack.logical_sp - stack.base_offset).to_c())
+
+        instr = Instr(
+            name=name,
+            **opts,
+            properties=instruction.properties,
+            stack_effect=stack_effect,
+        )
 
         if is_pseudo:
             pseudo_instructions.append(instr)
@@ -318,6 +386,7 @@ def main():
     output = f"""
     use core::fmt;
 
+    use crate::bytecode::StackEffect;
     use super::oparg;
 
     {opcodes_code}
