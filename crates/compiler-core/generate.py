@@ -37,6 +37,7 @@ class Instr:
     properties: analyzer.Properties
     stack_effect: dict[str, str]
     oparg: dict[str, str] = dataclasses.field(default_factory=dict)
+    fmt_dis: dict | None = None
     placeholder: bool = False
 
     def __lt__(self, other) -> bool:
@@ -338,6 +339,16 @@ class InstructionEnumBuilder:
         }}
         """
 
+    @property
+    def impl_into_stack_effect(self) -> str:
+        return f"""
+        impl From<{self.name}> for StackEffect {{
+            fn from(value: {self.name}) -> Self {{
+                value.stack_effect()
+            }}
+        }}
+        """
+
     def __iter__(self):
         yield from self.instructions
 
@@ -363,11 +374,14 @@ def main():
         stack_effect.setdefault("popped", (-stack.base_offset).to_c())
         stack_effect.setdefault("pushed", (stack.logical_sp - stack.base_offset).to_c())
 
+        fmt_dis = opts.pop("fmt_dis", None)
+
         instr = Instr(
             name=name,
             **opts,
             properties=instruction.properties,
             stack_effect=stack_effect,
+            fmt_dis=fmt_dis,
         )
 
         if is_pseudo:

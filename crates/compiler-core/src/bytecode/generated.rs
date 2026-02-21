@@ -2211,6 +2211,12 @@ impl From<Instruction> for Opcode {
     }
 }
 
+impl From<Instruction> for StackEffect {
+    fn from(value: Instruction) -> Self {
+        value.stack_effect()
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub enum PseudoInstruction {
     AnnotationsPlaceholder,
@@ -2267,5 +2273,11 @@ impl PseudoInstruction {
 impl From<PseudoInstruction> for PseudoOpcode {
     fn from(value: PseudoInstruction) -> Self {
         value.opcode()
+    }
+}
+
+impl From<PseudoInstruction> for StackEffect {
+    fn from(value: PseudoInstruction) -> Self {
+        value.stack_effect()
     }
 }
