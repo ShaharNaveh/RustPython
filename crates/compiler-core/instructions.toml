@@ -143,6 +143,7 @@ cpython_name = "RETURN_GENERATOR"
 [ReturnValue]
 opcode = 35
 cpython_name = "RETURN_VALUE"
+stack_effect = { pushed = "0" } # TODO: Differs from CPython: `1`
 
 [SetupAnnotations]
 opcode = 36
@@ -419,8 +420,7 @@ oparg = { type = "oparg::NameIdx" }
 opcode = 92
 cpython_name = "LOAD_GLOBAL"
 oparg = { type = "oparg::NameIdx" }
-# TODO: Differs from CPython `1 + (oparg & 1)`
-stack_effect = { pushed = "1" }
+stack_effect = { pushed = "1" } # TODO: Differs from CPython `1 + (oparg & 1)`
 
 [LoadName]
 opcode = 93
@@ -481,11 +481,22 @@ oparg = { name = "target", type = "oparg::Label" }
 opcode = 104
 cpython_name = "RAISE_VARARGS"
 oparg = { name = "kind", type = "oparg::RaiseKind" }
+[RaiseVarargs.stack_effect]
+# TODO: Differs from CPython: `oparg`
+popped = """
+match kind {
+    oparg::RaiseKind::BareRaise => 0,
+    oparg::RaiseKind::Raise => 1,
+    oparg::RaiseKind::RaiseCause => 2,
+    oparg::RaiseKind::ReraiseFromStack => 1,
+}
+"""
 
 [Reraise]
 opcode = 105
 cpython_name = "RERAISE"
 oparg = { name = "depth", type = "u32" }
+stack_effect = { pushed = "1 + oparg" } # TODO: Differs from CPython: `oparg`
 
 [Send]
 opcode = 106

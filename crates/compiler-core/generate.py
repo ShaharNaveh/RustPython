@@ -249,7 +249,8 @@ class InstructionEnumBuilder:
             body = f"Self::{instr.name}"
             stack_effect = instr.stack_effect
             popped, pushed = stack_effect["popped"], stack_effect["pushed"]
-            needs_oparg = any("oparg" in expr for expr in (popped, pushed))
+            exprs = (popped, pushed)
+            needs_oparg = any("oparg" in expr for expr in exprs)
             oparg = instr.oparg
             oparg_name = oparg.get("name")
             oparg_type = oparg.get("type")
@@ -270,7 +271,11 @@ class InstructionEnumBuilder:
             body += " => {\n"
             if needs_oparg and instr.placeholder:
                 body += "let oparg = 0; // Placeholder"
-            elif needs_oparg:
+            elif needs_oparg and (
+                not any(
+                    "match" in expr for expr in exprs
+                )  # If we have a `match` statement it means we do not need the oparg
+            ):
                 body += f"""
                 let oparg = i32::try_from(
                     u32::from({oparg_name})

@@ -1837,7 +1837,7 @@ impl Instruction {
             Self::PushExcInfo => (2, 1),
             Self::PushNull => (1, 0),
             Self::ReturnGenerator => (1, 0),
-            Self::ReturnValue => (1, 1),
+            Self::ReturnValue => (0, 1),
             Self::SetupAnnotations => (0, 0),
             Self::StoreSlice => (0, 4),
             Self::StoreSubscr => (0, 3),
@@ -1957,13 +1957,18 @@ impl Instruction {
             Self::PopJumpIfNone { .. } => (0, 1),
             Self::PopJumpIfNotNone { .. } => (0, 1),
             Self::PopJumpIfTrue { .. } => (0, 1),
-            Self::RaiseVarargs { kind } => {
-                let oparg = i32::try_from(u32::from(kind)).expect("oparg does not fit in an i32");
-                (0, oparg)
-            }
+            Self::RaiseVarargs { kind } => (
+                0,
+                match kind {
+                    oparg::RaiseKind::BareRaise => 0,
+                    oparg::RaiseKind::Raise => 1,
+                    oparg::RaiseKind::RaiseCause => 2,
+                    oparg::RaiseKind::ReraiseFromStack => 1,
+                },
+            ),
             Self::Reraise { depth } => {
                 let oparg = i32::try_from(u32::from(depth)).expect("oparg does not fit in an i32");
-                (oparg, 1 + oparg)
+                (1 + oparg, 1 + oparg)
             }
             Self::Send { .. } => (2, 2),
             Self::SetAdd { i } => {
