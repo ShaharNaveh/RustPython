@@ -41,8 +41,32 @@ class Instr:
     placeholder: bool = False
 
     @property
+    def oparg_type(self) -> str | None:
+        return self.oparg.get("type")
+
+    @property
     def oparg_name(self) -> str | None:
-        pass
+        return self.oparg.get("name")
+
+    def arm(self, include_oparg: bool = True) -> str:
+        out = f"Self::{self.name}"
+        oparg = self.oparg
+        if self.oparg:
+            if self.oparg_name and self.oparg_type:
+                if include_oparg:
+                    return f"{out} {{ {self.oparg_name} }}"
+                else:
+                    return f"{out} {{ .. }}"
+            elif self.oparg_type:
+                if include_oparg:
+                    return f"{out}(oparg)"
+                else:
+                    return f"{out}(_)"
+            else:
+                raise ValueError(
+                    f"{self.name} has defined an oparg name without a type"
+                )
+        return out
 
     def __lt__(self, other) -> bool:
         return self.opcode < other.opcode
@@ -251,39 +275,25 @@ class InstructionEnumBuilder:
     def fn_stack_effect(self) -> str:
         arms = ""
         for instr in self:
-            body = f"Self::{instr.name}"
             stack_effect = instr.stack_effect
             popped, pushed = stack_effect["popped"], stack_effect["pushed"]
             exprs = (popped, pushed)
             needs_oparg = any("oparg" in expr for expr in exprs)
-            oparg = instr.oparg
-            oparg_name = oparg.get("name")
-            oparg_type = oparg.get("type")
-            stores_oparg = oparg_type is not None
-            if stores_oparg:
-                if oparg_name and oparg_type:
-                    if needs_oparg:
-                        body += f"{{ {oparg_name} }}"
-                    else:
-                        body += "{ .. }"
-                elif oparg_type:
-                    if needs_oparg:
-                        oparg_name = "oparg"
-                        body += f"({oparg_name})"
-                    else:
-                        body += "(_)"
-
+            body = instr.arm(needs_oparg)
             body += " => {\n"
             if needs_oparg and instr.placeholder:
                 body += "let oparg = 0; // Placeholder"
-            elif needs_oparg and (
-                not any(
-                    "match" in expr for expr in exprs
-                )  # If we have a `match` statement it means we do not need the oparg
+            elif (
+                needs_oparg
+                and (
+                    not any(
+                        "match" in expr for expr in exprs
+                    )  # If we have a `match` statement it means we do not need the oparg as i32
+                )
             ):
                 body += f"""
                 let oparg = i32::try_from(
-                    u32::from({oparg_name})
+                    u32::from({instr.oparg_name})
                 ).expect("oparg does not fit in an i32");
                 """.strip()
 
@@ -313,17 +323,8 @@ class InstructionEnumBuilder:
     def fn_opcode(self) -> str:
         variants = []
         for instr in self:
-            variant = instr.name
-            oparg = instr.oparg
-            oparg_name = oparg.get("name")
-            oparg_type = oparg.get("type")
-
-            if oparg_name and oparg_type:
-                variant += "{ .. }"
-            elif oparg_type:
-                variant += "(_)"
-
-            variants.append(f"Self::{variant} => {self.target_opcode}::{instr.name}")
+            arm = instr.arm(False)
+            variants.append(f"{arm} => {self.target_opcode}::{instr.name}")
 
         arms = ",\n".join(variants)
         return f"""
