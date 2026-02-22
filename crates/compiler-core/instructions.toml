@@ -373,6 +373,15 @@ oparg = { name = "i", type = "u32" }
 opcode = 80
 cpython_name = "LOAD_ATTR"
 oparg = { name = "idx", type = "oparg::LoadAttr" }
+fmt_dis = """
+let oparg_u32 = u32::from(idx);
+let attr_name = name(oparg.name_idx());
+if idx.is_method() {
+    write!(f, "{:pad$}({}, {}, method=true)", opcode, oparg_u32, attr_name)
+} else {
+    write!(f, "{:pad$}({}, {})", opcode, oparg_u32, attr_name)
+}
+"""
 
 [LoadCommonConstant]
 opcode = 81
@@ -383,6 +392,21 @@ oparg = { name = "idx", type = "oparg::CommonConstant" }
 opcode = 82
 cpython_name = "LOAD_CONST"
 oparg = { name = "idx", type = "u32" }
+fmt_dis = """
+let value = ctx.get_constant(usize::from(idx));
+match value.borrow_constant() {
+	BorrowedConstant::Code { code } if expand_code_objects => {
+		write!(f, "{opcode:pad$}({code:?}):")?;
+		code.display_inner(f, true, level + 1)?;
+		Ok(())
+	}
+	c => {
+		write!(f, "{opcode:pad$}(")?;
+        c.fmt_display(f)?;
+		write!(f, ")")
+	}
+}
+"""
 
 [LoadDeref]
 opcode = 83

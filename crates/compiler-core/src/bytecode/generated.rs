@@ -1720,9 +1720,35 @@ impl Instruction {
             Self::JumpForward { target } => write!(f, "{:pad$}({})", opcode, target),
             Self::ListAppend { i } => write!(f, "{:pad$}({})", opcode, i),
             Self::ListExtend { i } => write!(f, "{:pad$}({})", opcode, i),
-            Self::LoadAttr { idx } => write!(f, "{:pad$}({})", opcode, idx),
+            Self::LoadAttr { idx } => {
+                let oparg_u32 = u32::from(idx);
+                let attr_name = name(oparg.name_idx());
+                if idx.is_method() {
+                    write!(
+                        f,
+                        "{:pad$}({}, {}, method=true)",
+                        opcode, oparg_u32, attr_name
+                    )
+                } else {
+                    write!(f, "{:pad$}({}, {})", opcode, oparg_u32, attr_name)
+                }
+            }
             Self::LoadCommonConstant { idx } => write!(f, "{:pad$}({})", opcode, idx),
-            Self::LoadConst { idx } => write!(f, "{:pad$}({})", opcode, idx),
+            Self::LoadConst { idx } => {
+                let value = ctx.get_constant(usize::from(idx));
+                match value.borrow_constant() {
+                    BorrowedConstant::Code { code } if expand_code_objects => {
+                        write!(f, "{opcode:pad$}({code:?}):")?;
+                        code.display_inner(f, true, level + 1)?;
+                        Ok(())
+                    }
+                    c => {
+                        write!(f, "{opcode:pad$}(")?;
+                        c.fmt_display(f)?;
+                        write!(f, ")")
+                    }
+                }
+            }
             Self::LoadDeref(oparg) => {
                 let oparg_val = usize::from(u32::from(oparg));
                 write!(
