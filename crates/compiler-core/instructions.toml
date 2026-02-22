@@ -436,6 +436,13 @@ fmt_dis = "varname"
 opcode = 87
 cpython_name = "LOAD_FAST_BORROW_LOAD_FAST_BORROW"
 oparg = { name = "arg", type = "u32" }
+fmt_dis = """
+let idx1 = arg >> 4;
+let idx2 = arg & 15;
+let name1 = ctx.get_varname(usize::from(idx1));
+let name2 = ctx.get_varname(usize::from(idx2));
+write!(f, "{:pad$}({}, {})", opcode, name1, name2)
+"""
 
 [LoadFastCheck]
 opcode = 88
@@ -447,6 +454,13 @@ fmt_dis = "varname"
 opcode = 89
 cpython_name = "LOAD_FAST_LOAD_FAST"
 oparg = { name = "arg", type = "u32" }
+fmt_dis = """
+let idx1 = arg >> 4;
+let idx2 = arg & 15;
+let name1 = ctx.get_varname(usize::from(idx1));
+let name2 = ctx.get_varname(usize::from(idx2));
+write!(f, "{:pad$}({}, {})", opcode, name1, name2)
+"""
 
 [LoadFromDictOrDeref]
 opcode = 90
@@ -487,6 +501,17 @@ oparg = { name = "method", type = "oparg::SpecialMethod" }
 opcode = 96
 cpython_name = "LOAD_SUPER_ATTR"
 oparg = { name = "arg", type = "oparg::LoadSuperAttr" }
+fmt_dis = """
+write!(
+	f,
+	"{:pad$}({}, {}, method={}, class={})",
+	opcode,
+	u32::from(arg),
+	name(arg.name_idx()),
+	arg.is_load_method(),
+	arg.has_class()
+)
+"""
 
 [MakeCell]
 opcode = 97
@@ -587,8 +612,10 @@ fmt_dis = "varname"
 [StoreFastLoadFast]
 opcode = 113
 cpython_name = "STORE_FAST_LOAD_FAST"
-#oparg = { name = "var_nums", type = "oparg::StoreFastLoadFast" }
-oparg = { name = "var_nums", type = "oparg::NameIdx" }
+oparg = { name = "var_nums", type = "oparg::StoreFastLoadFast" }
+fmt_dis = """
+write!("{:pad$} ({}, {})", var_nums.store_idx(), var_nums.load_idx())
+"""
 
 [StoreFastStoreFast]
 opcode = 114

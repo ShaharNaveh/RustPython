@@ -1449,7 +1449,7 @@ pub enum Instruction {
     StoreAttr { idx: oparg::NameIdx },
     StoreDeref(oparg::NameIdx),
     StoreFast(oparg::NameIdx),
-    StoreFastLoadFast { var_nums: oparg::NameIdx },
+    StoreFastLoadFast { var_nums: oparg::StoreFastLoadFast },
     StoreFastStoreFast { arg: u32 },
     StoreGlobal(oparg::NameIdx),
     StoreName(oparg::NameIdx),
@@ -1789,7 +1789,13 @@ impl Instruction {
                     ctx.get_varname(oparg_val)
                 )
             }
-            Self::LoadFastBorrowLoadFastBorrow { arg } => write!(f, "{:pad$}({})", opcode, arg),
+            Self::LoadFastBorrowLoadFastBorrow { arg } => {
+                let idx1 = arg >> 4;
+                let idx2 = arg & 15;
+                let name1 = ctx.get_varname(usize::from(idx1));
+                let name2 = ctx.get_varname(usize::from(idx2));
+                write!(f, "{:pad$}({}, {})", opcode, name1, name2)
+            }
             Self::LoadFastCheck(oparg) => {
                 let oparg_val = usize::from(u32::from(oparg));
                 write!(
@@ -1800,7 +1806,13 @@ impl Instruction {
                     ctx.get_varname(oparg_val)
                 )
             }
-            Self::LoadFastLoadFast { arg } => write!(f, "{:pad$}({})", opcode, arg),
+            Self::LoadFastLoadFast { arg } => {
+                let idx1 = arg >> 4;
+                let idx2 = arg & 15;
+                let name1 = ctx.get_varname(usize::from(idx1));
+                let name2 = ctx.get_varname(usize::from(idx2));
+                write!(f, "{:pad$}({}, {})", opcode, name1, name2)
+            }
             Self::LoadFromDictOrDeref(oparg) => {
                 let oparg_val = usize::from(u32::from(oparg));
                 write!(
@@ -1843,7 +1855,17 @@ impl Instruction {
             }
             Self::LoadSmallInt { idx } => write!(f, "{:pad$}({})", opcode, idx),
             Self::LoadSpecial { method } => write!(f, "{:pad$}({})", opcode, method),
-            Self::LoadSuperAttr { arg } => write!(f, "{:pad$}({})", opcode, arg),
+            Self::LoadSuperAttr { arg } => {
+                write!(
+                    f,
+                    "{:pad$}({}, {}, method={}, class={})",
+                    opcode,
+                    u32::from(arg),
+                    name(arg.name_idx()),
+                    arg.is_load_method(),
+                    arg.has_class()
+                )
+            }
             Self::MakeCell(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
             Self::MapAdd { i } => write!(f, "{:pad$}({})", opcode, i),
             Self::MatchClass(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
@@ -1887,7 +1909,13 @@ impl Instruction {
                     ctx.get_varname(oparg_val)
                 )
             }
-            Self::StoreFastLoadFast { var_nums } => write!(f, "{:pad$}({})", opcode, var_nums),
+            Self::StoreFastLoadFast { var_nums } => {
+                write!(
+                    "{:pad$} ({}, {})",
+                    var_nums.store_idx(),
+                    var_nums.load_idx()
+                )
+            }
             Self::StoreFastStoreFast { arg } => write!(f, "{:pad$}({})", opcode, arg),
             Self::StoreGlobal(oparg) => {
                 let oparg_val = usize::from(u32::from(oparg));
