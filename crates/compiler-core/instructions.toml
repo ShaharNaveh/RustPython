@@ -266,6 +266,7 @@ oparg = { name = "count", type = "u32" }
 opcode = 61
 cpython_name = "DELETE_ATTR"
 oparg = { name = "idx", type = "oparg::NameIdx" }
+fmt_dis = "name"
 
 [DeleteDeref]
 opcode = 62
@@ -281,11 +282,13 @@ oparg = { type = "oparg::NameIdx" }
 opcode = 64
 cpython_name = "DELETE_GLOBAL"
 oparg = { type = "oparg::NameIdx" }
+fmt_dis = "name"
 
 [DeleteName]
 opcode = 65
 cpython_name = "DELETE_NAME"
 oparg = { type = "oparg::NameIdx" }
+fmt_dis = "name"
 
 [DictMerge]
 opcode = 66
@@ -319,11 +322,13 @@ oparg = { name = "arg", type = "u32" }
 opcode = 72
 cpython_name = "IMPORT_FROM"
 oparg = { name = "idx", type = "oparg::NameIdx" }
+fmt_dis = "name"
 
 [ImportName]
 opcode = 73
 cpython_name = "IMPORT_NAME"
 oparg = { name = "idx", type = "oparg::NameIdx" }
+fmt_dis = "name"
 
 [IsOp]
 opcode = 74
@@ -415,6 +420,7 @@ oparg = { type = "oparg::NameIdx" }
 opcode = 91
 cpython_name = "LOAD_FROM_DICT_OR_GLOBALS"
 oparg = { type = "oparg::NameIdx" }
+fmt_dis = "name"
 
 [LoadGlobal]
 opcode = 92

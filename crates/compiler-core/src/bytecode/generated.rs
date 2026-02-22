@@ -1566,6 +1566,301 @@ pub enum Instruction {
 }
 
 impl Instruction {
+    pub fn fmt_dis(
+        self,
+        f: &mut fmt::Formatter<'_>,
+        ctx: &impl InstrDisplayContext,
+        expand_code_objects: bool,
+        pad: usize,
+        level: usize,
+    ) -> fmt::Result {
+        let opcode = self.opcode();
+
+        match self {
+            Self::Cache => write!(f, "{opcode}"),
+            Self::BinarySlice => write!(f, "{opcode}"),
+            Self::BuildTemplate => write!(f, "{opcode}"),
+            Self::BinaryOpInplaceAddUnicode => write!(f, "{opcode}"),
+            Self::CallFunctionEx => write!(f, "{opcode}"),
+            Self::CheckEgMatch => write!(f, "{opcode}"),
+            Self::CheckExcMatch => write!(f, "{opcode}"),
+            Self::CleanupThrow => write!(f, "{opcode}"),
+            Self::DeleteSubscr => write!(f, "{opcode}"),
+            Self::EndFor => write!(f, "{opcode}"),
+            Self::EndSend => write!(f, "{opcode}"),
+            Self::ExitInitCheck => write!(f, "{opcode}"),
+            Self::FormatSimple => write!(f, "{opcode}"),
+            Self::FormatWithSpec => write!(f, "{opcode}"),
+            Self::GetAIter => write!(f, "{opcode}"),
+            Self::GetANext => write!(f, "{opcode}"),
+            Self::GetIter => write!(f, "{opcode}"),
+            Self::Reserved => write!(f, "{opcode}"),
+            Self::GetLen => write!(f, "{opcode}"),
+            Self::GetYieldFromIter => write!(f, "{opcode}"),
+            Self::InterpreterExit => write!(f, "{opcode}"),
+            Self::LoadBuildClass => write!(f, "{opcode}"),
+            Self::LoadLocals => write!(f, "{opcode}"),
+            Self::MakeFunction => write!(f, "{opcode}"),
+            Self::MatchKeys => write!(f, "{opcode}"),
+            Self::MatchMapping => write!(f, "{opcode}"),
+            Self::MatchSequence => write!(f, "{opcode}"),
+            Self::Nop => write!(f, "{opcode}"),
+            Self::NotTaken => write!(f, "{opcode}"),
+            Self::PopExcept => write!(f, "{opcode}"),
+            Self::PopIter => write!(f, "{opcode}"),
+            Self::PopTop => write!(f, "{opcode}"),
+            Self::PushExcInfo => write!(f, "{opcode}"),
+            Self::PushNull => write!(f, "{opcode}"),
+            Self::ReturnGenerator => write!(f, "{opcode}"),
+            Self::ReturnValue => write!(f, "{opcode}"),
+            Self::SetupAnnotations => write!(f, "{opcode}"),
+            Self::StoreSlice => write!(f, "{opcode}"),
+            Self::StoreSubscr => write!(f, "{opcode}"),
+            Self::ToBool => write!(f, "{opcode}"),
+            Self::UnaryInvert => write!(f, "{opcode}"),
+            Self::UnaryNegative => write!(f, "{opcode}"),
+            Self::UnaryNot => write!(f, "{opcode}"),
+            Self::WithExceptStart => write!(f, "{opcode}"),
+            Self::BinaryOp { op } => write!(f, "{:pad$}({})", opcode, op),
+            Self::BuildInterpolation { oparg } => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::BuildList { size } => write!(f, "{:pad$}({})", opcode, size),
+            Self::BuildMap { size } => write!(f, "{:pad$}({})", opcode, size),
+            Self::BuildSet { size } => write!(f, "{:pad$}({})", opcode, size),
+            Self::BuildSlice { argc } => write!(f, "{:pad$}({})", opcode, argc),
+            Self::BuildString { size } => write!(f, "{:pad$}({})", opcode, size),
+            Self::BuildTuple { size } => write!(f, "{:pad$}({})", opcode, size),
+            Self::Call { nargs } => write!(f, "{:pad$}({})", opcode, nargs),
+            Self::CallIntrinsic1 { func } => write!(f, "{:pad$}({})", opcode, func),
+            Self::CallIntrinsic2 { func } => write!(f, "{:pad$}({})", opcode, func),
+            Self::CallKw { nargs } => write!(f, "{:pad$}({})", opcode, nargs),
+            Self::CompareOp { op } => write!(f, "{:pad$}({})", opcode, op),
+            Self::ContainsOp(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::ConvertValue { oparg } => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::Copy { index } => write!(f, "{:pad$}({})", opcode, index),
+            Self::CopyFreeVars { count } => write!(f, "{:pad$}({})", opcode, count),
+            Self::DeleteAttr { idx } => {
+                let oparg_val = usize::from(u32::from(idx));
+                write!(
+                    f,
+                    "{:pad$}({}, {})",
+                    opcode,
+                    oparg_val,
+                    ctx.get_name(oparg_val)
+                )
+            }
+            Self::DeleteDeref(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::DeleteFast(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::DeleteGlobal(oparg) => {
+                let oparg_val = usize::from(u32::from(oparg));
+                write!(
+                    f,
+                    "{:pad$}({}, {})",
+                    opcode,
+                    oparg_val,
+                    ctx.get_name(oparg_val)
+                )
+            }
+            Self::DeleteName(oparg) => {
+                let oparg_val = usize::from(u32::from(oparg));
+                write!(
+                    f,
+                    "{:pad$}({}, {})",
+                    opcode,
+                    oparg_val,
+                    ctx.get_name(oparg_val)
+                )
+            }
+            Self::DictMerge { index } => write!(f, "{:pad$}({})", opcode, index),
+            Self::DictUpdate { index } => write!(f, "{:pad$}({})", opcode, index),
+            Self::EndAsyncFor => write!(f, "{opcode}"),
+            Self::ExtendedArg => write!(f, "{opcode}"),
+            Self::ForIter { target } => write!(f, "{:pad$}({})", opcode, target),
+            Self::GetAwaitable { arg } => write!(f, "{:pad$}({})", opcode, arg),
+            Self::ImportFrom { idx } => {
+                let oparg_val = usize::from(u32::from(idx));
+                write!(
+                    f,
+                    "{:pad$}({}, {})",
+                    opcode,
+                    oparg_val,
+                    ctx.get_name(oparg_val)
+                )
+            }
+            Self::ImportName { idx } => {
+                let oparg_val = usize::from(u32::from(idx));
+                write!(
+                    f,
+                    "{:pad$}({}, {})",
+                    opcode,
+                    oparg_val,
+                    ctx.get_name(oparg_val)
+                )
+            }
+            Self::IsOp(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::JumpBackward { target } => write!(f, "{:pad$}({})", opcode, target),
+            Self::JumpBackwardNoInterrupt { target } => write!(f, "{:pad$}({})", opcode, target),
+            Self::JumpForward { target } => write!(f, "{:pad$}({})", opcode, target),
+            Self::ListAppend { i } => write!(f, "{:pad$}({})", opcode, i),
+            Self::ListExtend { i } => write!(f, "{:pad$}({})", opcode, i),
+            Self::LoadAttr { idx } => write!(f, "{:pad$}({})", opcode, idx),
+            Self::LoadCommonConstant { idx } => write!(f, "{:pad$}({})", opcode, idx),
+            Self::LoadConst { idx } => write!(f, "{:pad$}({})", opcode, idx),
+            Self::LoadDeref(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::LoadFast(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::LoadFastAndClear(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::LoadFastBorrow(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::LoadFastBorrowLoadFastBorrow { arg } => write!(f, "{:pad$}({})", opcode, arg),
+            Self::LoadFastCheck(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::LoadFastLoadFast { arg } => write!(f, "{:pad$}({})", opcode, arg),
+            Self::LoadFromDictOrDeref(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::LoadFromDictOrGlobals(oparg) => {
+                let oparg_val = usize::from(u32::from(oparg));
+                write!(
+                    f,
+                    "{:pad$}({}, {})",
+                    opcode,
+                    oparg_val,
+                    ctx.get_name(oparg_val)
+                )
+            }
+            Self::LoadGlobal(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::LoadName(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::LoadSmallInt { idx } => write!(f, "{:pad$}({})", opcode, idx),
+            Self::LoadSpecial { method } => write!(f, "{:pad$}({})", opcode, method),
+            Self::LoadSuperAttr { arg } => write!(f, "{:pad$}({})", opcode, arg),
+            Self::MakeCell(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::MapAdd { i } => write!(f, "{:pad$}({})", opcode, i),
+            Self::MatchClass(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::PopJumpIfFalse { target } => write!(f, "{:pad$}({})", opcode, target),
+            Self::PopJumpIfNone { target } => write!(f, "{:pad$}({})", opcode, target),
+            Self::PopJumpIfNotNone { target } => write!(f, "{:pad$}({})", opcode, target),
+            Self::PopJumpIfTrue { target } => write!(f, "{:pad$}({})", opcode, target),
+            Self::RaiseVarargs { kind } => write!(f, "{:pad$}({})", opcode, kind),
+            Self::Reraise { depth } => write!(f, "{:pad$}({})", opcode, depth),
+            Self::Send { target } => write!(f, "{:pad$}({})", opcode, target),
+            Self::SetAdd { i } => write!(f, "{:pad$}({})", opcode, i),
+            Self::SetFunctionAttribute { attr } => write!(f, "{:pad$}({})", opcode, attr),
+            Self::SetUpdate { i } => write!(f, "{:pad$}({})", opcode, i),
+            Self::StoreAttr { idx } => write!(f, "{:pad$}({})", opcode, idx),
+            Self::StoreDeref(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::StoreFast(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::StoreFastLoadFast { var_nums } => write!(f, "{:pad$}({})", opcode, var_nums),
+            Self::StoreFastStoreFast { arg } => write!(f, "{:pad$}({})", opcode, arg),
+            Self::StoreGlobal(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::StoreName(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::Swap { index } => write!(f, "{:pad$}({})", opcode, index),
+            Self::UnpackEx { args } => write!(f, "{:pad$}({})", opcode, args),
+            Self::UnpackSequence { size } => write!(f, "{:pad$}({})", opcode, size),
+            Self::YieldValue { arg } => write!(f, "{:pad$}({})", opcode, arg),
+            Self::Resume { arg } => write!(f, "{:pad$}({})", opcode, arg),
+            Self::BinaryOpAddFloat => write!(f, "{opcode}"),
+            Self::BinaryOpAddInt => write!(f, "{opcode}"),
+            Self::BinaryOpAddUnicode => write!(f, "{opcode}"),
+            Self::BinaryOpExtend => write!(f, "{opcode}"),
+            Self::BinaryOpMultiplyFloat => write!(f, "{opcode}"),
+            Self::BinaryOpMultiplyInt => write!(f, "{opcode}"),
+            Self::BinaryOpSubscrDict => write!(f, "{opcode}"),
+            Self::BinaryOpSubscrGetitem => write!(f, "{opcode}"),
+            Self::BinaryOpSubscrListInt => write!(f, "{opcode}"),
+            Self::BinaryOpSubscrListSlice => write!(f, "{opcode}"),
+            Self::BinaryOpSubscrStrInt => write!(f, "{opcode}"),
+            Self::BinaryOpSubscrTupleInt => write!(f, "{opcode}"),
+            Self::BinaryOpSubtractFloat => write!(f, "{opcode}"),
+            Self::BinaryOpSubtractInt => write!(f, "{opcode}"),
+            Self::CallAllocAndEnterInit => write!(f, "{opcode}"),
+            Self::CallBoundMethodExactArgs => write!(f, "{opcode}"),
+            Self::CallBoundMethodGeneral => write!(f, "{opcode}"),
+            Self::CallBuiltinClass => write!(f, "{opcode}"),
+            Self::CallBuiltinFast => write!(f, "{opcode}"),
+            Self::CallBuiltinFastWithKeywords => write!(f, "{opcode}"),
+            Self::CallBuiltinO => write!(f, "{opcode}"),
+            Self::CallIsinstance => write!(f, "{opcode}"),
+            Self::CallKwBoundMethod => write!(f, "{opcode}"),
+            Self::CallKwNonPy => write!(f, "{opcode}"),
+            Self::CallKwPy => write!(f, "{opcode}"),
+            Self::CallLen => write!(f, "{opcode}"),
+            Self::CallListAppend => write!(f, "{opcode}"),
+            Self::CallMethodDescriptorFast => write!(f, "{opcode}"),
+            Self::CallMethodDescriptorFastWithKeywords => write!(f, "{opcode}"),
+            Self::CallMethodDescriptorNoargs => write!(f, "{opcode}"),
+            Self::CallMethodDescriptorO => write!(f, "{opcode}"),
+            Self::CallNonPyGeneral => write!(f, "{opcode}"),
+            Self::CallPyExactArgs => write!(f, "{opcode}"),
+            Self::CallPyGeneral => write!(f, "{opcode}"),
+            Self::CallStr1 => write!(f, "{opcode}"),
+            Self::CallTuple1 => write!(f, "{opcode}"),
+            Self::CallType1 => write!(f, "{opcode}"),
+            Self::CompareOpFloat => write!(f, "{opcode}"),
+            Self::CompareOpInt => write!(f, "{opcode}"),
+            Self::CompareOpStr => write!(f, "{opcode}"),
+            Self::ContainsOpDict => write!(f, "{opcode}"),
+            Self::ContainsOpSet => write!(f, "{opcode}"),
+            Self::ForIterGen => write!(f, "{opcode}"),
+            Self::ForIterList => write!(f, "{opcode}"),
+            Self::ForIterRange => write!(f, "{opcode}"),
+            Self::ForIterTuple => write!(f, "{opcode}"),
+            Self::JumpBackwardJit => write!(f, "{opcode}"),
+            Self::JumpBackwardNoJit => write!(f, "{opcode}"),
+            Self::LoadAttrClass => write!(f, "{opcode}"),
+            Self::LoadAttrClassWithMetaclassCheck => write!(f, "{opcode}"),
+            Self::LoadAttrGetattributeOverridden => write!(f, "{opcode}"),
+            Self::LoadAttrInstanceValue => write!(f, "{opcode}"),
+            Self::LoadAttrMethodLazyDict => write!(f, "{opcode}"),
+            Self::LoadAttrMethodNoDict => write!(f, "{opcode}"),
+            Self::LoadAttrMethodWithValues => write!(f, "{opcode}"),
+            Self::LoadAttrModule => write!(f, "{opcode}"),
+            Self::LoadAttrNondescriptorNoDict => write!(f, "{opcode}"),
+            Self::LoadAttrNondescriptorWithValues => write!(f, "{opcode}"),
+            Self::LoadAttrProperty => write!(f, "{opcode}"),
+            Self::LoadAttrSlot => write!(f, "{opcode}"),
+            Self::LoadAttrWithHint => write!(f, "{opcode}"),
+            Self::LoadConstImmortal => write!(f, "{opcode}"),
+            Self::LoadConstMortal => write!(f, "{opcode}"),
+            Self::LoadGlobalBuiltin => write!(f, "{opcode}"),
+            Self::LoadGlobalModule => write!(f, "{opcode}"),
+            Self::LoadSuperAttrAttr => write!(f, "{opcode}"),
+            Self::LoadSuperAttrMethod => write!(f, "{opcode}"),
+            Self::ResumeCheck => write!(f, "{opcode}"),
+            Self::SendGen => write!(f, "{opcode}"),
+            Self::StoreAttrInstanceValue => write!(f, "{opcode}"),
+            Self::StoreAttrSlot => write!(f, "{opcode}"),
+            Self::StoreAttrWithHint => write!(f, "{opcode}"),
+            Self::StoreSubscrDict => write!(f, "{opcode}"),
+            Self::StoreSubscrListInt => write!(f, "{opcode}"),
+            Self::ToBoolAlwaysTrue => write!(f, "{opcode}"),
+            Self::ToBoolBool => write!(f, "{opcode}"),
+            Self::ToBoolInt => write!(f, "{opcode}"),
+            Self::ToBoolList => write!(f, "{opcode}"),
+            Self::ToBoolNone => write!(f, "{opcode}"),
+            Self::ToBoolStr => write!(f, "{opcode}"),
+            Self::UnpackSequenceList => write!(f, "{opcode}"),
+            Self::UnpackSequenceTuple => write!(f, "{opcode}"),
+            Self::UnpackSequenceTwoTuple => write!(f, "{opcode}"),
+            Self::InstrumentedEndFor => write!(f, "{opcode}"),
+            Self::InstrumentedPopIter => write!(f, "{opcode}"),
+            Self::InstrumentedEndSend => write!(f, "{opcode}"),
+            Self::InstrumentedForIter => write!(f, "{opcode}"),
+            Self::InstrumentedInstruction => write!(f, "{opcode}"),
+            Self::InstrumentedJumpForward => write!(f, "{opcode}"),
+            Self::InstrumentedNotTaken => write!(f, "{opcode}"),
+            Self::InstrumentedPopJumpIfTrue => write!(f, "{opcode}"),
+            Self::InstrumentedPopJumpIfFalse => write!(f, "{opcode}"),
+            Self::InstrumentedPopJumpIfNone => write!(f, "{opcode}"),
+            Self::InstrumentedPopJumpIfNotNone => write!(f, "{opcode}"),
+            Self::InstrumentedResume => write!(f, "{opcode}"),
+            Self::InstrumentedReturnValue => write!(f, "{opcode}"),
+            Self::InstrumentedYieldValue => write!(f, "{opcode}"),
+            Self::InstrumentedEndAsyncFor => write!(f, "{opcode}"),
+            Self::InstrumentedLoadSuperAttr => write!(f, "{opcode}"),
+            Self::InstrumentedCall => write!(f, "{opcode}"),
+            Self::InstrumentedCallKw => write!(f, "{opcode}"),
+            Self::InstrumentedCallFunctionEx => write!(f, "{opcode}"),
+            Self::InstrumentedJumpBackward => write!(f, "{opcode}"),
+            Self::InstrumentedLine => write!(f, "{opcode}"),
+            Self::EnterExecutor => write!(f, "{opcode}"),
+        }
+    }
+
     /// Instruction's opcode.
     #[must_use]
     pub const fn opcode(self) -> Opcode {
@@ -2238,6 +2533,31 @@ pub enum PseudoInstruction {
 }
 
 impl PseudoInstruction {
+    pub fn fmt_dis(
+        self,
+        f: &mut fmt::Formatter<'_>,
+        ctx: &impl InstrDisplayContext,
+        expand_code_objects: bool,
+        pad: usize,
+        level: usize,
+    ) -> fmt::Result {
+        let opcode = self.opcode();
+
+        match self {
+            Self::AnnotationsPlaceholder => write!(f, "{opcode}"),
+            Self::Jump { target } => write!(f, "{:pad$}({})", opcode, target),
+            Self::JumpIfFalse { target } => write!(f, "{:pad$}({})", opcode, target),
+            Self::JumpIfTrue { target } => write!(f, "{:pad$}({})", opcode, target),
+            Self::JumpNoInterrupt { target } => write!(f, "{:pad$}({})", opcode, target),
+            Self::LoadClosure(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::PopBlock => write!(f, "{opcode}"),
+            Self::SetupCleanup { target } => write!(f, "{:pad$}({})", opcode, target),
+            Self::SetupFinally { target } => write!(f, "{:pad$}({})", opcode, target),
+            Self::SetupWith { target } => write!(f, "{:pad$}({})", opcode, target),
+            Self::StoreFastMaybeNull(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+        }
+    }
+
     /// Instruction's opcode.
     #[must_use]
     pub const fn opcode(self) -> PseudoOpcode {

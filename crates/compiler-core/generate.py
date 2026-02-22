@@ -338,25 +338,33 @@ class InstructionEnumBuilder:
         """
 
     @property
-    def d_fn_fmt_dis(self) -> str:
+    def fn_fmt_dis(self) -> str:
         arms = ""
         for instr in self:
-            oparg = instr.oparg
-            oparg_name = oparg.get("name")
-            oparg_type = oparg.get("type")
-
-            body = f"Self::{self.name}"
-            if oparg_name and oparg_type:
-                body += f"{{ {oparg_name} }}"
-            elif oparg_type:
-                body += "(oparg)"
-
             fmt = instr.fmt_dis
+            body = instr.arm()
+            body += " =>"
 
+            oparg_name = instr.oparg_name or "oparg"
             if fmt is None:
-                body += ""
+                if instr.oparg:
+                    body += f"""
+                    write!(f, "{{:pad$}}({{}})", opcode, {oparg_name})
+                    """.strip()
+                else:
+                    body += 'write!(f, "{opcode}")'
 
-            body += "}"
+            elif fmt in ("name", "cell_name", "varname"):
+                body += f"""
+                {{
+                    let oparg_val = usize::from(u32::from({oparg_name}));
+                    write!(f, "{{:pad$}}({{}}, {{}})", opcode, oparg_val, ctx.get_{fmt}(oparg_val))
+                }}
+                """.strip()
+
+            body += ","
+
+            arms += body
 
         return f"""
         pub fn fmt_dis(
@@ -366,6 +374,8 @@ class InstructionEnumBuilder:
             pad: usize,
             level: usize,
         ) -> fmt::Result {{
+            let opcode = self.opcode();
+
             match self {{
                 {arms}
             }}
