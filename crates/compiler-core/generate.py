@@ -272,7 +272,7 @@ class InstructionEnumBuilder:
         return "PseudoOpcode" if next(iter(self)).opcode > 255 else "Opcode"
 
     @property
-    def fn_stack_effect(self) -> str:
+    def fn_stack_effect_info(self) -> str:
         arms = ""
         for instr in self:
             stack_effect = instr.stack_effect
@@ -307,7 +307,8 @@ class InstructionEnumBuilder:
             arms += body
 
         return f"""
-        pub fn stack_effect(self) -> StackEffect {{
+        #[must_use]
+        pub fn stack_effect_info(self) -> StackEffect {{
             // NOTE: Reason for converting oparg to `i32` is because of expressions like `1 + (oparg -1)`
             // that causes underflow errors.
 
@@ -379,6 +380,7 @@ class InstructionEnumBuilder:
             arms += body
 
         return f"""
+        #[must_use]
         #[allow(unused_variables)]
         pub fn fmt_dis(
             self,
@@ -410,7 +412,7 @@ class InstructionEnumBuilder:
         return f"""
         impl From<{self.name}> for StackEffect {{
             fn from(value: {self.name}) -> Self {{
-                value.stack_effect()
+                value.stack_effect_info()
             }}
         }}
         """

@@ -1566,6 +1566,7 @@ pub enum Instruction {
 }
 
 impl Instruction {
+    #[must_use]
     #[allow(unused_variables)]
     pub fn fmt_dis(
         self,
@@ -2289,7 +2290,8 @@ impl Instruction {
         }
     }
 
-    pub fn stack_effect(self) -> StackEffect {
+    #[must_use]
+    pub fn stack_effect_info(self) -> StackEffect {
         // NOTE: Reason for converting oparg to `i32` is because of expressions like `1 + (oparg -1)`
         // that causes underflow errors.
 
@@ -2705,7 +2707,7 @@ impl From<Instruction> for Opcode {
 
 impl From<Instruction> for StackEffect {
     fn from(value: Instruction) -> Self {
-        value.stack_effect()
+        value.stack_effect_info()
     }
 }
 
@@ -2725,6 +2727,7 @@ pub enum PseudoInstruction {
 }
 
 impl PseudoInstruction {
+    #[must_use]
     #[allow(unused_variables)]
     pub fn fmt_dis(
         self,
@@ -2769,7 +2772,8 @@ impl PseudoInstruction {
         }
     }
 
-    pub fn stack_effect(self) -> StackEffect {
+    #[must_use]
+    pub fn stack_effect_info(self) -> StackEffect {
         // NOTE: Reason for converting oparg to `i32` is because of expressions like `1 + (oparg -1)`
         // that causes underflow errors.
 
@@ -2799,6 +2803,6 @@ impl From<PseudoInstruction> for PseudoOpcode {
 
 impl From<PseudoInstruction> for StackEffect {
     fn from(value: PseudoInstruction) -> Self {
-        value.stack_effect()
+        value.stack_effect_info()
     }
 }
