@@ -1639,7 +1639,7 @@ impl Instruction {
             Self::Copy { index } => write!(f, "{:pad$}({})", opcode, index),
             Self::CopyFreeVars { count } => write!(f, "{:pad$}({})", opcode, count),
             Self::DeleteAttr { idx } => {
-                let oparg_val = usize::from(u32::from(idx));
+                let oparg_val = u32::from(idx) as usize;
                 write!(
                     f,
                     "{:pad$}({}, {})",
@@ -1649,7 +1649,7 @@ impl Instruction {
                 )
             }
             Self::DeleteDeref(oparg) => {
-                let oparg_val = usize::from(u32::from(oparg));
+                let oparg_val = u32::from(oparg) as usize;
                 write!(
                     f,
                     "{:pad$}({}, {})",
@@ -1659,7 +1659,7 @@ impl Instruction {
                 )
             }
             Self::DeleteFast(oparg) => {
-                let oparg_val = usize::from(u32::from(oparg));
+                let oparg_val = u32::from(oparg) as usize;
                 write!(
                     f,
                     "{:pad$}({}, {})",
@@ -1669,7 +1669,7 @@ impl Instruction {
                 )
             }
             Self::DeleteGlobal(oparg) => {
-                let oparg_val = usize::from(u32::from(oparg));
+                let oparg_val = u32::from(oparg) as usize;
                 write!(
                     f,
                     "{:pad$}({}, {})",
@@ -1679,7 +1679,7 @@ impl Instruction {
                 )
             }
             Self::DeleteName(oparg) => {
-                let oparg_val = usize::from(u32::from(oparg));
+                let oparg_val = u32::from(oparg) as usize;
                 write!(
                     f,
                     "{:pad$}({}, {})",
@@ -1695,7 +1695,7 @@ impl Instruction {
             Self::ForIter { target } => write!(f, "{:pad$}({})", opcode, target),
             Self::GetAwaitable { arg } => write!(f, "{:pad$}({})", opcode, arg),
             Self::ImportFrom { idx } => {
-                let oparg_val = usize::from(u32::from(idx));
+                let oparg_val = u32::from(idx) as usize;
                 write!(
                     f,
                     "{:pad$}({}, {})",
@@ -1705,7 +1705,7 @@ impl Instruction {
                 )
             }
             Self::ImportName { idx } => {
-                let oparg_val = usize::from(u32::from(idx));
+                let oparg_val = u32::from(idx) as usize;
                 write!(
                     f,
                     "{:pad$}({}, {})",
@@ -1722,7 +1722,7 @@ impl Instruction {
             Self::ListExtend { i } => write!(f, "{:pad$}({})", opcode, i),
             Self::LoadAttr { idx } => {
                 let oparg_u32 = u32::from(idx);
-                let attr_name = name(oparg.name_idx());
+                let attr_name = ctx.get_name(idx.name_idx() as usize);
                 if idx.is_method() {
                     write!(
                         f,
@@ -1735,7 +1735,7 @@ impl Instruction {
             }
             Self::LoadCommonConstant { idx } => write!(f, "{:pad$}({})", opcode, idx),
             Self::LoadConst { idx } => {
-                let value = ctx.get_constant(usize::from(idx));
+                let value = ctx.get_constant(idx as usize);
                 match value.borrow_constant() {
                     BorrowedConstant::Code { code } if expand_code_objects => {
                         write!(f, "{opcode:pad$}({code:?}):")?;
@@ -1750,7 +1750,7 @@ impl Instruction {
                 }
             }
             Self::LoadDeref(oparg) => {
-                let oparg_val = usize::from(u32::from(oparg));
+                let oparg_val = u32::from(oparg) as usize;
                 write!(
                     f,
                     "{:pad$}({}, {})",
@@ -1760,7 +1760,7 @@ impl Instruction {
                 )
             }
             Self::LoadFast(oparg) => {
-                let oparg_val = usize::from(u32::from(oparg));
+                let oparg_val = u32::from(oparg) as usize;
                 write!(
                     f,
                     "{:pad$}({}, {})",
@@ -1770,7 +1770,7 @@ impl Instruction {
                 )
             }
             Self::LoadFastAndClear(oparg) => {
-                let oparg_val = usize::from(u32::from(oparg));
+                let oparg_val = u32::from(oparg) as usize;
                 write!(
                     f,
                     "{:pad$}({}, {})",
@@ -1780,7 +1780,7 @@ impl Instruction {
                 )
             }
             Self::LoadFastBorrow(oparg) => {
-                let oparg_val = usize::from(u32::from(oparg));
+                let oparg_val = u32::from(oparg) as usize;
                 write!(
                     f,
                     "{:pad$}({}, {})",
@@ -1792,12 +1792,12 @@ impl Instruction {
             Self::LoadFastBorrowLoadFastBorrow { arg } => {
                 let idx1 = arg >> 4;
                 let idx2 = arg & 15;
-                let name1 = ctx.get_varname(usize::from(idx1));
-                let name2 = ctx.get_varname(usize::from(idx2));
+                let name1 = ctx.get_varname(idx1 as usize);
+                let name2 = ctx.get_varname(idx2 as usize);
                 write!(f, "{:pad$}({}, {})", opcode, name1, name2)
             }
             Self::LoadFastCheck(oparg) => {
-                let oparg_val = usize::from(u32::from(oparg));
+                let oparg_val = u32::from(oparg) as usize;
                 write!(
                     f,
                     "{:pad$}({}, {})",
@@ -1809,12 +1809,12 @@ impl Instruction {
             Self::LoadFastLoadFast { arg } => {
                 let idx1 = arg >> 4;
                 let idx2 = arg & 15;
-                let name1 = ctx.get_varname(usize::from(idx1));
-                let name2 = ctx.get_varname(usize::from(idx2));
+                let name1 = ctx.get_varname(idx1 as usize);
+                let name2 = ctx.get_varname(idx2 as usize);
                 write!(f, "{:pad$}({}, {})", opcode, name1, name2)
             }
             Self::LoadFromDictOrDeref(oparg) => {
-                let oparg_val = usize::from(u32::from(oparg));
+                let oparg_val = u32::from(oparg) as usize;
                 write!(
                     f,
                     "{:pad$}({}, {})",
@@ -1824,7 +1824,7 @@ impl Instruction {
                 )
             }
             Self::LoadFromDictOrGlobals(oparg) => {
-                let oparg_val = usize::from(u32::from(oparg));
+                let oparg_val = u32::from(oparg) as usize;
                 write!(
                     f,
                     "{:pad$}({}, {})",
@@ -1834,7 +1834,7 @@ impl Instruction {
                 )
             }
             Self::LoadGlobal(oparg) => {
-                let oparg_val = usize::from(u32::from(oparg));
+                let oparg_val = u32::from(oparg) as usize;
                 write!(
                     f,
                     "{:pad$}({}, {})",
@@ -1844,7 +1844,7 @@ impl Instruction {
                 )
             }
             Self::LoadName(oparg) => {
-                let oparg_val = usize::from(u32::from(oparg));
+                let oparg_val = u32::from(oparg) as usize;
                 write!(
                     f,
                     "{:pad$}({}, {})",
@@ -1861,7 +1861,7 @@ impl Instruction {
                     "{:pad$}({}, {}, method={}, class={})",
                     opcode,
                     u32::from(arg),
-                    name(arg.name_idx()),
+                    ctx.get_name(arg.name_idx() as usize),
                     arg.is_load_method(),
                     arg.has_class()
                 )
@@ -1880,7 +1880,7 @@ impl Instruction {
             Self::SetFunctionAttribute { attr } => write!(f, "{:pad$}({:?})", opcode, attr),
             Self::SetUpdate { i } => write!(f, "{:pad$}({})", opcode, i),
             Self::StoreAttr { idx } => {
-                let oparg_val = usize::from(u32::from(idx));
+                let oparg_val = u32::from(idx) as usize;
                 write!(
                     f,
                     "{:pad$}({}, {})",
@@ -1890,7 +1890,7 @@ impl Instruction {
                 )
             }
             Self::StoreDeref(oparg) => {
-                let oparg_val = usize::from(u32::from(oparg));
+                let oparg_val = u32::from(oparg) as usize;
                 write!(
                     f,
                     "{:pad$}({}, {})",
@@ -1900,7 +1900,7 @@ impl Instruction {
                 )
             }
             Self::StoreFast(oparg) => {
-                let oparg_val = usize::from(u32::from(oparg));
+                let oparg_val = u32::from(oparg) as usize;
                 write!(
                     f,
                     "{:pad$}({}, {})",
@@ -1911,14 +1911,16 @@ impl Instruction {
             }
             Self::StoreFastLoadFast { var_nums } => {
                 write!(
+                    f,
                     "{:pad$} ({}, {})",
+                    opcode,
                     var_nums.store_idx(),
                     var_nums.load_idx()
                 )
             }
             Self::StoreFastStoreFast { arg } => write!(f, "{:pad$}({})", opcode, arg),
             Self::StoreGlobal(oparg) => {
-                let oparg_val = usize::from(u32::from(oparg));
+                let oparg_val = u32::from(oparg) as usize;
                 write!(
                     f,
                     "{:pad$}({}, {})",
@@ -1928,7 +1930,7 @@ impl Instruction {
                 )
             }
             Self::StoreName(oparg) => {
-                let oparg_val = usize::from(u32::from(oparg));
+                let oparg_val = u32::from(oparg) as usize;
                 write!(
                     f,
                     "{:pad$}({}, {})",

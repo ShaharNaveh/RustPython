@@ -362,7 +362,7 @@ class InstructionEnumBuilder:
             elif fmt in ("name", "cell_name", "varname"):
                 body += f"""
                 {{
-                    let oparg_val = usize::from(u32::from({oparg_name}));
+                    let oparg_val = u32::from({oparg_name}) as usize;
                     write!(f, "{{:pad$}}({{}}, {{}})", opcode, oparg_val, ctx.get_{fmt}(oparg_val))
                 }}
                 """.strip()
