@@ -380,21 +380,25 @@ oparg = { name = "idx", type = "u32" }
 opcode = 83
 cpython_name = "LOAD_DEREF"
 oparg = { type = "oparg::NameIdx" }
+fmt_dis = "cell_name"
 
 [LoadFast]
 opcode = 84
 cpython_name = "LOAD_FAST"
 oparg = { type = "oparg::NameIdx" }
+fmt_dis = "varname"
 
 [LoadFastAndClear]
 opcode = 85
 cpython_name = "LOAD_FAST_AND_CLEAR"
 oparg = { type = "oparg::NameIdx" }
+fmt_dis = "varname"
 
 [LoadFastBorrow]
 opcode = 86
 cpython_name = "LOAD_FAST_BORROW"
 oparg = { type = "oparg::NameIdx" }
+fmt_dis = "varname"
 
 [LoadFastBorrowLoadFastBorrow]
 opcode = 87
@@ -415,6 +419,7 @@ oparg = { name = "arg", type = "u32" }
 opcode = 90
 cpython_name = "LOAD_FROM_DICT_OR_DEREF"
 oparg = { type = "oparg::NameIdx" }
+fmt_dis = "cell_name"
 
 [LoadFromDictOrGlobals]
 opcode = 91
@@ -427,11 +432,13 @@ opcode = 92
 cpython_name = "LOAD_GLOBAL"
 oparg = { type = "oparg::NameIdx" }
 stack_effect = { pushed = "1" } # TODO: Differs from CPython `1 + (oparg & 1)`
+fmt_dis = "name"
 
 [LoadName]
 opcode = 93
 cpython_name = "LOAD_NAME"
 oparg = { type = "oparg::NameIdx" }
+fmt_dis = "name"
 
 [LoadSmallInt]
 opcode = 94
@@ -528,6 +535,7 @@ oparg = { name = "i", type = "u32" }
 opcode = 110
 cpython_name = "STORE_ATTR"
 oparg = { name = "idx", type = "oparg::NameIdx" }
+fmt_dis = "name"
 
 [StoreDeref]
 opcode = 111
@@ -554,11 +562,13 @@ oparg = { name = "arg", type = "u32" }
 opcode = 115
 cpython_name = "STORE_GLOBAL"
 oparg = { type = "oparg::NameIdx" }
+fmt_dis = "name"
 
 [StoreName]
 opcode = 116
 cpython_name = "STORE_NAME"
 oparg = { type = "oparg::NameIdx" }
+fmt_dis = "name"
 
 [Swap]
 opcode = 117

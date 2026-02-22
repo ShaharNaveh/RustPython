@@ -1705,14 +1705,59 @@ impl Instruction {
             Self::LoadAttr { idx } => write!(f, "{:pad$}({})", opcode, idx),
             Self::LoadCommonConstant { idx } => write!(f, "{:pad$}({})", opcode, idx),
             Self::LoadConst { idx } => write!(f, "{:pad$}({})", opcode, idx),
-            Self::LoadDeref(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
-            Self::LoadFast(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
-            Self::LoadFastAndClear(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
-            Self::LoadFastBorrow(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::LoadDeref(oparg) => {
+                let oparg_val = usize::from(u32::from(oparg));
+                write!(
+                    f,
+                    "{:pad$}({}, {})",
+                    opcode,
+                    oparg_val,
+                    ctx.get_cell_name(oparg_val)
+                )
+            }
+            Self::LoadFast(oparg) => {
+                let oparg_val = usize::from(u32::from(oparg));
+                write!(
+                    f,
+                    "{:pad$}({}, {})",
+                    opcode,
+                    oparg_val,
+                    ctx.get_varname(oparg_val)
+                )
+            }
+            Self::LoadFastAndClear(oparg) => {
+                let oparg_val = usize::from(u32::from(oparg));
+                write!(
+                    f,
+                    "{:pad$}({}, {})",
+                    opcode,
+                    oparg_val,
+                    ctx.get_varname(oparg_val)
+                )
+            }
+            Self::LoadFastBorrow(oparg) => {
+                let oparg_val = usize::from(u32::from(oparg));
+                write!(
+                    f,
+                    "{:pad$}({}, {})",
+                    opcode,
+                    oparg_val,
+                    ctx.get_varname(oparg_val)
+                )
+            }
             Self::LoadFastBorrowLoadFastBorrow { arg } => write!(f, "{:pad$}({})", opcode, arg),
             Self::LoadFastCheck(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
             Self::LoadFastLoadFast { arg } => write!(f, "{:pad$}({})", opcode, arg),
-            Self::LoadFromDictOrDeref(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::LoadFromDictOrDeref(oparg) => {
+                let oparg_val = usize::from(u32::from(oparg));
+                write!(
+                    f,
+                    "{:pad$}({}, {})",
+                    opcode,
+                    oparg_val,
+                    ctx.get_cell_name(oparg_val)
+                )
+            }
             Self::LoadFromDictOrGlobals(oparg) => {
                 let oparg_val = usize::from(u32::from(oparg));
                 write!(
@@ -1723,8 +1768,26 @@ impl Instruction {
                     ctx.get_name(oparg_val)
                 )
             }
-            Self::LoadGlobal(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
-            Self::LoadName(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::LoadGlobal(oparg) => {
+                let oparg_val = usize::from(u32::from(oparg));
+                write!(
+                    f,
+                    "{:pad$}({}, {})",
+                    opcode,
+                    oparg_val,
+                    ctx.get_name(oparg_val)
+                )
+            }
+            Self::LoadName(oparg) => {
+                let oparg_val = usize::from(u32::from(oparg));
+                write!(
+                    f,
+                    "{:pad$}({}, {})",
+                    opcode,
+                    oparg_val,
+                    ctx.get_name(oparg_val)
+                )
+            }
             Self::LoadSmallInt { idx } => write!(f, "{:pad$}({})", opcode, idx),
             Self::LoadSpecial { method } => write!(f, "{:pad$}({})", opcode, method),
             Self::LoadSuperAttr { arg } => write!(f, "{:pad$}({})", opcode, arg),
@@ -1741,13 +1804,40 @@ impl Instruction {
             Self::SetAdd { i } => write!(f, "{:pad$}({})", opcode, i),
             Self::SetFunctionAttribute { attr } => write!(f, "{:pad$}({})", opcode, attr),
             Self::SetUpdate { i } => write!(f, "{:pad$}({})", opcode, i),
-            Self::StoreAttr { idx } => write!(f, "{:pad$}({})", opcode, idx),
+            Self::StoreAttr { idx } => {
+                let oparg_val = usize::from(u32::from(idx));
+                write!(
+                    f,
+                    "{:pad$}({}, {})",
+                    opcode,
+                    oparg_val,
+                    ctx.get_name(oparg_val)
+                )
+            }
             Self::StoreDeref(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
             Self::StoreFast(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
             Self::StoreFastLoadFast { var_nums } => write!(f, "{:pad$}({})", opcode, var_nums),
             Self::StoreFastStoreFast { arg } => write!(f, "{:pad$}({})", opcode, arg),
-            Self::StoreGlobal(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
-            Self::StoreName(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::StoreGlobal(oparg) => {
+                let oparg_val = usize::from(u32::from(oparg));
+                write!(
+                    f,
+                    "{:pad$}({}, {})",
+                    opcode,
+                    oparg_val,
+                    ctx.get_name(oparg_val)
+                )
+            }
+            Self::StoreName(oparg) => {
+                let oparg_val = usize::from(u32::from(oparg));
+                write!(
+                    f,
+                    "{:pad$}({}, {})",
+                    opcode,
+                    oparg_val,
+                    ctx.get_name(oparg_val)
+                )
+            }
             Self::Swap { index } => write!(f, "{:pad$}({})", opcode, index),
             Self::UnpackEx { args } => write!(f, "{:pad$}({})", opcode, args),
             Self::UnpackSequence { size } => write!(f, "{:pad$}({})", opcode, size),
