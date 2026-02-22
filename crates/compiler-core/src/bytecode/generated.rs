@@ -1626,15 +1626,15 @@ impl Instruction {
             Self::BuildList { size } => write!(f, "{:pad$}({})", opcode, size),
             Self::BuildMap { size } => write!(f, "{:pad$}({})", opcode, size),
             Self::BuildSet { size } => write!(f, "{:pad$}({})", opcode, size),
-            Self::BuildSlice { argc } => write!(f, "{:pad$}({})", opcode, argc),
+            Self::BuildSlice { argc } => write!(f, "{:pad$}({:?})", opcode, argc),
             Self::BuildString { size } => write!(f, "{:pad$}({})", opcode, size),
             Self::BuildTuple { size } => write!(f, "{:pad$}({})", opcode, size),
             Self::Call { nargs } => write!(f, "{:pad$}({})", opcode, nargs),
-            Self::CallIntrinsic1 { func } => write!(f, "{:pad$}({})", opcode, func),
-            Self::CallIntrinsic2 { func } => write!(f, "{:pad$}({})", opcode, func),
+            Self::CallIntrinsic1 { func } => write!(f, "{:pad$}({:?})", opcode, func),
+            Self::CallIntrinsic2 { func } => write!(f, "{:pad$}({:?})", opcode, func),
             Self::CallKw { nargs } => write!(f, "{:pad$}({})", opcode, nargs),
-            Self::CompareOp { op } => write!(f, "{:pad$}({})", opcode, op),
-            Self::ContainsOp(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::CompareOp { op } => write!(f, "{:pad$}({:?})", opcode, op),
+            Self::ContainsOp(oparg) => write!(f, "{:pad$}({:?})", opcode, oparg),
             Self::ConvertValue { oparg } => write!(f, "{:pad$}({})", opcode, oparg),
             Self::Copy { index } => write!(f, "{:pad$}({})", opcode, index),
             Self::CopyFreeVars { count } => write!(f, "{:pad$}({})", opcode, count),
@@ -1714,7 +1714,7 @@ impl Instruction {
                     ctx.get_name(oparg_val)
                 )
             }
-            Self::IsOp(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::IsOp(oparg) => write!(f, "{:pad$}({:?})", opcode, oparg),
             Self::JumpBackward { target } => write!(f, "{:pad$}({})", opcode, target),
             Self::JumpBackwardNoInterrupt { target } => write!(f, "{:pad$}({})", opcode, target),
             Self::JumpForward { target } => write!(f, "{:pad$}({})", opcode, target),
@@ -1825,11 +1825,11 @@ impl Instruction {
             Self::PopJumpIfNone { target } => write!(f, "{:pad$}({})", opcode, target),
             Self::PopJumpIfNotNone { target } => write!(f, "{:pad$}({})", opcode, target),
             Self::PopJumpIfTrue { target } => write!(f, "{:pad$}({})", opcode, target),
-            Self::RaiseVarargs { kind } => write!(f, "{:pad$}({})", opcode, kind),
+            Self::RaiseVarargs { kind } => write!(f, "{:pad$}({:?})", opcode, kind),
             Self::Reraise { depth } => write!(f, "{:pad$}({})", opcode, depth),
             Self::Send { target } => write!(f, "{:pad$}({})", opcode, target),
             Self::SetAdd { i } => write!(f, "{:pad$}({})", opcode, i),
-            Self::SetFunctionAttribute { attr } => write!(f, "{:pad$}({})", opcode, attr),
+            Self::SetFunctionAttribute { attr } => write!(f, "{:pad$}({:?})", opcode, attr),
             Self::SetUpdate { i } => write!(f, "{:pad$}({})", opcode, i),
             Self::StoreAttr { idx } => {
                 let oparg_val = usize::from(u32::from(idx));

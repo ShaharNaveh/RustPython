@@ -206,6 +206,7 @@ oparg = { name = "size", type = "u32" }
 opcode = 49
 cpython_name = "BUILD_SLICE"
 oparg = { name = "argc", type = "oparg::BuildSliceArgCount" }
+fmt_dis = "debug"
 
 [BuildString]
 opcode = 50
@@ -226,11 +227,13 @@ oparg = { name = "nargs", type = "u32" }
 opcode = 53
 cpython_name = "CALL_INTRINSIC_1"
 oparg = { name = "func", type = "oparg::IntrinsicFunction1" }
+fmt_dis = "debug"
 
 [CallIntrinsic2]
 opcode = 54
 cpython_name = "CALL_INTRINSIC_2"
 oparg = { name = "func", type = "oparg::IntrinsicFunction2" }
+fmt_dis = "debug"
 
 [CallKw]
 opcode = 55
@@ -241,11 +244,13 @@ oparg = { name = "nargs", type = "u32" }
 opcode = 56
 cpython_name = "COMPARE_OP"
 oparg = { name = "op", type = "oparg::ComparisonOperator" }
+fmt_dis = "debug"
 
 [ContainsOp]
 opcode = 57
 cpython_name = "CONTAINS_OP"
 oparg = { type = "oparg::Invert" }
+fmt_dis = "debug"
 
 [ConvertValue]
 opcode = 58
@@ -336,6 +341,7 @@ fmt_dis = "name"
 opcode = 74
 cpython_name = "IS_OP"
 oparg = { type = "oparg::Invert" }
+fmt_dis = "debug"
 
 [JumpBackward]
 opcode = 75
@@ -497,6 +503,7 @@ oparg = { name = "target", type = "oparg::Label" }
 opcode = 104
 cpython_name = "RAISE_VARARGS"
 oparg = { name = "kind", type = "oparg::RaiseKind" }
+fmt_dis = "debug"
 [RaiseVarargs.stack_effect]
 # TODO: Differs from CPython: `oparg`
 popped = """
@@ -528,6 +535,7 @@ oparg = { name = "i", type = "u32" }
 opcode = 108
 cpython_name = "SET_FUNCTION_ATTRIBUTE"
 oparg = { name = "attr", type = "oparg::MakeFunctionFlags" }
+fmt_dis = "debug"
 
 [SetUpdate]
 opcode = 109

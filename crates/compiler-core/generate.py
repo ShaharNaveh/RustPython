@@ -354,12 +354,24 @@ class InstructionEnumBuilder:
                 else:
                     body += 'write!(f, "{opcode}")'
 
+            elif fmt == "debug":
+                body += f"""
+                write!(f, "{{:pad$}}({{:?}})", opcode, {oparg_name})
+                """.strip()
+
             elif fmt in ("name", "cell_name", "varname"):
                 body += f"""
                 {{
                     let oparg_val = usize::from(u32::from({oparg_name}));
                     write!(f, "{{:pad$}}({{}}, {{}})", opcode, oparg_val, ctx.get_{fmt}(oparg_val))
                 }}
+                """.strip()
+
+            else:  # Trust whatever we get
+                body += f"""
+                    {{
+                        {fmt}
+                    }}
                 """.strip()
 
             body += ","
