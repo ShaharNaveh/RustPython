@@ -1648,8 +1648,26 @@ impl Instruction {
                     ctx.get_name(oparg_val)
                 )
             }
-            Self::DeleteDeref(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
-            Self::DeleteFast(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::DeleteDeref(oparg) => {
+                let oparg_val = usize::from(u32::from(oparg));
+                write!(
+                    f,
+                    "{:pad$}({}, {})",
+                    opcode,
+                    oparg_val,
+                    ctx.get_cell_name(oparg_val)
+                )
+            }
+            Self::DeleteFast(oparg) => {
+                let oparg_val = usize::from(u32::from(oparg));
+                write!(
+                    f,
+                    "{:pad$}({}, {})",
+                    opcode,
+                    oparg_val,
+                    ctx.get_varname(oparg_val)
+                )
+            }
             Self::DeleteGlobal(oparg) => {
                 let oparg_val = usize::from(u32::from(oparg));
                 write!(
@@ -1746,7 +1764,16 @@ impl Instruction {
                 )
             }
             Self::LoadFastBorrowLoadFastBorrow { arg } => write!(f, "{:pad$}({})", opcode, arg),
-            Self::LoadFastCheck(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::LoadFastCheck(oparg) => {
+                let oparg_val = usize::from(u32::from(oparg));
+                write!(
+                    f,
+                    "{:pad$}({}, {})",
+                    opcode,
+                    oparg_val,
+                    ctx.get_varname(oparg_val)
+                )
+            }
             Self::LoadFastLoadFast { arg } => write!(f, "{:pad$}({})", opcode, arg),
             Self::LoadFromDictOrDeref(oparg) => {
                 let oparg_val = usize::from(u32::from(oparg));
@@ -1814,8 +1841,26 @@ impl Instruction {
                     ctx.get_name(oparg_val)
                 )
             }
-            Self::StoreDeref(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
-            Self::StoreFast(oparg) => write!(f, "{:pad$}({})", opcode, oparg),
+            Self::StoreDeref(oparg) => {
+                let oparg_val = usize::from(u32::from(oparg));
+                write!(
+                    f,
+                    "{:pad$}({}, {})",
+                    opcode,
+                    oparg_val,
+                    ctx.get_cell_name(oparg_val)
+                )
+            }
+            Self::StoreFast(oparg) => {
+                let oparg_val = usize::from(u32::from(oparg));
+                write!(
+                    f,
+                    "{:pad$}({}, {})",
+                    opcode,
+                    oparg_val,
+                    ctx.get_varname(oparg_val)
+                )
+            }
             Self::StoreFastLoadFast { var_nums } => write!(f, "{:pad$}({})", opcode, var_nums),
             Self::StoreFastStoreFast { arg } => write!(f, "{:pad$}({})", opcode, arg),
             Self::StoreGlobal(oparg) => {

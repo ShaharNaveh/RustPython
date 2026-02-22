@@ -272,11 +272,13 @@ fmt_dis = "name"
 opcode = 62
 cpython_name = "DELETE_DEREF"
 oparg = { type = "oparg::NameIdx" }
+fmt_dis = "cell_name"
 
 [DeleteFast]
 opcode = 63
 cpython_name = "DELETE_FAST"
 oparg = { type = "oparg::NameIdx" }
+fmt_dis = "varname"
 
 [DeleteGlobal]
 opcode = 64
@@ -409,6 +411,7 @@ oparg = { name = "arg", type = "u32" }
 opcode = 88
 cpython_name = "LOAD_FAST_CHECK"
 oparg = { type = "oparg::NameIdx" }
+fmt_dis = "varname"
 
 [LoadFastLoadFast]
 opcode = 89
@@ -541,11 +544,13 @@ fmt_dis = "name"
 opcode = 111
 cpython_name = "STORE_DEREF"
 oparg = { type = "oparg::NameIdx" }
+fmt_dis = "cell_name"
 
 [StoreFast]
 opcode = 112
 cpython_name = "STORE_FAST"
 oparg = { type = "oparg::NameIdx" }
+fmt_dis = "varname"
 
 [StoreFastLoadFast]
 opcode = 113
