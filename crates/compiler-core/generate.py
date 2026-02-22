@@ -379,6 +379,7 @@ class InstructionEnumBuilder:
             arms += body
 
         return f"""
+        #[allow(unused_variables)]
         pub fn fmt_dis(
             self,
             f: &mut fmt::Formatter<'_>,                                                                              ctx: &impl InstrDisplayContext,

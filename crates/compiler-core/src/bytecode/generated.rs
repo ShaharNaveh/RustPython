@@ -1566,6 +1566,7 @@ pub enum Instruction {
 }
 
 impl Instruction {
+    #[allow(unused_variables)]
     pub fn fmt_dis(
         self,
         f: &mut fmt::Formatter<'_>,
@@ -2724,6 +2725,7 @@ pub enum PseudoInstruction {
 }
 
 impl PseudoInstruction {
+    #[allow(unused_variables)]
     pub fn fmt_dis(
         self,
         f: &mut fmt::Formatter<'_>,
