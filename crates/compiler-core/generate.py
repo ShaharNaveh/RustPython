@@ -393,10 +393,8 @@ class InstructionEnumBuilder:
             if oparg_type == "u32":
                 pass
             elif meta["infallible"]:
-                # oparg_expr = f"{oparg_type}::from(oparg)"
                 oparg_expr += ".into()"
             else:
-                # oparg_expr = f"{oparg_type}::try_from(oparg)?"
                 oparg_expr += ".try_into()?"
 
             if oparg_type and instr.oparg_name:
