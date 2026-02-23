@@ -1567,6 +1567,11 @@ pub enum Instruction {
 
 impl Instruction {
     #[must_use]
+    fn display(&self, ctx: &impl InstrDisplayContext) -> impl fmt::Display {
+        fmt::from_fn(move |f| self.fmt_dis(f, ctx, false, 0, 0))
+    }
+
+    #[must_use]
     #[allow(unused_variables)]
     pub fn fmt_dis(
         self,
@@ -2054,6 +2059,22 @@ impl Instruction {
         }
     }
 
+    #[must_use]
+    pub const fn label_oparg(self) -> Option<oparg::Label> {
+        Some(match self {
+            Self::ForIter { target } => target,
+            Self::JumpBackward { target } => target,
+            Self::JumpBackwardNoInterrupt { target } => target,
+            Self::JumpForward { target } => target,
+            Self::PopJumpIfFalse { target } => target,
+            Self::PopJumpIfNone { target } => target,
+            Self::PopJumpIfNotNone { target } => target,
+            Self::PopJumpIfTrue { target } => target,
+            Self::Send { target } => target,
+            _ => return None,
+        })
+    }
+
     /// Instruction's opcode.
     #[must_use]
     pub const fn opcode(self) -> Opcode {
@@ -2288,6 +2309,10 @@ impl Instruction {
             Self::InstrumentedLine => Opcode::InstrumentedLine,
             Self::EnterExecutor => Opcode::EnterExecutor,
         }
+    }
+
+    pub fn stack_effect(self) -> i32 {
+        self.stack_effect_info().effect()
     }
 
     #[must_use]
@@ -2728,6 +2753,11 @@ pub enum PseudoInstruction {
 
 impl PseudoInstruction {
     #[must_use]
+    fn display(&self, ctx: &impl InstrDisplayContext) -> impl fmt::Display {
+        fmt::from_fn(move |f| self.fmt_dis(f, ctx, false, 0, 0))
+    }
+
+    #[must_use]
     #[allow(unused_variables)]
     pub fn fmt_dis(
         self,
@@ -2754,6 +2784,20 @@ impl PseudoInstruction {
         }
     }
 
+    #[must_use]
+    pub const fn label_oparg(self) -> Option<oparg::Label> {
+        Some(match self {
+            Self::Jump { target } => target,
+            Self::JumpIfFalse { target } => target,
+            Self::JumpIfTrue { target } => target,
+            Self::JumpNoInterrupt { target } => target,
+            Self::SetupCleanup { target } => target,
+            Self::SetupFinally { target } => target,
+            Self::SetupWith { target } => target,
+            _ => return None,
+        })
+    }
+
     /// Instruction's opcode.
     #[must_use]
     pub const fn opcode(self) -> PseudoOpcode {
@@ -2770,6 +2814,10 @@ impl PseudoInstruction {
             Self::SetupWith { .. } => PseudoOpcode::SetupWith,
             Self::StoreFastMaybeNull(_) => PseudoOpcode::StoreFastMaybeNull,
         }
+    }
+
+    pub fn stack_effect(self) -> i32 {
+        self.stack_effect_info().effect()
     }
 
     #[must_use]

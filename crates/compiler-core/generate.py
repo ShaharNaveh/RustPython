@@ -272,6 +272,45 @@ class InstructionEnumBuilder:
         return "PseudoOpcode" if next(iter(self)).opcode > 255 else "Opcode"
 
     @property
+    def fn_label_oparg(self) -> str:
+        arms = ""
+        for instr in self:
+            if instr.oparg_type != "oparg::Label":
+                continue
+            arm = instr.arm()
+            oparg_name = instr.oparg_name or "oparg"
+            arms += f"{arm} => {oparg_name},"
+
+        return f"""
+        #[must_use]
+        pub const fn label_oparg(self) -> Option<oparg::Label> {{
+            Some(
+                match self {{
+                    {arms}
+                    _ => return None,
+                }}
+            )
+        }}
+        """
+
+    @property
+    def fn_display(self) -> str:
+        return """
+        #[must_use]
+        fn display(&self, ctx: &impl InstrDisplayContext) -> impl fmt::Display {
+            fmt::from_fn(move |f| self.fmt_dis(f, ctx, false, 0, 0))
+        }
+        """
+
+    @property
+    def fn_stack_effect(self) -> str:
+        return """
+        pub fn stack_effect(self) -> i32 {
+            self.stack_effect_info().effect()
+        }
+        """
+
+    @property
     def fn_stack_effect_info(self) -> str:
         arms = ""
         for instr in self:
