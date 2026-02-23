@@ -15,6 +15,12 @@ infallible = false
 [Oparg.BuildSliceArgCount]
 infallible = false
 
+[Oparg.ConvertValueOparg]
+infallible = false
+
+[Oparg.MakeFunctionFlags]
+infallible = false
+
 # Instructions
 
 [Instruction.Cache]

@@ -2126,7 +2126,7 @@ impl Instruction {
             Opcode::UnaryNot => Self::UnaryNot,
             Opcode::WithExceptStart => Self::WithExceptStart,
             Opcode::BinaryOp => Self::BinaryOpSelf::BinaryOp {
-                op: oparg::BinaryOperator::try_from(oparg)?,
+                op: oparg.try_into()?,
             },
             Opcode::BuildInterpolation => {
                 Self::BuildInterpolationSelf::BuildInterpolation { oparg: oparg }
@@ -2135,30 +2135,26 @@ impl Instruction {
             Opcode::BuildMap => Self::BuildMapSelf::BuildMap { size: oparg },
             Opcode::BuildSet => Self::BuildSetSelf::BuildSet { size: oparg },
             Opcode::BuildSlice => Self::BuildSliceSelf::BuildSlice {
-                argc: oparg::BuildSliceArgCount::try_from(oparg)?,
+                argc: oparg.try_into()?,
             },
             Opcode::BuildString => Self::BuildStringSelf::BuildString { size: oparg },
             Opcode::BuildTuple => Self::BuildTupleSelf::BuildTuple { size: oparg },
             Opcode::Call => Self::CallSelf::Call { nargs: oparg },
             Opcode::CallIntrinsic1 => Self::CallIntrinsic1Self::CallIntrinsic1 {
-                func: oparg::IntrinsicFunction1::try_from(oparg)?,
+                func: oparg.try_into()?,
             },
             Opcode::CallIntrinsic2 => Self::CallIntrinsic2Self::CallIntrinsic2 {
-                func: oparg::IntrinsicFunction2::try_from(oparg)?,
+                func: oparg.try_into()?,
             },
             Opcode::CallKw => Self::CallKwSelf::CallKw { nargs: oparg },
-            Opcode::CompareOp => Self::CompareOpSelf::CompareOp {
-                op: oparg::ComparisonOperator::from(oparg),
-            },
+            Opcode::CompareOp => Self::CompareOpSelf::CompareOp { op: oparg.into() },
             Opcode::ContainsOp => Self::ContainsOp,
             Opcode::ConvertValue => Self::ConvertValueSelf::ConvertValue {
-                oparg: oparg::ConvertValueOparg::from(oparg),
+                oparg: oparg.try_into()?,
             },
             Opcode::Copy => Self::CopySelf::Copy { index: oparg },
             Opcode::CopyFreeVars => Self::CopyFreeVarsSelf::CopyFreeVars { count: oparg },
-            Opcode::DeleteAttr => Self::DeleteAttrSelf::DeleteAttr {
-                idx: oparg::NameIdx::from(oparg),
-            },
+            Opcode::DeleteAttr => Self::DeleteAttrSelf::DeleteAttr { idx: oparg.into() },
             Opcode::DeleteDeref => Self::DeleteDeref,
             Opcode::DeleteFast => Self::DeleteFast,
             Opcode::DeleteGlobal => Self::DeleteGlobal,
@@ -2168,35 +2164,29 @@ impl Instruction {
             Opcode::EndAsyncFor => Self::EndAsyncFor,
             Opcode::ExtendedArg => Self::ExtendedArg,
             Opcode::ForIter => Self::ForIterSelf::ForIter {
-                target: oparg::Label::from(oparg),
+                target: oparg.into(),
             },
             Opcode::GetAwaitable => Self::GetAwaitableSelf::GetAwaitable { arg: oparg },
-            Opcode::ImportFrom => Self::ImportFromSelf::ImportFrom {
-                idx: oparg::NameIdx::from(oparg),
-            },
-            Opcode::ImportName => Self::ImportNameSelf::ImportName {
-                idx: oparg::NameIdx::from(oparg),
-            },
+            Opcode::ImportFrom => Self::ImportFromSelf::ImportFrom { idx: oparg.into() },
+            Opcode::ImportName => Self::ImportNameSelf::ImportName { idx: oparg.into() },
             Opcode::IsOp => Self::IsOp,
             Opcode::JumpBackward => Self::JumpBackwardSelf::JumpBackward {
-                target: oparg::Label::from(oparg),
+                target: oparg.into(),
             },
             Opcode::JumpBackwardNoInterrupt => {
                 Self::JumpBackwardNoInterruptSelf::JumpBackwardNoInterrupt {
-                    target: oparg::Label::from(oparg),
+                    target: oparg.into(),
                 }
             }
             Opcode::JumpForward => Self::JumpForwardSelf::JumpForward {
-                target: oparg::Label::from(oparg),
+                target: oparg.into(),
             },
             Opcode::ListAppend => Self::ListAppendSelf::ListAppend { i: oparg },
             Opcode::ListExtend => Self::ListExtendSelf::ListExtend { i: oparg },
-            Opcode::LoadAttr => Self::LoadAttrSelf::LoadAttr {
-                idx: oparg::LoadAttr::from(oparg),
-            },
-            Opcode::LoadCommonConstant => Self::LoadCommonConstantSelf::LoadCommonConstant {
-                idx: oparg::CommonConstant::from(oparg),
-            },
+            Opcode::LoadAttr => Self::LoadAttrSelf::LoadAttr { idx: oparg.into() },
+            Opcode::LoadCommonConstant => {
+                Self::LoadCommonConstantSelf::LoadCommonConstant { idx: oparg.into() }
+            }
             Opcode::LoadConst => Self::LoadConstSelf::LoadConst { idx: oparg },
             Opcode::LoadDeref => Self::LoadDeref,
             Opcode::LoadFast => Self::LoadFast,
@@ -2213,45 +2203,41 @@ impl Instruction {
             Opcode::LoadName => Self::LoadName,
             Opcode::LoadSmallInt => Self::LoadSmallIntSelf::LoadSmallInt { idx: oparg },
             Opcode::LoadSpecial => Self::LoadSpecialSelf::LoadSpecial {
-                method: oparg::SpecialMethod::from(oparg),
+                method: oparg.into(),
             },
-            Opcode::LoadSuperAttr => Self::LoadSuperAttrSelf::LoadSuperAttr {
-                arg: oparg::LoadSuperAttr::from(oparg),
-            },
+            Opcode::LoadSuperAttr => Self::LoadSuperAttrSelf::LoadSuperAttr { arg: oparg.into() },
             Opcode::MakeCell => Self::MakeCell,
             Opcode::MapAdd => Self::MapAddSelf::MapAdd { i: oparg },
             Opcode::MatchClass => Self::MatchClass,
             Opcode::PopJumpIfFalse => Self::PopJumpIfFalseSelf::PopJumpIfFalse {
-                target: oparg::Label::from(oparg),
+                target: oparg.into(),
             },
             Opcode::PopJumpIfNone => Self::PopJumpIfNoneSelf::PopJumpIfNone {
-                target: oparg::Label::from(oparg),
+                target: oparg.into(),
             },
             Opcode::PopJumpIfNotNone => Self::PopJumpIfNotNoneSelf::PopJumpIfNotNone {
-                target: oparg::Label::from(oparg),
+                target: oparg.into(),
             },
             Opcode::PopJumpIfTrue => Self::PopJumpIfTrueSelf::PopJumpIfTrue {
-                target: oparg::Label::from(oparg),
+                target: oparg.into(),
             },
             Opcode::RaiseVarargs => Self::RaiseVarargsSelf::RaiseVarargs {
-                kind: oparg::RaiseKind::try_from(oparg)?,
+                kind: oparg.try_into()?,
             },
             Opcode::Reraise => Self::ReraiseSelf::Reraise { depth: oparg },
             Opcode::Send => Self::SendSelf::Send {
-                target: oparg::Label::from(oparg),
+                target: oparg.into(),
             },
             Opcode::SetAdd => Self::SetAddSelf::SetAdd { i: oparg },
             Opcode::SetFunctionAttribute => Self::SetFunctionAttributeSelf::SetFunctionAttribute {
-                attr: oparg::MakeFunctionFlags::from(oparg),
+                attr: oparg.try_into()?,
             },
             Opcode::SetUpdate => Self::SetUpdateSelf::SetUpdate { i: oparg },
-            Opcode::StoreAttr => Self::StoreAttrSelf::StoreAttr {
-                idx: oparg::NameIdx::from(oparg),
-            },
+            Opcode::StoreAttr => Self::StoreAttrSelf::StoreAttr { idx: oparg.into() },
             Opcode::StoreDeref => Self::StoreDeref,
             Opcode::StoreFast => Self::StoreFast,
             Opcode::StoreFastLoadFast => Self::StoreFastLoadFastSelf::StoreFastLoadFast {
-                var_nums: oparg::StoreFastLoadFast::from(oparg),
+                var_nums: oparg.into(),
             },
             Opcode::StoreFastStoreFast => {
                 Self::StoreFastStoreFastSelf::StoreFastStoreFast { arg: oparg }
@@ -2259,9 +2245,7 @@ impl Instruction {
             Opcode::StoreGlobal => Self::StoreGlobal,
             Opcode::StoreName => Self::StoreName,
             Opcode::Swap => Self::SwapSelf::Swap { index: oparg },
-            Opcode::UnpackEx => Self::UnpackExSelf::UnpackEx {
-                args: oparg::UnpackExArgs::from(oparg),
-            },
+            Opcode::UnpackEx => Self::UnpackExSelf::UnpackEx { args: oparg.into() },
             Opcode::UnpackSequence => Self::UnpackSequenceSelf::UnpackSequence { size: oparg },
             Opcode::YieldValue => Self::YieldValueSelf::YieldValue { arg: oparg },
             Opcode::Resume => Self::ResumeSelf::Resume { arg: oparg },
@@ -3103,27 +3087,27 @@ impl PseudoInstruction {
         Ok(match opcode {
             PseudoOpcode::AnnotationsPlaceholder => Self::AnnotationsPlaceholder,
             PseudoOpcode::Jump => Self::JumpSelf::Jump {
-                target: oparg::Label::from(oparg),
+                target: oparg.into(),
             },
             PseudoOpcode::JumpIfFalse => Self::JumpIfFalseSelf::JumpIfFalse {
-                target: oparg::Label::from(oparg),
+                target: oparg.into(),
             },
             PseudoOpcode::JumpIfTrue => Self::JumpIfTrueSelf::JumpIfTrue {
-                target: oparg::Label::from(oparg),
+                target: oparg.into(),
             },
             PseudoOpcode::JumpNoInterrupt => Self::JumpNoInterruptSelf::JumpNoInterrupt {
-                target: oparg::Label::from(oparg),
+                target: oparg.into(),
             },
             PseudoOpcode::LoadClosure => Self::LoadClosure,
             PseudoOpcode::PopBlock => Self::PopBlock,
             PseudoOpcode::SetupCleanup => Self::SetupCleanupSelf::SetupCleanup {
-                target: oparg::Label::from(oparg),
+                target: oparg.into(),
             },
             PseudoOpcode::SetupFinally => Self::SetupFinallySelf::SetupFinally {
-                target: oparg::Label::from(oparg),
+                target: oparg.into(),
             },
             PseudoOpcode::SetupWith => Self::SetupWithSelf::SetupWith {
-                target: oparg::Label::from(oparg),
+                target: oparg.into(),
             },
             PseudoOpcode::StoreFastMaybeNull => Self::StoreFastMaybeNull,
         })
