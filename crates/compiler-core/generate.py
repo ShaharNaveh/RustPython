@@ -382,7 +382,26 @@ class InstructionEnumBuilder:
     def fn_new(self) -> str:
         arms = ""
         for instr in self:
+            arms += f"{self.target_opcode}::{instr.name} => Self::{instr.name}"
+            if not instr.oparg:
+                arms += ",\n"
+                continue
+
             meta = instr.oparg_metadata
+            oparg_type = instr.oparg_type
+            if oparg_type == "u32":
+                oparg_expr = "oparg"
+            elif meta["infallible"]:
+                oparg_expr = f"{oparg_type}::from(oparg)"
+            else:
+                oparg_expr = f"{oparg_type}::try_from(oparg)?"
+
+            if oparg_type and instr.oparg_name:
+                arms += f"Self::{instr.name} {{ {instr.oparg_name}: {oparg_expr} }}"
+            elif instr.oparg_name:
+                arms += f"({oparg_expr})"
+
+            arms += ",\n"
 
         return f"""
         #[must_use]
@@ -502,8 +521,8 @@ def main():
 
         oparg = opts.get("oparg", {})
         oparg_metadata = {}
-        if oparg_name := oparg.get("name"):
-            rust_name = oparg_name.split("::")[-1]
+        if oparg_type := oparg.get("type"):
+            rust_name = oparg_type.split("::")[-1]
             oparg_metadata = opargs.get(rust_name, {"infallible": True})
 
         instr = Instr(

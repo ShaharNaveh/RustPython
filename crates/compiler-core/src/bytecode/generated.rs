@@ -2080,7 +2080,299 @@ impl Instruction {
 
     #[must_use]
     pub fn new(opcode: Opcode, oparg: u32) -> Result<Self, MarshalError> {
-        Ok(match opcode {})
+        Ok(match opcode {
+            Opcode::Cache => Self::Cache,
+            Opcode::BinarySlice => Self::BinarySlice,
+            Opcode::BuildTemplate => Self::BuildTemplate,
+            Opcode::BinaryOpInplaceAddUnicode => Self::BinaryOpInplaceAddUnicode,
+            Opcode::CallFunctionEx => Self::CallFunctionEx,
+            Opcode::CheckEgMatch => Self::CheckEgMatch,
+            Opcode::CheckExcMatch => Self::CheckExcMatch,
+            Opcode::CleanupThrow => Self::CleanupThrow,
+            Opcode::DeleteSubscr => Self::DeleteSubscr,
+            Opcode::EndFor => Self::EndFor,
+            Opcode::EndSend => Self::EndSend,
+            Opcode::ExitInitCheck => Self::ExitInitCheck,
+            Opcode::FormatSimple => Self::FormatSimple,
+            Opcode::FormatWithSpec => Self::FormatWithSpec,
+            Opcode::GetAIter => Self::GetAIter,
+            Opcode::GetANext => Self::GetANext,
+            Opcode::GetIter => Self::GetIter,
+            Opcode::Reserved => Self::Reserved,
+            Opcode::GetLen => Self::GetLen,
+            Opcode::GetYieldFromIter => Self::GetYieldFromIter,
+            Opcode::InterpreterExit => Self::InterpreterExit,
+            Opcode::LoadBuildClass => Self::LoadBuildClass,
+            Opcode::LoadLocals => Self::LoadLocals,
+            Opcode::MakeFunction => Self::MakeFunction,
+            Opcode::MatchKeys => Self::MatchKeys,
+            Opcode::MatchMapping => Self::MatchMapping,
+            Opcode::MatchSequence => Self::MatchSequence,
+            Opcode::Nop => Self::Nop,
+            Opcode::NotTaken => Self::NotTaken,
+            Opcode::PopExcept => Self::PopExcept,
+            Opcode::PopIter => Self::PopIter,
+            Opcode::PopTop => Self::PopTop,
+            Opcode::PushExcInfo => Self::PushExcInfo,
+            Opcode::PushNull => Self::PushNull,
+            Opcode::ReturnGenerator => Self::ReturnGenerator,
+            Opcode::ReturnValue => Self::ReturnValue,
+            Opcode::SetupAnnotations => Self::SetupAnnotations,
+            Opcode::StoreSlice => Self::StoreSlice,
+            Opcode::StoreSubscr => Self::StoreSubscr,
+            Opcode::ToBool => Self::ToBool,
+            Opcode::UnaryInvert => Self::UnaryInvert,
+            Opcode::UnaryNegative => Self::UnaryNegative,
+            Opcode::UnaryNot => Self::UnaryNot,
+            Opcode::WithExceptStart => Self::WithExceptStart,
+            Opcode::BinaryOp => Self::BinaryOpSelf::BinaryOp {
+                op: oparg::BinaryOperator::try_from(oparg)?,
+            },
+            Opcode::BuildInterpolation => {
+                Self::BuildInterpolationSelf::BuildInterpolation { oparg: oparg }
+            }
+            Opcode::BuildList => Self::BuildListSelf::BuildList { size: oparg },
+            Opcode::BuildMap => Self::BuildMapSelf::BuildMap { size: oparg },
+            Opcode::BuildSet => Self::BuildSetSelf::BuildSet { size: oparg },
+            Opcode::BuildSlice => Self::BuildSliceSelf::BuildSlice {
+                argc: oparg::BuildSliceArgCount::from(oparg),
+            },
+            Opcode::BuildString => Self::BuildStringSelf::BuildString { size: oparg },
+            Opcode::BuildTuple => Self::BuildTupleSelf::BuildTuple { size: oparg },
+            Opcode::Call => Self::CallSelf::Call { nargs: oparg },
+            Opcode::CallIntrinsic1 => Self::CallIntrinsic1Self::CallIntrinsic1 {
+                func: oparg::IntrinsicFunction1::try_from(oparg)?,
+            },
+            Opcode::CallIntrinsic2 => Self::CallIntrinsic2Self::CallIntrinsic2 {
+                func: oparg::IntrinsicFunction2::try_from(oparg)?,
+            },
+            Opcode::CallKw => Self::CallKwSelf::CallKw { nargs: oparg },
+            Opcode::CompareOp => Self::CompareOpSelf::CompareOp {
+                op: oparg::ComparisonOperator::from(oparg),
+            },
+            Opcode::ContainsOp => Self::ContainsOp,
+            Opcode::ConvertValue => Self::ConvertValueSelf::ConvertValue {
+                oparg: oparg::ConvertValueOparg::from(oparg),
+            },
+            Opcode::Copy => Self::CopySelf::Copy { index: oparg },
+            Opcode::CopyFreeVars => Self::CopyFreeVarsSelf::CopyFreeVars { count: oparg },
+            Opcode::DeleteAttr => Self::DeleteAttrSelf::DeleteAttr {
+                idx: oparg::NameIdx::from(oparg),
+            },
+            Opcode::DeleteDeref => Self::DeleteDeref,
+            Opcode::DeleteFast => Self::DeleteFast,
+            Opcode::DeleteGlobal => Self::DeleteGlobal,
+            Opcode::DeleteName => Self::DeleteName,
+            Opcode::DictMerge => Self::DictMergeSelf::DictMerge { index: oparg },
+            Opcode::DictUpdate => Self::DictUpdateSelf::DictUpdate { index: oparg },
+            Opcode::EndAsyncFor => Self::EndAsyncFor,
+            Opcode::ExtendedArg => Self::ExtendedArg,
+            Opcode::ForIter => Self::ForIterSelf::ForIter {
+                target: oparg::Label::from(oparg),
+            },
+            Opcode::GetAwaitable => Self::GetAwaitableSelf::GetAwaitable { arg: oparg },
+            Opcode::ImportFrom => Self::ImportFromSelf::ImportFrom {
+                idx: oparg::NameIdx::from(oparg),
+            },
+            Opcode::ImportName => Self::ImportNameSelf::ImportName {
+                idx: oparg::NameIdx::from(oparg),
+            },
+            Opcode::IsOp => Self::IsOp,
+            Opcode::JumpBackward => Self::JumpBackwardSelf::JumpBackward {
+                target: oparg::Label::from(oparg),
+            },
+            Opcode::JumpBackwardNoInterrupt => {
+                Self::JumpBackwardNoInterruptSelf::JumpBackwardNoInterrupt {
+                    target: oparg::Label::from(oparg),
+                }
+            }
+            Opcode::JumpForward => Self::JumpForwardSelf::JumpForward {
+                target: oparg::Label::from(oparg),
+            },
+            Opcode::ListAppend => Self::ListAppendSelf::ListAppend { i: oparg },
+            Opcode::ListExtend => Self::ListExtendSelf::ListExtend { i: oparg },
+            Opcode::LoadAttr => Self::LoadAttrSelf::LoadAttr {
+                idx: oparg::LoadAttr::from(oparg),
+            },
+            Opcode::LoadCommonConstant => Self::LoadCommonConstantSelf::LoadCommonConstant {
+                idx: oparg::CommonConstant::from(oparg),
+            },
+            Opcode::LoadConst => Self::LoadConstSelf::LoadConst { idx: oparg },
+            Opcode::LoadDeref => Self::LoadDeref,
+            Opcode::LoadFast => Self::LoadFast,
+            Opcode::LoadFastAndClear => Self::LoadFastAndClear,
+            Opcode::LoadFastBorrow => Self::LoadFastBorrow,
+            Opcode::LoadFastBorrowLoadFastBorrow => {
+                Self::LoadFastBorrowLoadFastBorrowSelf::LoadFastBorrowLoadFastBorrow { arg: oparg }
+            }
+            Opcode::LoadFastCheck => Self::LoadFastCheck,
+            Opcode::LoadFastLoadFast => Self::LoadFastLoadFastSelf::LoadFastLoadFast { arg: oparg },
+            Opcode::LoadFromDictOrDeref => Self::LoadFromDictOrDeref,
+            Opcode::LoadFromDictOrGlobals => Self::LoadFromDictOrGlobals,
+            Opcode::LoadGlobal => Self::LoadGlobal,
+            Opcode::LoadName => Self::LoadName,
+            Opcode::LoadSmallInt => Self::LoadSmallIntSelf::LoadSmallInt { idx: oparg },
+            Opcode::LoadSpecial => Self::LoadSpecialSelf::LoadSpecial {
+                method: oparg::SpecialMethod::from(oparg),
+            },
+            Opcode::LoadSuperAttr => Self::LoadSuperAttrSelf::LoadSuperAttr {
+                arg: oparg::LoadSuperAttr::from(oparg),
+            },
+            Opcode::MakeCell => Self::MakeCell,
+            Opcode::MapAdd => Self::MapAddSelf::MapAdd { i: oparg },
+            Opcode::MatchClass => Self::MatchClass,
+            Opcode::PopJumpIfFalse => Self::PopJumpIfFalseSelf::PopJumpIfFalse {
+                target: oparg::Label::from(oparg),
+            },
+            Opcode::PopJumpIfNone => Self::PopJumpIfNoneSelf::PopJumpIfNone {
+                target: oparg::Label::from(oparg),
+            },
+            Opcode::PopJumpIfNotNone => Self::PopJumpIfNotNoneSelf::PopJumpIfNotNone {
+                target: oparg::Label::from(oparg),
+            },
+            Opcode::PopJumpIfTrue => Self::PopJumpIfTrueSelf::PopJumpIfTrue {
+                target: oparg::Label::from(oparg),
+            },
+            Opcode::RaiseVarargs => Self::RaiseVarargsSelf::RaiseVarargs {
+                kind: oparg::RaiseKind::try_from(oparg)?,
+            },
+            Opcode::Reraise => Self::ReraiseSelf::Reraise { depth: oparg },
+            Opcode::Send => Self::SendSelf::Send {
+                target: oparg::Label::from(oparg),
+            },
+            Opcode::SetAdd => Self::SetAddSelf::SetAdd { i: oparg },
+            Opcode::SetFunctionAttribute => Self::SetFunctionAttributeSelf::SetFunctionAttribute {
+                attr: oparg::MakeFunctionFlags::from(oparg),
+            },
+            Opcode::SetUpdate => Self::SetUpdateSelf::SetUpdate { i: oparg },
+            Opcode::StoreAttr => Self::StoreAttrSelf::StoreAttr {
+                idx: oparg::NameIdx::from(oparg),
+            },
+            Opcode::StoreDeref => Self::StoreDeref,
+            Opcode::StoreFast => Self::StoreFast,
+            Opcode::StoreFastLoadFast => Self::StoreFastLoadFastSelf::StoreFastLoadFast {
+                var_nums: oparg::StoreFastLoadFast::from(oparg),
+            },
+            Opcode::StoreFastStoreFast => {
+                Self::StoreFastStoreFastSelf::StoreFastStoreFast { arg: oparg }
+            }
+            Opcode::StoreGlobal => Self::StoreGlobal,
+            Opcode::StoreName => Self::StoreName,
+            Opcode::Swap => Self::SwapSelf::Swap { index: oparg },
+            Opcode::UnpackEx => Self::UnpackExSelf::UnpackEx {
+                args: oparg::UnpackExArgs::from(oparg),
+            },
+            Opcode::UnpackSequence => Self::UnpackSequenceSelf::UnpackSequence { size: oparg },
+            Opcode::YieldValue => Self::YieldValueSelf::YieldValue { arg: oparg },
+            Opcode::Resume => Self::ResumeSelf::Resume { arg: oparg },
+            Opcode::BinaryOpAddFloat => Self::BinaryOpAddFloat,
+            Opcode::BinaryOpAddInt => Self::BinaryOpAddInt,
+            Opcode::BinaryOpAddUnicode => Self::BinaryOpAddUnicode,
+            Opcode::BinaryOpExtend => Self::BinaryOpExtend,
+            Opcode::BinaryOpMultiplyFloat => Self::BinaryOpMultiplyFloat,
+            Opcode::BinaryOpMultiplyInt => Self::BinaryOpMultiplyInt,
+            Opcode::BinaryOpSubscrDict => Self::BinaryOpSubscrDict,
+            Opcode::BinaryOpSubscrGetitem => Self::BinaryOpSubscrGetitem,
+            Opcode::BinaryOpSubscrListInt => Self::BinaryOpSubscrListInt,
+            Opcode::BinaryOpSubscrListSlice => Self::BinaryOpSubscrListSlice,
+            Opcode::BinaryOpSubscrStrInt => Self::BinaryOpSubscrStrInt,
+            Opcode::BinaryOpSubscrTupleInt => Self::BinaryOpSubscrTupleInt,
+            Opcode::BinaryOpSubtractFloat => Self::BinaryOpSubtractFloat,
+            Opcode::BinaryOpSubtractInt => Self::BinaryOpSubtractInt,
+            Opcode::CallAllocAndEnterInit => Self::CallAllocAndEnterInit,
+            Opcode::CallBoundMethodExactArgs => Self::CallBoundMethodExactArgs,
+            Opcode::CallBoundMethodGeneral => Self::CallBoundMethodGeneral,
+            Opcode::CallBuiltinClass => Self::CallBuiltinClass,
+            Opcode::CallBuiltinFast => Self::CallBuiltinFast,
+            Opcode::CallBuiltinFastWithKeywords => Self::CallBuiltinFastWithKeywords,
+            Opcode::CallBuiltinO => Self::CallBuiltinO,
+            Opcode::CallIsinstance => Self::CallIsinstance,
+            Opcode::CallKwBoundMethod => Self::CallKwBoundMethod,
+            Opcode::CallKwNonPy => Self::CallKwNonPy,
+            Opcode::CallKwPy => Self::CallKwPy,
+            Opcode::CallLen => Self::CallLen,
+            Opcode::CallListAppend => Self::CallListAppend,
+            Opcode::CallMethodDescriptorFast => Self::CallMethodDescriptorFast,
+            Opcode::CallMethodDescriptorFastWithKeywords => {
+                Self::CallMethodDescriptorFastWithKeywords
+            }
+            Opcode::CallMethodDescriptorNoargs => Self::CallMethodDescriptorNoargs,
+            Opcode::CallMethodDescriptorO => Self::CallMethodDescriptorO,
+            Opcode::CallNonPyGeneral => Self::CallNonPyGeneral,
+            Opcode::CallPyExactArgs => Self::CallPyExactArgs,
+            Opcode::CallPyGeneral => Self::CallPyGeneral,
+            Opcode::CallStr1 => Self::CallStr1,
+            Opcode::CallTuple1 => Self::CallTuple1,
+            Opcode::CallType1 => Self::CallType1,
+            Opcode::CompareOpFloat => Self::CompareOpFloat,
+            Opcode::CompareOpInt => Self::CompareOpInt,
+            Opcode::CompareOpStr => Self::CompareOpStr,
+            Opcode::ContainsOpDict => Self::ContainsOpDict,
+            Opcode::ContainsOpSet => Self::ContainsOpSet,
+            Opcode::ForIterGen => Self::ForIterGen,
+            Opcode::ForIterList => Self::ForIterList,
+            Opcode::ForIterRange => Self::ForIterRange,
+            Opcode::ForIterTuple => Self::ForIterTuple,
+            Opcode::JumpBackwardJit => Self::JumpBackwardJit,
+            Opcode::JumpBackwardNoJit => Self::JumpBackwardNoJit,
+            Opcode::LoadAttrClass => Self::LoadAttrClass,
+            Opcode::LoadAttrClassWithMetaclassCheck => Self::LoadAttrClassWithMetaclassCheck,
+            Opcode::LoadAttrGetattributeOverridden => Self::LoadAttrGetattributeOverridden,
+            Opcode::LoadAttrInstanceValue => Self::LoadAttrInstanceValue,
+            Opcode::LoadAttrMethodLazyDict => Self::LoadAttrMethodLazyDict,
+            Opcode::LoadAttrMethodNoDict => Self::LoadAttrMethodNoDict,
+            Opcode::LoadAttrMethodWithValues => Self::LoadAttrMethodWithValues,
+            Opcode::LoadAttrModule => Self::LoadAttrModule,
+            Opcode::LoadAttrNondescriptorNoDict => Self::LoadAttrNondescriptorNoDict,
+            Opcode::LoadAttrNondescriptorWithValues => Self::LoadAttrNondescriptorWithValues,
+            Opcode::LoadAttrProperty => Self::LoadAttrProperty,
+            Opcode::LoadAttrSlot => Self::LoadAttrSlot,
+            Opcode::LoadAttrWithHint => Self::LoadAttrWithHint,
+            Opcode::LoadConstImmortal => Self::LoadConstImmortal,
+            Opcode::LoadConstMortal => Self::LoadConstMortal,
+            Opcode::LoadGlobalBuiltin => Self::LoadGlobalBuiltin,
+            Opcode::LoadGlobalModule => Self::LoadGlobalModule,
+            Opcode::LoadSuperAttrAttr => Self::LoadSuperAttrAttr,
+            Opcode::LoadSuperAttrMethod => Self::LoadSuperAttrMethod,
+            Opcode::ResumeCheck => Self::ResumeCheck,
+            Opcode::SendGen => Self::SendGen,
+            Opcode::StoreAttrInstanceValue => Self::StoreAttrInstanceValue,
+            Opcode::StoreAttrSlot => Self::StoreAttrSlot,
+            Opcode::StoreAttrWithHint => Self::StoreAttrWithHint,
+            Opcode::StoreSubscrDict => Self::StoreSubscrDict,
+            Opcode::StoreSubscrListInt => Self::StoreSubscrListInt,
+            Opcode::ToBoolAlwaysTrue => Self::ToBoolAlwaysTrue,
+            Opcode::ToBoolBool => Self::ToBoolBool,
+            Opcode::ToBoolInt => Self::ToBoolInt,
+            Opcode::ToBoolList => Self::ToBoolList,
+            Opcode::ToBoolNone => Self::ToBoolNone,
+            Opcode::ToBoolStr => Self::ToBoolStr,
+            Opcode::UnpackSequenceList => Self::UnpackSequenceList,
+            Opcode::UnpackSequenceTuple => Self::UnpackSequenceTuple,
+            Opcode::UnpackSequenceTwoTuple => Self::UnpackSequenceTwoTuple,
+            Opcode::InstrumentedEndFor => Self::InstrumentedEndFor,
+            Opcode::InstrumentedPopIter => Self::InstrumentedPopIter,
+            Opcode::InstrumentedEndSend => Self::InstrumentedEndSend,
+            Opcode::InstrumentedForIter => Self::InstrumentedForIter,
+            Opcode::InstrumentedInstruction => Self::InstrumentedInstruction,
+            Opcode::InstrumentedJumpForward => Self::InstrumentedJumpForward,
+            Opcode::InstrumentedNotTaken => Self::InstrumentedNotTaken,
+            Opcode::InstrumentedPopJumpIfTrue => Self::InstrumentedPopJumpIfTrue,
+            Opcode::InstrumentedPopJumpIfFalse => Self::InstrumentedPopJumpIfFalse,
+            Opcode::InstrumentedPopJumpIfNone => Self::InstrumentedPopJumpIfNone,
+            Opcode::InstrumentedPopJumpIfNotNone => Self::InstrumentedPopJumpIfNotNone,
+            Opcode::InstrumentedResume => Self::InstrumentedResume,
+            Opcode::InstrumentedReturnValue => Self::InstrumentedReturnValue,
+            Opcode::InstrumentedYieldValue => Self::InstrumentedYieldValue,
+            Opcode::InstrumentedEndAsyncFor => Self::InstrumentedEndAsyncFor,
+            Opcode::InstrumentedLoadSuperAttr => Self::InstrumentedLoadSuperAttr,
+            Opcode::InstrumentedCall => Self::InstrumentedCall,
+            Opcode::InstrumentedCallKw => Self::InstrumentedCallKw,
+            Opcode::InstrumentedCallFunctionEx => Self::InstrumentedCallFunctionEx,
+            Opcode::InstrumentedJumpBackward => Self::InstrumentedJumpBackward,
+            Opcode::InstrumentedLine => Self::InstrumentedLine,
+            Opcode::EnterExecutor => Self::EnterExecutor,
+        })
     }
 
     /// Instruction's opcode.
@@ -2808,7 +3100,33 @@ impl PseudoInstruction {
 
     #[must_use]
     pub fn new(opcode: PseudoOpcode, oparg: u32) -> Result<Self, MarshalError> {
-        Ok(match opcode {})
+        Ok(match opcode {
+            PseudoOpcode::AnnotationsPlaceholder => Self::AnnotationsPlaceholder,
+            PseudoOpcode::Jump => Self::JumpSelf::Jump {
+                target: oparg::Label::from(oparg),
+            },
+            PseudoOpcode::JumpIfFalse => Self::JumpIfFalseSelf::JumpIfFalse {
+                target: oparg::Label::from(oparg),
+            },
+            PseudoOpcode::JumpIfTrue => Self::JumpIfTrueSelf::JumpIfTrue {
+                target: oparg::Label::from(oparg),
+            },
+            PseudoOpcode::JumpNoInterrupt => Self::JumpNoInterruptSelf::JumpNoInterrupt {
+                target: oparg::Label::from(oparg),
+            },
+            PseudoOpcode::LoadClosure => Self::LoadClosure,
+            PseudoOpcode::PopBlock => Self::PopBlock,
+            PseudoOpcode::SetupCleanup => Self::SetupCleanupSelf::SetupCleanup {
+                target: oparg::Label::from(oparg),
+            },
+            PseudoOpcode::SetupFinally => Self::SetupFinallySelf::SetupFinally {
+                target: oparg::Label::from(oparg),
+            },
+            PseudoOpcode::SetupWith => Self::SetupWithSelf::SetupWith {
+                target: oparg::Label::from(oparg),
+            },
+            PseudoOpcode::StoreFastMaybeNull => Self::StoreFastMaybeNull,
+        })
     }
 
     /// Instruction's opcode.
