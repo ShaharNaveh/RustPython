@@ -313,7 +313,7 @@ pub struct CodeUnit {
 const _: () = assert!(mem::size_of::<CodeUnit>() == 2);
 
 impl CodeUnit {
-    pub const fn new(op: Instruction, arg: OpArgByte) -> Self {
+    pub const fn new(op: Opcode, arg: OpArgByte) -> Self {
         Self { op, arg }
     }
 }

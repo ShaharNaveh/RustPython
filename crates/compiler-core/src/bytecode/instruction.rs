@@ -57,8 +57,19 @@ impl From<PseudoInstruction> for AnyInstruction {
 }
 
 macro_rules! inst_either {
-    ($vis:vis $(const)? fn $name:ident ( self $(, $arg:ident : $arg_ty:ty )* ) -> $ret:ty ) => {
-      $vis $(const)? fn $name(self $(, $arg : $arg_ty )* ) -> $ret {
+    ($vis:vis const fn $name:ident ( self $(, $arg:ident : $arg_ty:ty )* ) -> $ret:ty ) => {
+      #[must_use]
+      $vis const fn $name(self $(, $arg : $arg_ty )* ) -> $ret {
+            match self {
+                Self::Real(instr) => instr.$name($($arg),*),
+                Self::Pseudo(instr) => instr.$name($($arg),*),
+            }
+        }
+    };
+
+    ($vis:vis fn $name:ident ( self $(, $arg:ident : $arg_ty:ty )* ) -> $ret:ty ) => {
+      #[must_use]
+      $vis fn $name(self $(, $arg : $arg_ty )* ) -> $ret {
             match self {
                 Self::Real(instr) => instr.$name($($arg),*),
                 Self::Pseudo(instr) => instr.$name($($arg),*),
@@ -68,6 +79,31 @@ macro_rules! inst_either {
 }
 
 impl AnyInstruction {
+    /*
+        #[must_use]
+        pub const fn label_oparg(self) -> Option<crate::bytecode::oparg::Label> {
+            match self {
+                Self::Real(instr) => instr.label_oparg(),
+                Self::Pseudo(instr) => instr.label_oparg(),
+            }
+        }
+
+        #[must_use]
+        pub const fn label_oparg(self) -> Option<crate::bytecode::oparg::Label> {
+            match self {
+                Self::Real(instr) => instr.label_oparg(),
+                Self::Pseudo(instr) => instr.label_oparg(),
+            }
+        }
+
+        #[must_use]
+        pub const fn label_oparg(self) -> Option<crate::bytecode::oparg::Label> {
+            match self {
+                Self::Real(instr) => instr.label_oparg(),
+                Self::Pseudo(instr) => instr.label_oparg(),
+            }
+        }
+    */
     inst_either!(pub const fn label_oparg(self) -> Option<crate::bytecode::oparg::Label>);
 
     inst_either!(pub const fn is_unconditional_jump(self) -> bool);
@@ -80,8 +116,8 @@ impl AnyInstruction {
 
     inst_either!(pub fn fmt_dis(
         self,
-        f: &mut fmt::Formatter<'_>,
-        ctx: &impl InstrDisplayContext,
+        f: &mut core::fmt::Formatter<'_>,
+        ctx: &impl crate::bytecode::InstrDisplayContext,
         expand_code_objects: bool,
         pad: usize,
         level: usize
