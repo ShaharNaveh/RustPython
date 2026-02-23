@@ -1,18 +1,4 @@
-use core::{fmt, marker::PhantomData, mem};
-
-use crate::{
-    bytecode::{
-        BorrowedConstant, Constant, InstrDisplayContext,
-        generated::{Instruction, Opcode, PseudoInstruction, PseudoOpcode},
-        oparg::{
-            BinaryOperator, BuildSliceArgCount, CommonConstant, ComparisonOperator,
-            ConvertValueOparg, IntrinsicFunction1, IntrinsicFunction2, Invert, Label, LoadAttr,
-            LoadSuperAttr, MakeFunctionFlags, NameIdx, OpArg, OpArgByte, OpArgType, RaiseKind,
-            SpecialMethod, StoreFastLoadFast, UnpackExArgs,
-        },
-    },
-    marshal::MarshalError,
-};
+use crate::bytecode::generated::{Instruction, Opcode, PseudoInstruction, PseudoOpcode};
 
 impl Instruction {
     const fn is_unconditional_jump(self) -> bool {
@@ -24,7 +10,7 @@ impl Instruction {
 
     const fn is_scope_exit(self) -> bool {
         matches!(
-            self.opcde(),
+            self.opcode(),
             Opcode::ReturnValue | Opcode::RaiseVarargs | Opcode::Reraise
         )
     }
@@ -70,28 +56,9 @@ impl From<PseudoInstruction> for AnyInstruction {
     }
 }
 
-impl TryFrom<u8> for AnyInstruction {
-    type Error = MarshalError;
-
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
-        Ok(Instruction::try_from(value)?.into())
-    }
-}
-
-impl TryFrom<u16> for AnyInstruction {
-    type Error = MarshalError;
-
-    fn try_from(value: u16) -> Result<Self, Self::Error> {
-        match u8::try_from(value) {
-            Ok(v) => v.try_into(),
-            Err(_) => Ok(PseudoInstruction::try_from(value)?.into()),
-        }
-    }
-}
-
 macro_rules! inst_either {
-    ($vis:vis $(const)? fn $name:ident ( &self $(, $arg:ident : $arg_ty:ty )* ) -> $ret:ty ) => {
-      $vis $(const)? fn $name(&self $(, $arg : $arg_ty )* ) -> $ret {
+    ($vis:vis $(const)? fn $name:ident ( self $(, $arg:ident : $arg_ty:ty )* ) -> $ret:ty ) => {
+      $vis $(const)? fn $name(self $(, $arg : $arg_ty )* ) -> $ret {
             match self {
                 Self::Real(instr) => instr.$name($($arg),*),
                 Self::Pseudo(instr) => instr.$name($($arg),*),
@@ -101,7 +68,7 @@ macro_rules! inst_either {
 }
 
 impl AnyInstruction {
-    inst_either!(pub const fn label_oparg(self) -> Option<Arg<Label>>);
+    inst_either!(pub const fn label_oparg(self) -> Option<crate::bytecode::oparg::Label>);
 
     inst_either!(pub const fn is_unconditional_jump(self) -> bool);
 
@@ -112,13 +79,13 @@ impl AnyInstruction {
     inst_either!(pub fn stack_effect_info(self) -> StackEffect);
 
     inst_either!(pub fn fmt_dis(
-        &self,
+        self,
         f: &mut fmt::Formatter<'_>,
         ctx: &impl InstrDisplayContext,
         expand_code_objects: bool,
         pad: usize,
         level: usize
-    ) -> fmt::Result);
+    ) -> core::fmt::Result);
 }
 
 impl AnyInstruction {

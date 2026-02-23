@@ -3,7 +3,7 @@ use bitflags::bitflags;
 use core::fmt;
 
 use crate::{
-    bytecode::{CodeUnit, instruction::Instruction},
+    bytecode::{CodeUnit, Opcode},
     marshal::MarshalError,
 };
 
@@ -38,6 +38,34 @@ impl From<OpArgByte> for u8 {
 impl fmt::Debug for OpArgByte {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)
+    }
+}
+
+#[derive(Default, Copy, Clone)]
+#[repr(transparent)]
+pub struct OpArgState {
+    state: u32,
+}
+
+impl OpArgState {
+    #[inline(always)]
+    pub fn get(&mut self, ins: CodeUnit) -> (Opcode, OpArg) {
+        let arg = self.extend(ins.arg);
+        if !matches!(ins.op, Opcode::ExtendedArg) {
+            self.reset();
+        }
+        (ins.op, arg)
+    }
+
+    #[inline(always)]
+    pub fn extend(&mut self, arg: OpArgByte) -> OpArg {
+        self.state = (self.state << 8) | u32::from(arg.0);
+        self.state.into()
+    }
+
+    #[inline(always)]
+    pub const fn reset(&mut self) {
+        self.state = 0
     }
 }
 
@@ -84,34 +112,6 @@ impl From<u32> for OpArg {
 impl From<OpArg> for u32 {
     fn from(value: OpArg) -> Self {
         value.0
-    }
-}
-
-#[derive(Default, Copy, Clone)]
-#[repr(transparent)]
-pub struct OpArgState {
-    state: u32,
-}
-
-impl OpArgState {
-    #[inline(always)]
-    pub fn get(&mut self, ins: CodeUnit) -> (Instruction, OpArg) {
-        let arg = self.extend(ins.arg);
-        if !matches!(ins.op, Instruction::ExtendedArg) {
-            self.reset();
-        }
-        (ins.op, arg)
-    }
-
-    #[inline(always)]
-    pub fn extend(&mut self, arg: OpArgByte) -> OpArg {
-        self.state = (self.state << 8) | u32::from(arg.0);
-        self.state.into()
-    }
-
-    #[inline(always)]
-    pub const fn reset(&mut self) {
-        self.state = 0
     }
 }
 
@@ -225,7 +225,7 @@ macro_rules! impl_oparg_enum {
 }
 
 oparg_enum!(
-    /// Oparg values for [`Instruction::ConvertValue`].
+    /// Oparg values for [`crate::bytecode::generated::Instruction::ConvertValue`].
     ///
     /// ## See also
     ///
@@ -473,9 +473,8 @@ oparg_enum!(
     /// # Examples
     ///
     /// ```rust
-    /// use rustpython_compiler_core::bytecode::{Arg, BinaryOperator, Instruction};
-    /// let (op, _) = Arg::new(BinaryOperator::Add);
-    /// let instruction = Instruction::BinaryOp { op };
+    /// use rustpython_compiler_core::bytecode::{ BinaryOperator, Instruction};
+    /// let instruction = Instruction::BinaryOp { op: BinaryOperator };
     /// ```
     ///
     /// See also:
