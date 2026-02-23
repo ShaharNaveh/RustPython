@@ -1570,7 +1570,7 @@ pub enum Instruction {
 
 impl Instruction {
     #[must_use]
-    fn display(&self, ctx: &impl InstrDisplayContext) -> impl fmt::Display {
+    pub fn display(&self, ctx: &impl InstrDisplayContext) -> impl fmt::Display {
         fmt::from_fn(move |f| self.fmt_dis(f, ctx, false, 0, 0))
     }
 
@@ -3033,7 +3033,7 @@ pub enum PseudoInstruction {
 
 impl PseudoInstruction {
     #[must_use]
-    fn display(&self, ctx: &impl InstrDisplayContext) -> impl fmt::Display {
+    pub fn display(&self, ctx: &impl InstrDisplayContext) -> impl fmt::Display {
         fmt::from_fn(move |f| self.fmt_dis(f, ctx, false, 0, 0))
     }
 

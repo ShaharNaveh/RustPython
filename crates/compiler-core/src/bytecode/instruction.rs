@@ -57,7 +57,8 @@ impl From<PseudoInstruction> for AnyInstruction {
 }
 
 macro_rules! inst_either {
-    ($vis:vis const fn $name:ident ( self $(, $arg:ident : $arg_ty:ty )* ) -> $ret:ty ) => {
+    // `const fn`
+    ($vis:vis const fn $name:ident ( &self $(, $arg:ident : $arg_ty:ty )* ) -> $ret:ty ) => {
       #[must_use]
       $vis const fn $name(self $(, $arg : $arg_ty )* ) -> $ret {
             match self {
@@ -67,7 +68,8 @@ macro_rules! inst_either {
         }
     };
 
-    ($vis:vis fn $name:ident ( self $(, $arg:ident : $arg_ty:ty )* ) -> $ret:ty ) => {
+    // `fn`
+    ($vis:vis fn $name:ident ( &self $(, $arg:ident : $arg_ty:ty )* ) -> $ret:ty ) => {
       #[must_use]
       $vis fn $name(self $(, $arg : $arg_ty )* ) -> $ret {
             match self {
@@ -79,49 +81,34 @@ macro_rules! inst_either {
 }
 
 impl AnyInstruction {
-    /*
-        #[must_use]
-        pub const fn label_oparg(self) -> Option<crate::bytecode::oparg::Label> {
-            match self {
-                Self::Real(instr) => instr.label_oparg(),
-                Self::Pseudo(instr) => instr.label_oparg(),
-            }
-        }
+    inst_either!(pub const fn label_oparg(&self) -> Option<crate::bytecode::oparg::Label>);
 
-        #[must_use]
-        pub const fn label_oparg(self) -> Option<crate::bytecode::oparg::Label> {
-            match self {
-                Self::Real(instr) => instr.label_oparg(),
-                Self::Pseudo(instr) => instr.label_oparg(),
-            }
-        }
+    inst_either!(pub const fn is_unconditional_jump(&self) -> bool);
 
-        #[must_use]
-        pub const fn label_oparg(self) -> Option<crate::bytecode::oparg::Label> {
-            match self {
-                Self::Real(instr) => instr.label_oparg(),
-                Self::Pseudo(instr) => instr.label_oparg(),
-            }
-        }
-    */
-    inst_either!(pub const fn label_oparg(self) -> Option<crate::bytecode::oparg::Label>);
+    inst_either!(pub const fn is_scope_exit(&self) -> bool);
 
-    inst_either!(pub const fn is_unconditional_jump(self) -> bool);
+    inst_either!(pub fn stack_effect(&self) -> i32);
 
-    inst_either!(pub const fn is_scope_exit(self) -> bool);
-
-    inst_either!(pub fn stack_effect(self) -> i32);
-
-    inst_either!(pub fn stack_effect_info(self) -> StackEffect);
+    inst_either!(pub fn stack_effect_info(&self) -> StackEffect);
 
     inst_either!(pub fn fmt_dis(
-        self,
+        &self,
         f: &mut core::fmt::Formatter<'_>,
         ctx: &impl crate::bytecode::InstrDisplayContext,
         expand_code_objects: bool,
         pad: usize,
         level: usize
     ) -> core::fmt::Result);
+
+    pub fn display(
+        &self,
+        ctx: &impl crate::bytecode::InstrDisplayContext,
+    ) -> impl core::fmt::Display {
+        match self {
+            Self::Real(instr) => instr.display(ctx),
+            Self::Pseudo(_) => unimplemented!(),
+        }
+    }
 }
 
 impl AnyInstruction {
