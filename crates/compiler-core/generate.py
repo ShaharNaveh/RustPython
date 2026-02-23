@@ -466,7 +466,7 @@ def main():
 
     instructions = []
     pseudo_instructions = []
-    for name, opts in conf.items():
+    for name, opts in conf["Instruction"].items():
         opcode = opts["opcode"]
         is_pseudo = opcode > 255
 
