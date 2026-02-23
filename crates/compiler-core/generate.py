@@ -398,8 +398,8 @@ class InstructionEnumBuilder:
                 oparg_expr += ".try_into()?"
 
             if oparg_type and instr.oparg_name:
-                arms += f"Self::{instr.name} {{ {instr.oparg_name}: {oparg_expr} }}"
-            elif instr.oparg_name:
+                arms += f"{{ {instr.oparg_name}: {oparg_expr} }}"
+            elif instr.oparg_type:
                 arms += f"({oparg_expr})"
 
             arms += ",\n"

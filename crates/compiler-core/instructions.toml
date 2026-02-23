@@ -21,6 +21,18 @@ infallible = false
 [Oparg.MakeFunctionFlags]
 infallible = false
 
+[Oparg.SpecialMethod]
+infallible = false
+
+[Oparg.CommonConstant]
+infallible = false
+
+[Oparg.Invert]
+infallible = false
+
+[Oparg.ComparisonOperator]
+infallible = false
+
 # Instructions
 
 [Instruction.Cache]

@@ -596,10 +596,10 @@ impl<C: Constant> CodeObject<C> {
     pub fn label_targets(&self) -> BTreeSet<Label> {
         let mut label_targets = BTreeSet::new();
         let mut arg_state = OpArgState::default();
-        for instruction in &*self.instructions {
-            let (instruction, arg) = arg_state.get(*instruction);
-            if let Some(l) = instruction.label_arg() {
-                label_targets.insert(l.get(arg));
+        for code_unit in &*self.instructions {
+            let instruction = arg_state.get(*code_unit);
+            if let Some(label) = instruction.label_oparg() {
+                label_targets.insert(label);
             }
         }
         label_targets
@@ -616,8 +616,8 @@ impl<C: Constant> CodeObject<C> {
         let offset_digits = (4).max(1 + self.instructions.len().ilog10() as usize);
         let mut last_line = OneIndexed::MAX;
         let mut arg_state = OpArgState::default();
-        for (offset, &instruction) in self.instructions.iter().enumerate() {
-            let (instruction, arg) = arg_state.get(instruction);
+        for (offset, &code_unit) in self.instructions.iter().enumerate() {
+            let instruction = arg_state.get(code_unit);
             // optional line number
             let line = self.locations[offset].0.line;
             if line != last_line {
@@ -647,7 +647,7 @@ impl<C: Constant> CodeObject<C> {
             write!(f, "{arrow} {offset:offset_digits$} ")?;
 
             // instruction
-            instruction.fmt_dis(arg, f, self, expand_code_objects, 21, level)?;
+            instruction.fmt_dis(f, self, expand_code_objects, 21, level)?;
             writeln!(f)?;
         }
         Ok(())
