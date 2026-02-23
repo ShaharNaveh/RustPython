@@ -1,375 +1,375 @@
-[Cache]
+[Instruction.Cache]
 opcode = 0
 cpython_name = "CACHE"
 
-[BinarySlice]
+[Instruction.BinarySlice]
 opcode = 1
 cpython_name = "BINARY_SLICE"
 
-[BuildTemplate]
+[Instruction.BuildTemplate]
 opcode = 2
 cpython_name = "BUILD_TEMPLATE"
 
-[BinaryOpInplaceAddUnicode]
+[Instruction.BinaryOpInplaceAddUnicode]
 opcode = 3
 cpython_name = "BINARY_OP_INPLACE_ADD_UNICODE"
 
-[CallFunctionEx]
+[Instruction.CallFunctionEx]
 opcode = 4
 cpython_name = "CALL_FUNCTION_EX"
 
-[CheckEgMatch]
+[Instruction.CheckEgMatch]
 opcode = 5
 cpython_name = "CHECK_EG_MATCH"
 
-[CheckExcMatch]
+[Instruction.CheckExcMatch]
 opcode = 6
 cpython_name = "CHECK_EXC_MATCH"
 
-[CleanupThrow]
+[Instruction.CleanupThrow]
 opcode = 7
 cpython_name = "CLEANUP_THROW"
 
-[DeleteSubscr]
+[Instruction.DeleteSubscr]
 opcode = 8
 cpython_name = "DELETE_SUBSCR"
 
-[EndFor]
+[Instruction.EndFor]
 opcode = 9
 cpython_name = "END_FOR"
 
-[EndSend]
+[Instruction.EndSend]
 opcode = 10
 cpython_name = "END_SEND"
 
-[ExitInitCheck]
+[Instruction.ExitInitCheck]
 opcode = 11
 cpython_name = "EXIT_INIT_CHECK"
 placeholder = true
 
-[FormatSimple]
+[Instruction.FormatSimple]
 opcode = 12
 cpython_name = "FORMAT_SIMPLE"
 
-[FormatWithSpec]
+[Instruction.FormatWithSpec]
 opcode = 13
 cpython_name = "FORMAT_WITH_SPEC"
 
-[GetAIter]
+[Instruction.GetAIter]
 opcode = 14
 cpython_name = "GET_AITER"
 
-[GetANext]
+[Instruction.GetANext]
 opcode = 15
 cpython_name = "GET_ANEXT"
 
-[GetIter]
+[Instruction.GetIter]
 opcode = 16
 cpython_name = "GET_ITER"
 
-[Reserved]
+[Instruction.Reserved]
 opcode = 17
 cpython_name = "RESERVED"
 
-[GetLen]
+[Instruction.GetLen]
 opcode = 18
 cpython_name = "GET_LEN"
 
-[GetYieldFromIter]
+[Instruction.GetYieldFromIter]
 opcode = 19
 cpython_name = "GET_YIELD_FROM_ITER"
 
-[InterpreterExit]
+[Instruction.InterpreterExit]
 opcode = 20
 cpython_name = "INTERPRETER_EXIT"
 placeholder = true
 
-[LoadBuildClass]
+[Instruction.LoadBuildClass]
 opcode = 21
 cpython_name = "LOAD_BUILD_CLASS"
 
-[LoadLocals]
+[Instruction.LoadLocals]
 opcode = 22
 cpython_name = "LOAD_LOCALS"
 
-[MakeFunction]
+[Instruction.MakeFunction]
 opcode = 23
 cpython_name = "MAKE_FUNCTION"
 
-[MatchKeys]
+[Instruction.MatchKeys]
 opcode = 24
 cpython_name = "MATCH_KEYS"
 
-[MatchMapping]
+[Instruction.MatchMapping]
 opcode = 25
 cpython_name = "MATCH_MAPPING"
 
-[MatchSequence]
+[Instruction.MatchSequence]
 opcode = 26
 cpython_name = "MATCH_SEQUENCE"
 
-[Nop]
+[Instruction.Nop]
 opcode = 27
 cpython_name = "NOP"
 
-[NotTaken]
+[Instruction.NotTaken]
 opcode = 28
 cpython_name = "NOT_TAKEN"
 
-[PopExcept]
+[Instruction.PopExcept]
 opcode = 29
 cpython_name = "POP_EXCEPT"
 
-[PopIter]
+[Instruction.PopIter]
 opcode = 30
 cpython_name = "POP_ITER"
 
-[PopTop]
+[Instruction.PopTop]
 opcode = 31
 cpython_name = "POP_TOP"
 
-[PushExcInfo]
+[Instruction.PushExcInfo]
 opcode = 32
 cpython_name = "PUSH_EXC_INFO"
 
-[PushNull]
+[Instruction.PushNull]
 opcode = 33
 cpython_name = "PUSH_NULL"
 
-[ReturnGenerator]
+[Instruction.ReturnGenerator]
 opcode = 34
 cpython_name = "RETURN_GENERATOR"
 
-[ReturnValue]
+[Instruction.ReturnValue]
 opcode = 35
 cpython_name = "RETURN_VALUE"
 stack_effect = { pushed = "0" } # TODO: Differs from CPython: `1`
 
-[SetupAnnotations]
+[Instruction.SetupAnnotations]
 opcode = 36
 cpython_name = "SETUP_ANNOTATIONS"
 
-[StoreSlice]
+[Instruction.StoreSlice]
 opcode = 37
 cpython_name = "STORE_SLICE"
 
-[StoreSubscr]
+[Instruction.StoreSubscr]
 opcode = 38
 cpython_name = "STORE_SUBSCR"
 
-[ToBool]
+[Instruction.ToBool]
 opcode = 39
 cpython_name = "TO_BOOL"
 
-[UnaryInvert]
+[Instruction.UnaryInvert]
 opcode = 40
 cpython_name = "UNARY_INVERT"
 
-[UnaryNegative]
+[Instruction.UnaryNegative]
 opcode = 41
 cpython_name = "UNARY_NEGATIVE"
 
-[UnaryNot]
+[Instruction.UnaryNot]
 opcode = 42
 cpython_name = "UNARY_NOT"
 
-[WithExceptStart]
+[Instruction.WithExceptStart]
 opcode = 43
 cpython_name = "WITH_EXCEPT_START"
 
-[BinaryOp]
+[Instruction.BinaryOp]
 opcode = 44
 cpython_name = "BINARY_OP"
 oparg = { name = "op", type = "oparg::BinaryOperator" }
 
-[BuildInterpolation]
+[Instruction.BuildInterpolation]
 opcode = 45
 cpython_name = "BUILD_INTERPOLATION"
 oparg = { name = "oparg", type = "u32" }
 
-[BuildList]
+[Instruction.BuildList]
 opcode = 46
 cpython_name = "BUILD_LIST"
 oparg = { name = "size", type = "u32" }
 
-[BuildMap]
+[Instruction.BuildMap]
 opcode = 47
 cpython_name = "BUILD_MAP"
 oparg = { name = "size", type = "u32" }
 
-[BuildSet]
+[Instruction.BuildSet]
 opcode = 48
 cpython_name = "BUILD_SET"
 oparg = { name = "size", type = "u32" }
 
-[BuildSlice]
+[Instruction.BuildSlice]
 opcode = 49
 cpython_name = "BUILD_SLICE"
 oparg = { name = "argc", type = "oparg::BuildSliceArgCount" }
 fmt_dis = "debug"
 
-[BuildString]
+[Instruction.BuildString]
 opcode = 50
 cpython_name = "BUILD_STRING"
 oparg = { name = "size", type = "u32" }
 
-[BuildTuple]
+[Instruction.BuildTuple]
 opcode = 51
 cpython_name = "BUILD_TUPLE"
 oparg = { name = "size", type = "u32" }
 
-[Call]
+[Instruction.Call]
 opcode = 52
 cpython_name = "CALL"
 oparg = { name = "nargs", type = "u32" }
 
-[CallIntrinsic1]
+[Instruction.CallIntrinsic1]
 opcode = 53
 cpython_name = "CALL_INTRINSIC_1"
 oparg = { name = "func", type = "oparg::IntrinsicFunction1" }
 fmt_dis = "debug"
 
-[CallIntrinsic2]
+[Instruction.CallIntrinsic2]
 opcode = 54
 cpython_name = "CALL_INTRINSIC_2"
 oparg = { name = "func", type = "oparg::IntrinsicFunction2" }
 fmt_dis = "debug"
 
-[CallKw]
+[Instruction.CallKw]
 opcode = 55
 cpython_name = "CALL_KW"
 oparg = { name = "nargs", type = "u32" }
 
-[CompareOp]
+[Instruction.CompareOp]
 opcode = 56
 cpython_name = "COMPARE_OP"
 oparg = { name = "op", type = "oparg::ComparisonOperator" }
 fmt_dis = "debug"
 
-[ContainsOp]
+[Instruction.ContainsOp]
 opcode = 57
 cpython_name = "CONTAINS_OP"
 oparg = { type = "oparg::Invert" }
 fmt_dis = "debug"
 
-[ConvertValue]
+[Instruction.ConvertValue]
 opcode = 58
 cpython_name = "CONVERT_VALUE"
 oparg = { name = "oparg", type = "oparg::ConvertValueOparg" }
 
-[Copy]
+[Instruction.Copy]
 opcode = 59
 cpython_name = "COPY"
 oparg = { name = "index", type = "u32" }
 
-[CopyFreeVars]
+[Instruction.CopyFreeVars]
 opcode = 60
 cpython_name = "COPY_FREE_VARS"
 oparg = { name = "count", type = "u32" }
 
-[DeleteAttr]
+[Instruction.DeleteAttr]
 opcode = 61
 cpython_name = "DELETE_ATTR"
 oparg = { name = "idx", type = "oparg::NameIdx" }
 fmt_dis = "name"
 
-[DeleteDeref]
+[Instruction.DeleteDeref]
 opcode = 62
 cpython_name = "DELETE_DEREF"
 oparg = { type = "oparg::NameIdx" }
 fmt_dis = "cell_name"
 
-[DeleteFast]
+[Instruction.DeleteFast]
 opcode = 63
 cpython_name = "DELETE_FAST"
 oparg = { type = "oparg::NameIdx" }
 fmt_dis = "varname"
 
-[DeleteGlobal]
+[Instruction.DeleteGlobal]
 opcode = 64
 cpython_name = "DELETE_GLOBAL"
 oparg = { type = "oparg::NameIdx" }
 fmt_dis = "name"
 
-[DeleteName]
+[Instruction.DeleteName]
 opcode = 65
 cpython_name = "DELETE_NAME"
 oparg = { type = "oparg::NameIdx" }
 fmt_dis = "name"
 
-[DictMerge]
+[Instruction.DictMerge]
 opcode = 66
 cpython_name = "DICT_MERGE"
 oparg = { name = "index", type = "u32" }
 
-[DictUpdate]
+[Instruction.DictUpdate]
 opcode = 67
 cpython_name = "DICT_UPDATE"
 oparg = { name = "index", type = "u32" }
 
-[EndAsyncFor]
+[Instruction.EndAsyncFor]
 opcode = 68
 cpython_name = "END_ASYNC_FOR"
 
-[ExtendedArg]
+[Instruction.ExtendedArg]
 opcode = 69
 cpython_name = "EXTENDED_ARG"
 
-[ForIter]
+[Instruction.ForIter]
 opcode = 70
 cpython_name = "FOR_ITER"
 oparg = { name = "target", type = "oparg::Label" }
 
-[GetAwaitable]
+[Instruction.GetAwaitable]
 opcode = 71
 cpython_name = "GET_AWAITABLE"
 oparg = { name = "arg", type = "u32" }
 
-[ImportFrom]
+[Instruction.ImportFrom]
 opcode = 72
 cpython_name = "IMPORT_FROM"
 oparg = { name = "idx", type = "oparg::NameIdx" }
 fmt_dis = "name"
 
-[ImportName]
+[Instruction.ImportName]
 opcode = 73
 cpython_name = "IMPORT_NAME"
 oparg = { name = "idx", type = "oparg::NameIdx" }
 fmt_dis = "name"
 
-[IsOp]
+[Instruction.IsOp]
 opcode = 74
 cpython_name = "IS_OP"
 oparg = { type = "oparg::Invert" }
 fmt_dis = "debug"
 
-[JumpBackward]
+[Instruction.JumpBackward]
 opcode = 75
 cpython_name = "JUMP_BACKWARD"
 oparg = { name = "target", type = "oparg::Label" }
 
-[JumpBackwardNoInterrupt]
+[Instruction.JumpBackwardNoInterrupt]
 opcode = 76
 cpython_name = "JUMP_BACKWARD_NO_INTERRUPT"
 placeholder = true
 oparg = { name = "target", type = "oparg::Label" }
 
-[JumpForward]
+[Instruction.JumpForward]
 opcode = 77
 cpython_name = "JUMP_FORWARD"
 oparg = { name = "target", type = "oparg::Label" }
 
-[ListAppend]
+[Instruction.ListAppend]
 opcode = 78
 cpython_name = "LIST_APPEND"
 oparg = { name = "i", type = "u32" }
 
-[ListExtend]
+[Instruction.ListExtend]
 opcode = 79
 cpython_name = "LIST_EXTEND"
 oparg = { name = "i", type = "u32" }
 
-[LoadAttr]
+[Instruction.LoadAttr]
 opcode = 80
 cpython_name = "LOAD_ATTR"
 oparg = { name = "idx", type = "oparg::LoadAttr" }
@@ -383,12 +383,12 @@ if idx.is_method() {
 }
 """
 
-[LoadCommonConstant]
+[Instruction.LoadCommonConstant]
 opcode = 81
 cpython_name = "LOAD_COMMON_CONSTANT"
 oparg = { name = "idx", type = "oparg::CommonConstant" }
 
-[LoadConst]
+[Instruction.LoadConst]
 opcode = 82
 cpython_name = "LOAD_CONST"
 oparg = { name = "idx", type = "u32" }
@@ -408,31 +408,31 @@ match value.borrow_constant() {
 }
 """
 
-[LoadDeref]
+[Instruction.LoadDeref]
 opcode = 83
 cpython_name = "LOAD_DEREF"
 oparg = { type = "oparg::NameIdx" }
 fmt_dis = "cell_name"
 
-[LoadFast]
+[Instruction.LoadFast]
 opcode = 84
 cpython_name = "LOAD_FAST"
 oparg = { type = "oparg::NameIdx" }
 fmt_dis = "varname"
 
-[LoadFastAndClear]
+[Instruction.LoadFastAndClear]
 opcode = 85
 cpython_name = "LOAD_FAST_AND_CLEAR"
 oparg = { type = "oparg::NameIdx" }
 fmt_dis = "varname"
 
-[LoadFastBorrow]
+[Instruction.LoadFastBorrow]
 opcode = 86
 cpython_name = "LOAD_FAST_BORROW"
 oparg = { type = "oparg::NameIdx" }
 fmt_dis = "varname"
 
-[LoadFastBorrowLoadFastBorrow]
+[Instruction.LoadFastBorrowLoadFastBorrow]
 opcode = 87
 cpython_name = "LOAD_FAST_BORROW_LOAD_FAST_BORROW"
 oparg = { name = "arg", type = "u32" }
@@ -444,13 +444,13 @@ let name2 = ctx.get_varname(idx2 as usize);
 write!(f, "{:pad$}({}, {})", opcode, name1, name2)
 """
 
-[LoadFastCheck]
+[Instruction.LoadFastCheck]
 opcode = 88
 cpython_name = "LOAD_FAST_CHECK"
 oparg = { type = "oparg::NameIdx" }
 fmt_dis = "varname"
 
-[LoadFastLoadFast]
+[Instruction.LoadFastLoadFast]
 opcode = 89
 cpython_name = "LOAD_FAST_LOAD_FAST"
 oparg = { name = "arg", type = "u32" }
@@ -462,42 +462,42 @@ let name2 = ctx.get_varname(idx2 as usize);
 write!(f, "{:pad$}({}, {})", opcode, name1, name2)
 """
 
-[LoadFromDictOrDeref]
+[Instruction.LoadFromDictOrDeref]
 opcode = 90
 cpython_name = "LOAD_FROM_DICT_OR_DEREF"
 oparg = { type = "oparg::NameIdx" }
 fmt_dis = "cell_name"
 
-[LoadFromDictOrGlobals]
+[Instruction.LoadFromDictOrGlobals]
 opcode = 91
 cpython_name = "LOAD_FROM_DICT_OR_GLOBALS"
 oparg = { type = "oparg::NameIdx" }
 fmt_dis = "name"
 
-[LoadGlobal]
+[Instruction.LoadGlobal]
 opcode = 92
 cpython_name = "LOAD_GLOBAL"
 oparg = { type = "oparg::NameIdx" }
 stack_effect = { pushed = "1" } # TODO: Differs from CPython `1 + (oparg & 1)`
 fmt_dis = "name"
 
-[LoadName]
+[Instruction.LoadName]
 opcode = 93
 cpython_name = "LOAD_NAME"
 oparg = { type = "oparg::NameIdx" }
 fmt_dis = "name"
 
-[LoadSmallInt]
+[Instruction.LoadSmallInt]
 opcode = 94
 cpython_name = "LOAD_SMALL_INT"
 oparg = { name = "idx", type = "u32" }
 
-[LoadSpecial]
+[Instruction.LoadSpecial]
 opcode = 95
 cpython_name = "LOAD_SPECIAL"
 oparg = { name = "method", type = "oparg::SpecialMethod" }
 
-[LoadSuperAttr]
+[Instruction.LoadSuperAttr]
 opcode = 96
 cpython_name = "LOAD_SUPER_ATTR"
 oparg = { name = "arg", type = "oparg::LoadSuperAttr" }
@@ -513,47 +513,47 @@ write!(
 )
 """
 
-[MakeCell]
+[Instruction.MakeCell]
 opcode = 97
 cpython_name = "MAKE_CELL"
 oparg = { type = "oparg::NameIdx" }
 
-[MapAdd]
+[Instruction.MapAdd]
 opcode = 98
 cpython_name = "MAP_ADD"
 oparg = { name = "i", type = "u32" }
 
-[MatchClass]
+[Instruction.MatchClass]
 opcode = 99
 cpython_name = "MATCH_CLASS"
 oparg = { type = "u32" }
 
-[PopJumpIfFalse]
+[Instruction.PopJumpIfFalse]
 opcode = 100
 cpython_name = "POP_JUMP_IF_FALSE"
 oparg = { name = "target", type = "oparg::Label" }
 
-[PopJumpIfNone]
+[Instruction.PopJumpIfNone]
 opcode = 101
 cpython_name = "POP_JUMP_IF_NONE"
 oparg = { name = "target", type = "oparg::Label" }
 
-[PopJumpIfNotNone]
+[Instruction.PopJumpIfNotNone]
 opcode = 102
 cpython_name = "POP_JUMP_IF_NOT_NONE"
 oparg = { name = "target", type = "oparg::Label" }
 
-[PopJumpIfTrue]
+[Instruction.PopJumpIfTrue]
 opcode = 103
 cpython_name = "POP_JUMP_IF_TRUE"
 oparg = { name = "target", type = "oparg::Label" }
 
-[RaiseVarargs]
+[Instruction.RaiseVarargs]
 opcode = 104
 cpython_name = "RAISE_VARARGS"
 oparg = { name = "kind", type = "oparg::RaiseKind" }
 fmt_dis = "debug"
-[RaiseVarargs.stack_effect]
+[Instruction.RaiseVarargs.stack_effect]
 # TODO: Differs from CPython: `oparg`
 popped = """
 match kind {
@@ -564,52 +564,52 @@ match kind {
 }
 """
 
-[Reraise]
+[Instruction.Reraise]
 opcode = 105
 cpython_name = "RERAISE"
 oparg = { name = "depth", type = "u32" }
 stack_effect = { pushed = "1 + oparg" } # TODO: Differs from CPython: `oparg`
 
-[Send]
+[Instruction.Send]
 opcode = 106
 cpython_name = "SEND"
 oparg = { name = "target", type = "oparg::Label" }
 
-[SetAdd]
+[Instruction.SetAdd]
 opcode = 107
 cpython_name = "SET_ADD"
 oparg = { name = "i", type = "u32" }
 
-[SetFunctionAttribute]
+[Instruction.SetFunctionAttribute]
 opcode = 108
 cpython_name = "SET_FUNCTION_ATTRIBUTE"
 oparg = { name = "attr", type = "oparg::MakeFunctionFlags" }
 fmt_dis = "debug"
 
-[SetUpdate]
+[Instruction.SetUpdate]
 opcode = 109
 cpython_name = "SET_UPDATE"
 oparg = { name = "i", type = "u32" }
 
-[StoreAttr]
+[Instruction.StoreAttr]
 opcode = 110
 cpython_name = "STORE_ATTR"
 oparg = { name = "idx", type = "oparg::NameIdx" }
 fmt_dis = "name"
 
-[StoreDeref]
+[Instruction.StoreDeref]
 opcode = 111
 cpython_name = "STORE_DEREF"
 oparg = { type = "oparg::NameIdx" }
 fmt_dis = "cell_name"
 
-[StoreFast]
+[Instruction.StoreFast]
 opcode = 112
 cpython_name = "STORE_FAST"
 oparg = { type = "oparg::NameIdx" }
 fmt_dis = "varname"
 
-[StoreFastLoadFast]
+[Instruction.StoreFastLoadFast]
 opcode = 113
 cpython_name = "STORE_FAST_LOAD_FAST"
 oparg = { name = "var_nums", type = "oparg::StoreFastLoadFast" }
@@ -617,623 +617,624 @@ fmt_dis = """
 write!(f, "{:pad$} ({}, {})", opcode, var_nums.store_idx(), var_nums.load_idx())
 """
 
-[StoreFastStoreFast]
+[Instruction.StoreFastStoreFast]
 opcode = 114
 cpython_name = "STORE_FAST_STORE_FAST"
 oparg = { name = "arg", type = "u32" }
 
-[StoreGlobal]
+[Instruction.StoreGlobal]
 opcode = 115
 cpython_name = "STORE_GLOBAL"
 oparg = { type = "oparg::NameIdx" }
 fmt_dis = "name"
 
-[StoreName]
+[Instruction.StoreName]
 opcode = 116
 cpython_name = "STORE_NAME"
 oparg = { type = "oparg::NameIdx" }
 fmt_dis = "name"
 
-[Swap]
+[Instruction.Swap]
 opcode = 117
 cpython_name = "SWAP"
 oparg = { name = "index", type = "u32" }
 
-[UnpackEx]
+[Instruction.UnpackEx]
 opcode = 118
 cpython_name = "UNPACK_EX"
 oparg = { name = "args", type = "oparg::UnpackExArgs" }
 
-[UnpackSequence]
+[Instruction.UnpackSequence]
 opcode = 119
 cpython_name = "UNPACK_SEQUENCE"
 oparg = { name = "size", type = "u32" }
 
-[YieldValue]
+[Instruction.YieldValue]
 opcode = 120
 cpython_name = "YIELD_VALUE"
 oparg = { name = "arg", type = "u32" }
 
-[Resume]
+[Instruction.Resume]
 opcode = 128
 cpython_name = "RESUME"
 oparg = { name = "arg", type = "u32" }
 
-[BinaryOpAddFloat]
+[Instruction.BinaryOpAddFloat]
 opcode = 129
 cpython_name = "BINARY_OP_ADD_FLOAT"
 placeholder = true
 
-[BinaryOpAddInt]
+[Instruction.BinaryOpAddInt]
 opcode = 130
 cpython_name = "BINARY_OP_ADD_INT"
 placeholder = true
 
-[BinaryOpAddUnicode]
+[Instruction.BinaryOpAddUnicode]
 opcode = 131
 cpython_name = "BINARY_OP_ADD_UNICODE"
 placeholder = true
 
-[BinaryOpExtend]
+[Instruction.BinaryOpExtend]
 opcode = 132
 cpython_name = "BINARY_OP_EXTEND"
 placeholder = true
 
-[BinaryOpMultiplyFloat]
+[Instruction.BinaryOpMultiplyFloat]
 opcode = 133
 cpython_name = "BINARY_OP_MULTIPLY_FLOAT"
 placeholder = true
 
-[BinaryOpMultiplyInt]
+[Instruction.BinaryOpMultiplyInt]
 opcode = 134
 cpython_name = "BINARY_OP_MULTIPLY_INT"
 placeholder = true
 
-[BinaryOpSubscrDict]
+[Instruction.BinaryOpSubscrDict]
 opcode = 135
 cpython_name = "BINARY_OP_SUBSCR_DICT"
 placeholder = true
 
-[BinaryOpSubscrGetitem]
+[Instruction.BinaryOpSubscrGetitem]
 opcode = 136
 cpython_name = "BINARY_OP_SUBSCR_GETITEM"
 placeholder = true
 
-[BinaryOpSubscrListInt]
+[Instruction.BinaryOpSubscrListInt]
 opcode = 137
 cpython_name = "BINARY_OP_SUBSCR_LIST_INT"
 placeholder = true
 
-[BinaryOpSubscrListSlice]
+[Instruction.BinaryOpSubscrListSlice]
 opcode = 138
 cpython_name = "BINARY_OP_SUBSCR_LIST_SLICE"
 placeholder = true
 
-[BinaryOpSubscrStrInt]
+[Instruction.BinaryOpSubscrStrInt]
 opcode = 139
 cpython_name = "BINARY_OP_SUBSCR_STR_INT"
 placeholder = true
 
-[BinaryOpSubscrTupleInt]
+[Instruction.BinaryOpSubscrTupleInt]
 opcode = 140
 cpython_name = "BINARY_OP_SUBSCR_TUPLE_INT"
 placeholder = true
 
-[BinaryOpSubtractFloat]
+[Instruction.BinaryOpSubtractFloat]
 opcode = 141
 cpython_name = "BINARY_OP_SUBTRACT_FLOAT"
 placeholder = true
 
-[BinaryOpSubtractInt]
+[Instruction.BinaryOpSubtractInt]
 opcode = 142
 cpython_name = "BINARY_OP_SUBTRACT_INT"
 placeholder = true
 
-[CallAllocAndEnterInit]
+[Instruction.CallAllocAndEnterInit]
 opcode = 143
 cpython_name = "CALL_ALLOC_AND_ENTER_INIT"
 placeholder = true
 
-[CallBoundMethodExactArgs]
+[Instruction.CallBoundMethodExactArgs]
 opcode = 144
 cpython_name = "CALL_BOUND_METHOD_EXACT_ARGS"
 placeholder = true
 
-[CallBoundMethodGeneral]
+[Instruction.CallBoundMethodGeneral]
 opcode = 145
 cpython_name = "CALL_BOUND_METHOD_GENERAL"
 placeholder = true
 
-[CallBuiltinClass]
+[Instruction.CallBuiltinClass]
 opcode = 146
 cpython_name = "CALL_BUILTIN_CLASS"
 placeholder = true
 
-[CallBuiltinFast]
+[Instruction.CallBuiltinFast]
 opcode = 147
 cpython_name = "CALL_BUILTIN_FAST"
 placeholder = true
 
-[CallBuiltinFastWithKeywords]
+[Instruction.CallBuiltinFastWithKeywords]
 opcode = 148
 cpython_name = "CALL_BUILTIN_FAST_WITH_KEYWORDS"
 placeholder = true
 
-[CallBuiltinO]
+[Instruction.CallBuiltinO]
 opcode = 149
 cpython_name = "CALL_BUILTIN_O"
 placeholder = true
 
-[CallIsinstance]
+[Instruction.CallIsinstance]
 opcode = 150
 cpython_name = "CALL_ISINSTANCE"
 placeholder = true
 
-[CallKwBoundMethod]
+[Instruction.CallKwBoundMethod]
 opcode = 151
 cpython_name = "CALL_KW_BOUND_METHOD"
 placeholder = true
 
-[CallKwNonPy]
+[Instruction.CallKwNonPy]
 opcode = 152
 cpython_name = "CALL_KW_NON_PY"
 placeholder = true
 
-[CallKwPy]
+[Instruction.CallKwPy]
 opcode = 153
 cpython_name = "CALL_KW_PY"
 placeholder = true
 
-[CallLen]
+[Instruction.CallLen]
 opcode = 154
 cpython_name = "CALL_LEN"
 placeholder = true
 
-[CallListAppend]
+[Instruction.CallListAppend]
 opcode = 155
 cpython_name = "CALL_LIST_APPEND"
 placeholder = true
 
-[CallMethodDescriptorFast]
+[Instruction.CallMethodDescriptorFast]
 opcode = 156
 cpython_name = "CALL_METHOD_DESCRIPTOR_FAST"
 placeholder = true
 
-[CallMethodDescriptorFastWithKeywords]
+[Instruction.CallMethodDescriptorFastWithKeywords]
 opcode = 157
 cpython_name = "CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS"
 placeholder = true
 
-[CallMethodDescriptorNoargs]
+[Instruction.CallMethodDescriptorNoargs]
 opcode = 158
 cpython_name = "CALL_METHOD_DESCRIPTOR_NOARGS"
 placeholder = true
 
-[CallMethodDescriptorO]
+[Instruction.CallMethodDescriptorO]
 opcode = 159
 cpython_name = "CALL_METHOD_DESCRIPTOR_O"
 placeholder = true
 
-[CallNonPyGeneral]
+[Instruction.CallNonPyGeneral]
 opcode = 160
 cpython_name = "CALL_NON_PY_GENERAL"
 placeholder = true
 
-[CallPyExactArgs]
+[Instruction.CallPyExactArgs]
 opcode = 161
 cpython_name = "CALL_PY_EXACT_ARGS"
 placeholder = true
 
-[CallPyGeneral]
+[Instruction.CallPyGeneral]
 opcode = 162
 cpython_name = "CALL_PY_GENERAL"
 placeholder = true
 
-[CallStr1]
+[Instruction.CallStr1]
 opcode = 163
 cpython_name = "CALL_STR_1"
 placeholder = true
 
-[CallTuple1]
+[Instruction.CallTuple1]
 opcode = 164
 cpython_name = "CALL_TUPLE_1"
 placeholder = true
 
-[CallType1]
+[Instruction.CallType1]
 opcode = 165
 cpython_name = "CALL_TYPE_1"
 placeholder = true
 
-[CompareOpFloat]
+[Instruction.CompareOpFloat]
 opcode = 166
 cpython_name = "COMPARE_OP_FLOAT"
 placeholder = true
 
-[CompareOpInt]
+[Instruction.CompareOpInt]
 opcode = 167
 cpython_name = "COMPARE_OP_INT"
 placeholder = true
 
-[CompareOpStr]
+[Instruction.CompareOpStr]
 opcode = 168
 cpython_name = "COMPARE_OP_STR"
 placeholder = true
 
-[ContainsOpDict]
+[Instruction.ContainsOpDict]
 opcode = 169
 cpython_name = "CONTAINS_OP_DICT"
 placeholder = true
 
-[ContainsOpSet]
+[Instruction.ContainsOpSet]
 opcode = 170
 cpython_name = "CONTAINS_OP_SET"
 placeholder = true
 
-[ForIterGen]
+[Instruction.ForIterGen]
 opcode = 171
 cpython_name = "FOR_ITER_GEN"
 placeholder = true
 
-[ForIterList]
+[Instruction.ForIterList]
 opcode = 172
 cpython_name = "FOR_ITER_LIST"
 placeholder = true
 
-[ForIterRange]
+[Instruction.ForIterRange]
 opcode = 173
 cpython_name = "FOR_ITER_RANGE"
 placeholder = true
 
-[ForIterTuple]
+[Instruction.ForIterTuple]
 opcode = 174
 cpython_name = "FOR_ITER_TUPLE"
 placeholder = true
 
-[JumpBackwardJit]
+[Instruction.JumpBackwardJit]
 opcode = 175
 cpython_name = "JUMP_BACKWARD_JIT"
 placeholder = true
 
-[JumpBackwardNoJit]
+[Instruction.JumpBackwardNoJit]
 opcode = 176
 cpython_name = "JUMP_BACKWARD_NO_JIT"
 placeholder = true
 
-[LoadAttrClass]
+[Instruction.LoadAttrClass]
 opcode = 177
 cpython_name = "LOAD_ATTR_CLASS"
 placeholder = true
 
-[LoadAttrClassWithMetaclassCheck]
+[Instruction.LoadAttrClassWithMetaclassCheck]
 opcode = 178
 cpython_name = "LOAD_ATTR_CLASS_WITH_METACLASS_CHECK"
 placeholder = true
 
-[LoadAttrGetattributeOverridden]
+[Instruction.LoadAttrGetattributeOverridden]
 opcode = 179
 cpython_name = "LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN"
 placeholder = true
 
-[LoadAttrInstanceValue]
+[Instruction.LoadAttrInstanceValue]
 opcode = 180
 cpython_name = "LOAD_ATTR_INSTANCE_VALUE"
 placeholder = true
 
-[LoadAttrMethodLazyDict]
+[Instruction.LoadAttrMethodLazyDict]
 opcode = 181
 cpython_name = "LOAD_ATTR_METHOD_LAZY_DICT"
 placeholder = true
 
-[LoadAttrMethodNoDict]
+[Instruction.LoadAttrMethodNoDict]
 opcode = 182
 cpython_name = "LOAD_ATTR_METHOD_NO_DICT"
 placeholder = true
 
-[LoadAttrMethodWithValues]
+[Instruction.LoadAttrMethodWithValues]
 opcode = 183
 cpython_name = "LOAD_ATTR_METHOD_WITH_VALUES"
 placeholder = true
 
-[LoadAttrModule]
+[Instruction.LoadAttrModule]
 opcode = 184
 cpython_name = "LOAD_ATTR_MODULE"
 placeholder = true
 
-[LoadAttrNondescriptorNoDict]
+[Instruction.LoadAttrNondescriptorNoDict]
 opcode = 185
 cpython_name = "LOAD_ATTR_NONDESCRIPTOR_NO_DICT"
 placeholder = true
 
-[LoadAttrNondescriptorWithValues]
+[Instruction.LoadAttrNondescriptorWithValues]
 opcode = 186
 cpython_name = "LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES"
 placeholder = true
 
-[LoadAttrProperty]
+[Instruction.LoadAttrProperty]
 opcode = 187
 cpython_name = "LOAD_ATTR_PROPERTY"
 placeholder = true
 
-[LoadAttrSlot]
+[Instruction.LoadAttrSlot]
 opcode = 188
 cpython_name = "LOAD_ATTR_SLOT"
 placeholder = true
 
-[LoadAttrWithHint]
+[Instruction.LoadAttrWithHint]
 opcode = 189
 cpython_name = "LOAD_ATTR_WITH_HINT"
 placeholder = true
 
-[LoadConstImmortal]
+[Instruction.LoadConstImmortal]
 opcode = 190
 cpython_name = "LOAD_CONST_IMMORTAL"
 placeholder = true
 
-[LoadConstMortal]
+[Instruction.LoadConstMortal]
 opcode = 191
 cpython_name = "LOAD_CONST_MORTAL"
 placeholder = true
 
-[LoadGlobalBuiltin]
+[Instruction.LoadGlobalBuiltin]
 opcode = 192
 cpython_name = "LOAD_GLOBAL_BUILTIN"
 placeholder = true
 
-[LoadGlobalModule]
+[Instruction.LoadGlobalModule]
 opcode = 193
 cpython_name = "LOAD_GLOBAL_MODULE"
 placeholder = true
 
-[LoadSuperAttrAttr]
+[Instruction.LoadSuperAttrAttr]
 opcode = 194
 cpython_name = "LOAD_SUPER_ATTR_ATTR"
 placeholder = true
 
-[LoadSuperAttrMethod]
+[Instruction.LoadSuperAttrMethod]
 opcode = 195
 cpython_name = "LOAD_SUPER_ATTR_METHOD"
 placeholder = true
 
-[ResumeCheck]
+[Instruction.ResumeCheck]
 opcode = 196
 cpython_name = "RESUME_CHECK"
 placeholder = true
 
-[SendGen]
+[Instruction.SendGen]
 opcode = 197
 cpython_name = "SEND_GEN"
 placeholder = true
 
-[StoreAttrInstanceValue]
+[Instruction.StoreAttrInstanceValue]
 opcode = 198
 cpython_name = "STORE_ATTR_INSTANCE_VALUE"
 placeholder = true
 
-[StoreAttrSlot]
+[Instruction.StoreAttrSlot]
 opcode = 199
 cpython_name = "STORE_ATTR_SLOT"
 placeholder = true
 
-[StoreAttrWithHint]
+[Instruction.StoreAttrWithHint]
 opcode = 200
 cpython_name = "STORE_ATTR_WITH_HINT"
 placeholder = true
 
-[StoreSubscrDict]
+[Instruction.StoreSubscrDict]
 opcode = 201
 cpython_name = "STORE_SUBSCR_DICT"
 placeholder = true
 
-[StoreSubscrListInt]
+[Instruction.StoreSubscrListInt]
 opcode = 202
 cpython_name = "STORE_SUBSCR_LIST_INT"
 placeholder = true
 
-[ToBoolAlwaysTrue]
+[Instruction.ToBoolAlwaysTrue]
 opcode = 203
 cpython_name = "TO_BOOL_ALWAYS_TRUE"
 placeholder = true
 
-[ToBoolBool]
+[Instruction.ToBoolBool]
 opcode = 204
 cpython_name = "TO_BOOL_BOOL"
 placeholder = true
 
-[ToBoolInt]
+[Instruction.ToBoolInt]
 opcode = 205
 cpython_name = "TO_BOOL_INT"
 placeholder = true
 
-[ToBoolList]
+[Instruction.ToBoolList]
 opcode = 206
 cpython_name = "TO_BOOL_LIST"
 placeholder = true
 
-[ToBoolNone]
+[Instruction.ToBoolNone]
 opcode = 207
 cpython_name = "TO_BOOL_NONE"
 placeholder = true
 
-[ToBoolStr]
+[Instruction.ToBoolStr]
 opcode = 208
 cpython_name = "TO_BOOL_STR"
 placeholder = true
 
-[UnpackSequenceList]
+[Instruction.UnpackSequenceList]
 opcode = 209
 cpython_name = "UNPACK_SEQUENCE_LIST"
 placeholder = true
 
-[UnpackSequenceTuple]
+[Instruction.UnpackSequenceTuple]
 opcode = 210
 cpython_name = "UNPACK_SEQUENCE_TUPLE"
 placeholder = true
 
-[UnpackSequenceTwoTuple]
+[Instruction.UnpackSequenceTwoTuple]
 opcode = 211
 cpython_name = "UNPACK_SEQUENCE_TWO_TUPLE"
 placeholder = true
 
-[InstrumentedEndFor]
+[Instruction.InstrumentedEndFor]
 opcode = 234
 cpython_name = "INSTRUMENTED_END_FOR"
 placeholder = true
 
-[InstrumentedPopIter]
+[Instruction.InstrumentedPopIter]
 opcode = 235
 cpython_name = "INSTRUMENTED_POP_ITER"
 placeholder = true
 
-[InstrumentedEndSend]
+[Instruction.InstrumentedEndSend]
 opcode = 236
 cpython_name = "INSTRUMENTED_END_SEND"
 placeholder = true
 
-[InstrumentedForIter]
+[Instruction.InstrumentedForIter]
 opcode = 237
 cpython_name = "INSTRUMENTED_FOR_ITER"
 placeholder = true
 
-[InstrumentedInstruction]
+[Instruction.InstrumentedInstruction]
 opcode = 238
 cpython_name = "INSTRUMENTED_INSTRUCTION"
 placeholder = true
 
-[InstrumentedJumpForward]
+[Instruction.InstrumentedJumpForward]
 opcode = 239
 cpython_name = "INSTRUMENTED_JUMP_FORWARD"
 placeholder = true
 
-[InstrumentedNotTaken]
+[Instruction.InstrumentedNotTaken]
 opcode = 240
 cpython_name = "INSTRUMENTED_NOT_TAKEN"
 placeholder = true
 
-[InstrumentedPopJumpIfTrue]
+[Instruction.InstrumentedPopJumpIfTrue]
 opcode = 241
 cpython_name = "INSTRUMENTED_POP_JUMP_IF_TRUE"
 placeholder = true
 
-[InstrumentedPopJumpIfFalse]
+[Instruction.InstrumentedPopJumpIfFalse]
 opcode = 242
 cpython_name = "INSTRUMENTED_POP_JUMP_IF_FALSE"
 placeholder = true
 
-[InstrumentedPopJumpIfNone]
+[Instruction.InstrumentedPopJumpIfNone]
 opcode = 243
 cpython_name = "INSTRUMENTED_POP_JUMP_IF_NONE"
 placeholder = true
 
-[InstrumentedPopJumpIfNotNone]
+[Instruction.InstrumentedPopJumpIfNotNone]
 opcode = 244
 cpython_name = "INSTRUMENTED_POP_JUMP_IF_NOT_NONE"
 placeholder = true
 
-[InstrumentedResume]
+[Instruction.InstrumentedResume]
 opcode = 245
 cpython_name = "INSTRUMENTED_RESUME"
 placeholder = true
 
-[InstrumentedReturnValue]
+[Instruction.InstrumentedReturnValue]
 opcode = 246
 cpython_name = "INSTRUMENTED_RETURN_VALUE"
 placeholder = true
 
-[InstrumentedYieldValue]
+[Instruction.InstrumentedYieldValue]
 opcode = 247
 cpython_name = "INSTRUMENTED_YIELD_VALUE"
 placeholder = true
 
-[InstrumentedEndAsyncFor]
+[Instruction.InstrumentedEndAsyncFor]
 opcode = 248
 cpython_name = "INSTRUMENTED_END_ASYNC_FOR"
 placeholder = true
 
-[InstrumentedLoadSuperAttr]
+[Instruction.InstrumentedLoadSuperAttr]
 opcode = 249
 cpython_name = "INSTRUMENTED_LOAD_SUPER_ATTR"
 placeholder = true
 
-[InstrumentedCall]
+[Instruction.InstrumentedCall]
 opcode = 250
 cpython_name = "INSTRUMENTED_CALL"
 placeholder = true
 
-[InstrumentedCallKw]
+[Instruction.InstrumentedCallKw]
 opcode = 251
 cpython_name = "INSTRUMENTED_CALL_KW"
 placeholder = true
 
-[InstrumentedCallFunctionEx]
+[Instruction.InstrumentedCallFunctionEx]
 opcode = 252
 cpython_name = "INSTRUMENTED_CALL_FUNCTION_EX"
 placeholder = true
 
-[InstrumentedJumpBackward]
+[Instruction.InstrumentedJumpBackward]
 opcode = 253
 cpython_name = "INSTRUMENTED_JUMP_BACKWARD"
 placeholder = true
 
-[InstrumentedLine]
+[Instruction.InstrumentedLine]
 opcode = 254
 cpython_name = "INSTRUMENTED_LINE"
 placeholder = true
 
-[EnterExecutor]
+[Instruction.EnterExecutor]
 opcode = 255
 cpython_name = "ENTER_EXECUTOR"
 placeholder = true
 
-[AnnotationsPlaceholder]
+[Instruction.AnnotationsPlaceholder]
 opcode = 256
 cpython_name = "ANNOTATIONS_PLACEHOLDER"
 
-[Jump]
+[Instruction.Jump]
 opcode = 257
 cpython_name = "JUMP"
 oparg = { name = "target", type = "oparg::Label" }
 
-[JumpIfFalse]
+[Instruction.JumpIfFalse]
 opcode = 258
 cpython_name = "JUMP_IF_FALSE"
 oparg = { name = "target", type = "oparg::Label" }
 
-[JumpIfTrue]
+[Instruction.JumpIfTrue]
 opcode = 259
 cpython_name = "JUMP_IF_TRUE"
 oparg = { name = "target", type = "oparg::Label" }
 
-[JumpNoInterrupt]
+[Instruction.JumpNoInterrupt]
 opcode = 260
 cpython_name = "JUMP_NO_INTERRUPT"
 oparg = { name = "target", type = "oparg::Label" }
 
-[LoadClosure]
+[Instruction.LoadClosure]
 opcode = 261
 cpython_name = "LOAD_CLOSURE"
 oparg = { type = "oparg::NameIdx" }
 
-[PopBlock]
+[Instruction.PopBlock]
 opcode = 262
 cpython_name = "POP_BLOCK"
 
-[SetupCleanup]
+[Instruction.SetupCleanup]
 opcode = 263
 cpython_name = "SETUP_CLEANUP"
 oparg = { name = "target", type = "oparg::Label" }
 
-[SetupFinally]
+[Instruction.SetupFinally]
 opcode = 264
 cpython_name = "SETUP_FINALLY"
 oparg = { name = "target", type = "oparg::Label" }
 
-[SetupWith]
+[Instruction.SetupWith]
 opcode = 265
 cpython_name = "SETUP_WITH"
 oparg = { name = "target", type = "oparg::Label" }
 
-[StoreFastMaybeNull]
+[Instruction.StoreFastMaybeNull]
 opcode = 266
 cpython_name = "STORE_FAST_MAYBE_NULL"
 oparg = { type = "oparg::NameIdx" }
+
 
