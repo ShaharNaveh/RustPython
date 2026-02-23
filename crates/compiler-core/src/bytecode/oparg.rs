@@ -3,7 +3,7 @@ use bitflags::bitflags;
 use core::fmt;
 
 use crate::{
-    bytecode::{CodeUnit, Opcode},
+    bytecode::{CodeUnit, Instruction, Opcode},
     marshal::MarshalError,
 };
 
@@ -49,12 +49,13 @@ pub struct OpArgState {
 
 impl OpArgState {
     #[inline(always)]
-    pub fn get(&mut self, ins: CodeUnit) -> (Opcode, OpArg) {
+    pub fn get(&mut self, ins: CodeUnit) -> Instruction {
         let arg = self.extend(ins.arg);
         if !matches!(ins.op, Opcode::ExtendedArg) {
             self.reset();
         }
-        (ins.op, arg)
+        Instruction::new(ins.op.try_into().expect("Invalid opcode"), arg.into())
+            .expect("Invalid inatruction")
     }
 
     #[inline(always)]

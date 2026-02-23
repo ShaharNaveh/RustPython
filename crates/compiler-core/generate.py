@@ -36,6 +36,7 @@ class Instr:
     opcode: int
     properties: analyzer.Properties
     stack_effect: dict[str, str]
+    oparg_metadata: dict
     oparg: dict[str, str] = dataclasses.field(default_factory=dict)
     fmt_dis: dict | None = None
     placeholder: bool = False
@@ -173,7 +174,7 @@ class OpcodeEnumBuilder:
 
         return f"""
         impl TryFrom<{self.num_repr}> for {self.name} {{
-            type Error = crate::marshal::MarshalError;
+            type Error = MarshalError;
 
             fn try_from(value: {self.num_repr}) -> Result<Self, Self::Error> {{
                 Ok(match value {{
@@ -378,6 +379,14 @@ class InstructionEnumBuilder:
         """
 
     @property
+    def fn_new(self) -> str:
+        return f"""
+        #[must_use]
+        pub fn new(opcode: {self.target_opcode}, oparg: u32) -> Result<Self, MarshalError> {{
+        }}
+        """
+
+    @property
     def fn_fmt_dis(self) -> str:
         arms = ""
         for instr in self:
@@ -463,6 +472,7 @@ class InstructionEnumBuilder:
 def main():
     analysis = analyzer.analyze_files([DEFAULT_INPUT])
     conf = tomllib.loads(CONF_FILE.read_text())
+    opargs = conf["Oparg"]
 
     instructions = []
     pseudo_instructions = []
@@ -483,12 +493,19 @@ def main():
 
         fmt_dis = opts.pop("fmt_dis", None)
 
+        oparg = opts.get("oparg", {})
+        oparg_metadata = {}
+        if oparg_name := oparg.get("name"):
+            rust_name = oparg_name.split("::")[-1]
+            oparg_metadata = opargs.get(rust_name, {"infallible": True})
+
         instr = Instr(
             name=name,
             **opts,
             properties=instruction.properties,
             stack_effect=stack_effect,
             fmt_dis=fmt_dis,
+            oparg_metadata=oparg_metadata,
         )
 
         if is_pseudo:
@@ -515,7 +532,10 @@ def main():
 
     use core::fmt;
 
-    use crate::bytecode::{{BorrowedConstant, Constant, InstrDisplayContext, StackEffect}};
+    use crate::{{
+        bytecode::{{BorrowedConstant, Constant, InstrDisplayContext, StackEffect}},
+        marshal::MarshalError,
+    }};
     use super::oparg;
 
     {opcodes_code}

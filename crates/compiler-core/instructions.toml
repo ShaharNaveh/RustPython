@@ -1,3 +1,19 @@
+# Opargs
+
+[Oparg.BinaryOperator]
+infallible = false
+
+[Oparg.RaiseKind]
+infallible = false
+
+[Oparg.IntrinsicFunction1]
+infallible = false
+
+[Oparg.IntrinsicFunction2]
+infallible = false
+
+# Instructions
+
 [Instruction.Cache]
 opcode = 0
 cpython_name = "CACHE"
@@ -1236,5 +1252,4 @@ oparg = { name = "target", type = "oparg::Label" }
 opcode = 266
 cpython_name = "STORE_FAST_MAYBE_NULL"
 oparg = { type = "oparg::NameIdx" }
-
 
