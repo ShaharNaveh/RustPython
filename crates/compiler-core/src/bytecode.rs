@@ -15,10 +15,8 @@ use num_complex::Complex64;
 use rustpython_wtf8::{Wtf8, Wtf8Buf};
 
 pub use crate::bytecode::{
-    generated::{Opcode, PseudoOpcode},
-    instruction::{
-        AnyInstruction, Arg, Instruction, InstructionMetadata, PseudoInstruction, StackEffect,
-    },
+    generated::{Instruction, Opcode, PseudoInstruction, PseudoOpcode},
+    instruction::{AnyInstruction, StackEffect},
     oparg::{
         BinaryOperator, BuildSliceArgCount, CommonConstant, ComparisonOperator, ConvertValueOparg,
         IntrinsicFunction1, IntrinsicFunction2, Invert, Label, LoadAttr, LoadSuperAttr,
@@ -308,7 +306,7 @@ bitflags! {
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct CodeUnit {
-    pub op: Instruction,
+    pub op: Opcode,
     pub arg: OpArgByte,
 }
 
