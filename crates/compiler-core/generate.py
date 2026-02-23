@@ -380,9 +380,16 @@ class InstructionEnumBuilder:
 
     @property
     def fn_new(self) -> str:
+        arms = ""
+        for instr in self:
+            meta = instr.oparg_metadata
+
         return f"""
         #[must_use]
         pub fn new(opcode: {self.target_opcode}, oparg: u32) -> Result<Self, MarshalError> {{
+            Ok(match opcode {{
+                {arms}
+            }})
         }}
         """
 

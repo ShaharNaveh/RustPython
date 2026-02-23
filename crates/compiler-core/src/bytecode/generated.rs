@@ -4,7 +4,10 @@
 use core::fmt;
 
 use super::oparg;
-use crate::bytecode::{BorrowedConstant, Constant, InstrDisplayContext, StackEffect};
+use crate::{
+    bytecode::{BorrowedConstant, Constant, InstrDisplayContext, StackEffect},
+    marshal::MarshalError,
+};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Opcode {
@@ -968,7 +971,7 @@ impl From<Opcode> for u8 {
 }
 
 impl TryFrom<u8> for Opcode {
-    type Error = crate::marshal::MarshalError;
+    type Error = MarshalError;
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         Ok(match value {
@@ -1314,7 +1317,7 @@ impl From<PseudoOpcode> for u16 {
 }
 
 impl TryFrom<u16> for PseudoOpcode {
-    type Error = crate::marshal::MarshalError;
+    type Error = MarshalError;
 
     fn try_from(value: u16) -> Result<Self, Self::Error> {
         Ok(match value {
@@ -2075,6 +2078,11 @@ impl Instruction {
         })
     }
 
+    #[must_use]
+    pub fn new(opcode: Opcode, oparg: u32) -> Result<Self, MarshalError> {
+        Ok(match opcode {})
+    }
+
     /// Instruction's opcode.
     #[must_use]
     pub const fn opcode(self) -> Opcode {
@@ -2796,6 +2804,11 @@ impl PseudoInstruction {
             Self::SetupWith { target } => target,
             _ => return None,
         })
+    }
+
+    #[must_use]
+    pub fn new(opcode: PseudoOpcode, oparg: u32) -> Result<Self, MarshalError> {
+        Ok(match opcode {})
     }
 
     /// Instruction's opcode.
