@@ -2135,7 +2135,7 @@ impl Instruction {
             Opcode::BuildMap => Self::BuildMapSelf::BuildMap { size: oparg },
             Opcode::BuildSet => Self::BuildSetSelf::BuildSet { size: oparg },
             Opcode::BuildSlice => Self::BuildSliceSelf::BuildSlice {
-                argc: oparg::BuildSliceArgCount::from(oparg),
+                argc: oparg::BuildSliceArgCount::try_from(oparg)?,
             },
             Opcode::BuildString => Self::BuildStringSelf::BuildString { size: oparg },
             Opcode::BuildTuple => Self::BuildTupleSelf::BuildTuple { size: oparg },

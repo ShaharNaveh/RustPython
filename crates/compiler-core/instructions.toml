@@ -12,6 +12,9 @@ infallible = false
 [Oparg.IntrinsicFunction2]
 infallible = false
 
+[Oparg.BuildSliceArgCount]
+infallible = false
+
 # Instructions
 
 [Instruction.Cache]
