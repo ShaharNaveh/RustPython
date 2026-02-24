@@ -8,7 +8,7 @@ use num_traits::ToPrimitive;
 use rustpython_compiler_core::{
     OneIndexed, SourceLocation,
     bytecode::{
-        AnyInstruction, Arg, CodeFlags, CodeObject, CodeUnit, CodeUnits, ConstantData,
+        AnyInstruction, CodeFlags, CodeObject, CodeUnit, CodeUnits, ConstantData,
         ExceptionTableEntry, InstrDisplayContext, Instruction, InstructionMetadata, Label, OpArg,
         PseudoInstruction, PyCodeLocationInfoKind, encode_exception_table,
     },
@@ -99,7 +99,6 @@ impl ops::IndexMut<BlockIdx> for Vec<Block> {
 #[derive(Clone, Copy, Debug)]
 pub struct InstructionInfo {
     pub instr: AnyInstruction,
-    pub arg: OpArg,
     pub target: BlockIdx,
     pub location: SourceLocation,
     pub end_location: SourceLocation,

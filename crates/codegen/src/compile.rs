@@ -26,10 +26,9 @@ use ruff_text_size::{Ranged, TextRange, TextSize};
 use rustpython_compiler_core::{
     Mode, OneIndexed, PositionEncoding, SourceFile, SourceLocation,
     bytecode::{
-        self, AnyInstruction, Arg as OpArgMarker, BinaryOperator, BuildSliceArgCount, CodeObject,
-        ComparisonOperator, ConstantData, ConvertValueOparg, Instruction, IntrinsicFunction1,
-        Invert, LoadAttr, LoadSuperAttr, OpArg, OpArgType, PseudoInstruction, SpecialMethod,
-        UnpackExArgs,
+        self, AnyInstruction, BinaryOperator, BuildSliceArgCount, CodeObject, ComparisonOperator,
+        ConstantData, ConvertValueOparg, Instruction, IntrinsicFunction1, Invert, LoadAttr,
+        LoadSuperAttr, OpArg, PseudoInstruction, SpecialMethod, UnpackExArgs,
     },
 };
 use rustpython_wtf8::Wtf8Buf;
