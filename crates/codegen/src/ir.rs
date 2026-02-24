@@ -519,7 +519,7 @@ impl CodeInfo {
         for block in &mut self.blocks {
             let mut i = 0;
             while i + 1 < block.instructions.len() {
-                let combined = {
+                let new_instruction = {
                     let curr = &block.instructions[i];
                     let next = &block.instructions[i + 1];
 
@@ -533,29 +533,23 @@ impl CodeInfo {
 
                     match (curr_instr, next_instr) {
                         // LoadFast + LoadFast -> LoadFastLoadFast (if both indices < 16)
-                        (Instruction::LoadFast(_), Instruction::LoadFast(_)) => {
-                            let idx1 = u32::from(curr.arg);
-                            let idx2 = u32::from(next.arg);
+                        (Instruction::LoadFast(curr), Instruction::LoadFast(next)) => {
+                            let idx1 = u32::from(curr);
+                            let idx2 = u32::from(next);
                             if idx1 < 16 && idx2 < 16 {
                                 let packed = (idx1 << 4) | idx2;
-                                Some((
-                                    Instruction::LoadFastLoadFast { arg: Arg::marker() },
-                                    OpArg::new(packed),
-                                ))
+                                Some(Instruction::LoadFastLoadFast { arg: packed })
                             } else {
                                 None
                             }
                         }
                         // StoreFast + StoreFast -> StoreFastStoreFast (if both indices < 16)
-                        (Instruction::StoreFast(_), Instruction::StoreFast(_)) => {
-                            let idx1 = u32::from(curr.arg);
-                            let idx2 = u32::from(next.arg);
+                        (Instruction::StoreFast(curr), Instruction::StoreFast(next)) => {
+                            let idx1 = u32::from(curr);
+                            let idx2 = u32::from(next);
                             if idx1 < 16 && idx2 < 16 {
                                 let packed = (idx1 << 4) | idx2;
-                                Some((
-                                    Instruction::StoreFastStoreFast { arg: Arg::marker() },
-                                    OpArg::new(packed),
-                                ))
+                                Some(Instruction::StoreFastStoreFast { arg: packed })
                             } else {
                                 None
                             }
@@ -564,10 +558,9 @@ impl CodeInfo {
                     }
                 };
 
-                if let Some((new_instr, new_arg)) = combined {
+                if let Some(new_instr) = new_instruction {
                     // Combine: keep first instruction's location, replace with combined instruction
                     block.instructions[i].instr = new_instr.into();
-                    block.instructions[i].arg = new_arg;
                     // Remove the second instruction
                     block.instructions.remove(i + 1);
                     // Don't increment i - check if we can combine again with the next instruction
@@ -602,9 +595,8 @@ impl CodeInfo {
                 // Check if it's in small int range: -5 to 256 (_PY_IS_SMALL_INT)
                 if let Some(small) = value.to_i32().filter(|v| (-5..=256).contains(v)) {
                     // Convert LOAD_CONST to LOAD_SMALL_INT
-                    instr.instr = Instruction::LoadSmallInt { idx: Arg::marker() }.into();
                     // The arg is the i32 value stored as u32 (two's complement)
-                    instr.arg = OpArg::new(small as u32);
+                    instr.instr = Instruction::LoadSmallInt { idx: small as u32 }.into();
                 }
             }
         }
@@ -761,12 +753,11 @@ impl CodeInfo {
                     continue;
                 };
                 match instr {
-                    Instruction::LoadFast(_) => {
-                        info.instr = Instruction::LoadFastBorrow(Arg::marker()).into();
+                    Instruction::LoadFast(idx) => {
+                        info.instr = Instruction::LoadFastBorrow(idx).into();
                     }
-                    Instruction::LoadFastLoadFast { .. } => {
-                        info.instr =
-                            Instruction::LoadFastBorrowLoadFastBorrow { arg: Arg::marker() }.into();
+                    Instruction::LoadFastLoadFast { arg } => {
+                        info.instr = Instruction::LoadFastBorrowLoadFastBorrow { arg }.into();
                     }
                     _ => {}
                 }
@@ -1240,11 +1231,7 @@ fn push_cold_blocks_to_end(blocks: &mut Vec<Block>) {
             ..Block::default()
         };
         jump_block.instructions.push(InstructionInfo {
-            instr: PseudoInstruction::JumpNoInterrupt {
-                target: Arg::marker(),
-            }
-            .into(),
-            arg: OpArg::new(0),
+            instr: PseudoInstruction::JumpNoInterrupt { target: 0.into() }.into(),
             target: warm_next,
             location: loc,
             end_location: end_loc,
@@ -1515,32 +1502,31 @@ pub(crate) fn convert_pseudo_ops(blocks: &mut [Block], varnames_len: u32) {
             let Some(pseudo) = info.instr.pseudo() else {
                 continue;
             };
-            match pseudo {
+            match pseudo.opcode() {
                 // Block push pseudo ops → NOP
-                PseudoInstruction::SetupCleanup { .. }
-                | PseudoInstruction::SetupFinally { .. }
-                | PseudoInstruction::SetupWith { .. } => {
+                PseudoOpcode::SetupCleanup
+                | PseudoOpcode::SetupFinally
+                | PseudoOpcode::SetupWith { .. } => {
                     info.instr = Instruction::Nop.into();
                 }
                 // PopBlock in reachable blocks is converted to NOP by
                 // label_exception_targets. Dead blocks may still have them.
-                PseudoInstruction::PopBlock => {
+                PseudoOpcode::PopBlock => {
                     info.instr = Instruction::Nop.into();
                 }
                 // LOAD_CLOSURE → LOAD_FAST (with varnames offset)
-                PseudoInstruction::LoadClosure(idx) => {
-                    let new_idx = varnames_len + idx.get(info.arg);
-                    info.arg = OpArg::new(new_idx);
-                    info.instr = Instruction::LoadFast(Arg::marker()).into();
+                PseudoOpcode::LoadClosure(idx) => {
+                    let new_idx = varnames_len + idx.into();
+                    info.instr = Instruction::LoadFast(new_idx.into()).into();
                 }
                 // Jump pseudo ops are resolved during block linearization
-                PseudoInstruction::Jump { .. } | PseudoInstruction::JumpNoInterrupt { .. } => {}
+                PseudoOpcode::Jump | PseudoOpcode::JumpNoInterrupt => {}
                 // These should have been resolved earlier
-                PseudoInstruction::AnnotationsPlaceholder
-                | PseudoInstruction::JumpIfFalse { .. }
-                | PseudoInstruction::JumpIfTrue { .. }
-                | PseudoInstruction::StoreFastMaybeNull(_) => {
-                    unreachable!("Unexpected pseudo instruction in convert_pseudo_ops: {pseudo:?}")
+                PseudoOpcode::AnnotationsPlaceholder
+                | PseudoOpcode::JumpIfFalse
+                | PseudoOpcode::JumpIfTrue
+                | PseudoOpcode::StoreFastMaybeNull => {
+                    unreachable!("Unexpected pseudo opcode in convert_pseudo_ops: {pseudo:?}")
                 }
             }
         }
