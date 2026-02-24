@@ -10,7 +10,7 @@ use rustpython_compiler_core::{
     bytecode::{
         AnyInstruction, CodeFlags, CodeObject, CodeUnit, CodeUnits, ConstantData,
         ExceptionTableEntry, InstrDisplayContext, Instruction, InstructionMetadata, Label, OpArg,
-        PseudoInstruction, PyCodeLocationInfoKind, encode_exception_table,
+        Opcode, PseudoInstruction, PyCodeLocationInfoKind, encode_exception_table,
     },
     varint::{write_signed_varint, write_varint},
 };
@@ -296,27 +296,21 @@ impl CodeInfo {
 
                     // Convert JUMP pseudo to real instructions (direction depends on offset)
                     let op = match info.instr {
-                        AnyInstruction::Pseudo(PseudoInstruction::Jump { .. })
+                        AnyInstruction::Pseudo(PseudoInstruction::Jump { target })
                             if target != BlockIdx::NULL =>
                         {
                             let target_offset = block_to_offset[target.idx()].0;
                             if target_offset > current_offset {
-                                Instruction::JumpForward {
-                                    target: Arg::marker(),
-                                }
+                                Instruction::JumpForward { target }
                             } else {
-                                Instruction::JumpBackward {
-                                    target: Arg::marker(),
-                                }
+                                Instruction::JumpBackward { target }
                             }
                         }
-                        AnyInstruction::Pseudo(PseudoInstruction::JumpNoInterrupt { .. })
+                        AnyInstruction::Pseudo(PseudoInstruction::JumpNoInterrupt { target })
                             if target != BlockIdx::NULL =>
                         {
                             // JumpNoInterrupt is always backward (used in yield-from/await loops)
-                            Instruction::JumpBackwardNoInterrupt {
-                                target: Arg::marker(),
-                            }
+                            Instruction::JumpBackwardNoInterrupt { target }
                         }
                         other => other.expect_real(),
                     };
@@ -338,7 +332,7 @@ impl CodeInfo {
                     linetable_locations.extend(core::iter::repeat_n(lt_loc, info.arg.instr_size()));
                     instructions.extend(
                         extras
-                            .map(|byte| CodeUnit::new(Instruction::ExtendedArg, byte))
+                            .map(|byte| CodeUnit::new(Opcode::ExtendedArg, byte))
                             .chain([CodeUnit { op, arg: lo_arg }]),
                     );
                     current_offset += info.arg.instr_size() as u32;
@@ -506,8 +500,10 @@ impl CodeInfo {
                 }
 
                 // Replace BUILD_TUPLE with LOAD_CONST
-                block.instructions[i].instr = Instruction::LoadConst { idx: Arg::marker() }.into();
-                block.instructions[i].arg = OpArg::new(const_idx as u32);
+                block.instructions[i].instr = Instruction::LoadConst {
+                    idx: const_idx as u32,
+                }
+                .into();
 
                 i += 1;
             }
@@ -1502,31 +1498,31 @@ pub(crate) fn convert_pseudo_ops(blocks: &mut [Block], varnames_len: u32) {
             let Some(pseudo) = info.instr.pseudo() else {
                 continue;
             };
-            match pseudo.opcode() {
+            match pseudo {
                 // Block push pseudo ops → NOP
-                PseudoOpcode::SetupCleanup
-                | PseudoOpcode::SetupFinally
-                | PseudoOpcode::SetupWith { .. } => {
+                PseudoInstruction::SetupCleanup { .. }
+                | PseudoInstruction::SetupFinally { .. }
+                | PseudoInstruction::SetupWith { .. } => {
                     info.instr = Instruction::Nop.into();
                 }
                 // PopBlock in reachable blocks is converted to NOP by
                 // label_exception_targets. Dead blocks may still have them.
-                PseudoOpcode::PopBlock => {
+                PseudoInstruction::PopBlock => {
                     info.instr = Instruction::Nop.into();
                 }
                 // LOAD_CLOSURE → LOAD_FAST (with varnames offset)
-                PseudoOpcode::LoadClosure(idx) => {
+                PseudoInstruction::LoadClosure(idx) => {
                     let new_idx = varnames_len + idx.into();
                     info.instr = Instruction::LoadFast(new_idx.into()).into();
                 }
                 // Jump pseudo ops are resolved during block linearization
-                PseudoOpcode::Jump | PseudoOpcode::JumpNoInterrupt => {}
+                PseudoInstruction::Jump { .. } | PseudoInstruction::JumpNoInterrupt { .. } => {}
                 // These should have been resolved earlier
-                PseudoOpcode::AnnotationsPlaceholder
-                | PseudoOpcode::JumpIfFalse
-                | PseudoOpcode::JumpIfTrue
-                | PseudoOpcode::StoreFastMaybeNull => {
-                    unreachable!("Unexpected pseudo opcode in convert_pseudo_ops: {pseudo:?}")
+                PseudoInstruction::AnnotationsPlaceholder
+                | PseudoInstruction::JumpIfFalse { .. }
+                | PseudoInstruction::JumpIfTrue { .. }
+                | PseudoInstruction::StoreFastMaybeNull(_) => {
+                    unreachable!("Unexpected pseudo instruction in convert_pseudo_ops: {pseudo:?}")
                 }
             }
         }
