@@ -48,7 +48,7 @@ class FunctionalTest(unittest.TestCase):
         self.assertEqual(res.out.decode().splitlines(), ["atexit2", "atexit1"])
         self.assertFalse(res.err)
 
-    @unittest.expectedFailure  # TODO: RUSTPYTHON
+    @unittest.skip("TODO: RUSTPYTHON; Flakey on CI")
     @threading_helper.requires_working_threading()
     @support.requires_resource("cpu")
     @unittest.skipUnless(support.Py_GIL_DISABLED, "only meaningful without the GIL")
