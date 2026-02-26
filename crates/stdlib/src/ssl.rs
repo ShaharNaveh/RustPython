@@ -2023,18 +2023,15 @@ mod _ssl {
                     // Try bytes-like
                     else if let Ok(pwd_bytes_like) = ArgBytesLike::try_from_object(vm, p.clone())
                     {
-                        let pwd = String::from_utf8(pwd_bytes_like.borrow_buf().to_vec()).map_err(
-                            |_| vm.new_type_error("password bytes must be valid UTF-8".to_owned()),
-                        )?;
+                        let pwd = String::from_utf8(pwd_bytes_like.borrow_buf().to_vec())
+                            .map_err(|_| vm.new_type_error("password bytes must be valid UTF-8"))?;
                         Ok((Some(pwd), None))
                     }
                     // Try callable
                     else if p.is_callable() {
                         Ok((None, Some(p.clone())))
                     } else {
-                        Err(vm.new_type_error(
-                            "password should be a string, bytes, or callable".to_owned(),
-                        ))
+                        Err(vm.new_type_error("password should be a string or callable"))
                     }
                 }
                 _ => Ok((None, None)),
