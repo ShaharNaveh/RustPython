@@ -418,7 +418,6 @@ class BaseHTTPSServerTestCase(BaseTestCase):
 
     request_handler = DummyRequestHandler
 
-    @unittest.expectedFailure  # TODO: RUSTPYTHON
     def test_get(self):
         response = self.request('/')
         self.assertEqual(response.status, HTTPStatus.OK)
