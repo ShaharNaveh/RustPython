@@ -2012,7 +2012,7 @@ mod _ssl {
         ) -> PyResult<(Option<String>, Option<PyObjectRef>)> {
             match password {
                 OptionalArg::Present(p) => {
-                    if vm.is_none(&p) {
+                    if vm.is_none(p) {
                         return Ok((None, None));
                     }
 
