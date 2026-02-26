@@ -2714,7 +2714,6 @@ class TestGetattrStatic(unittest.TestCase):
 
         self.assertFalse(test.called)
 
-    @unittest.expectedFailure  # TODO: RUSTPYTHON; AssertionError: <class 'test.test_inspect.test_inspect.TestGetattrStatic.test_cache_does_not_cause_classes_to_persist.<locals>.Foo'> is not None
     def test_cache_does_not_cause_classes_to_persist(self):
         # regression test for gh-118013:
         # check that the internal _shadowed_dict cache does not cause
@@ -2779,7 +2778,6 @@ class TestGetGeneratorState(unittest.TestCase):
         # Running after the first yield
         next(self.generator)
 
-    @unittest.expectedFailure  # TODO: RUSTPYTHON; AttributeError: '_GeneratorWrapper' object has no attribute 'gi_suspended'
     def test_types_coroutine_wrapper_state(self):
         def gen():
             yield 1

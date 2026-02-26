@@ -11,6 +11,7 @@ badsyntax
 baseinfo
 basetype
 binop
+bltin
 boolop
 BUFMAX
 BUILDSTDLIB
@@ -194,6 +195,7 @@ uncollectable
 Unhandle
 unparse
 unparser
+untracking
 VARKEYWORDS
 varkwarg
 venvlauncher
@@ -208,5 +210,6 @@ webpki
 winconsoleio
 withitem
 withs
+worklist
 xstat
 XXPRIME

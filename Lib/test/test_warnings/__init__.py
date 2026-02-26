@@ -1478,7 +1478,6 @@ class EnvironmentVariableTests(BaseTest):
         self.assertEqual(stdout,
             b"['ignore::DeprecationWarning', 'ignore::UnicodeWarning']")
 
-    @unittest.expectedFailure  # TODO: RUSTPYTHON; AssertionError: b"['error::DeprecationWarning']" != b"['default::DeprecationWarning', 'error::DeprecationWarning']"
     @force_not_colorized
     def test_conflicting_envvar_and_command_line(self):
         rc, stdout, stderr = assert_python_failure("-Werror::DeprecationWarning", "-c",
@@ -1611,7 +1610,6 @@ class BootstrapTest(unittest.TestCase):
 
 
 class FinalizationTest(unittest.TestCase):
-    @unittest.expectedFailure  # TODO: RUSTPYTHON; - TypeError: 'NoneType' object is not callable
     def test_finalization(self):
         # Issue #19421: warnings.warn() should not crash
         # during Python finalization

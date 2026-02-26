@@ -4119,8 +4119,6 @@ class ConfigDictTest(BaseTest):
         # Logger should be enabled, since explicitly mentioned
         self.assertFalse(logger.disabled)
 
-    # TODO: RUSTPYTHON - SemLock not implemented on Windows
-    @unittest.expectedFailureIfWindows("TODO: RUSTPYTHON")
     def test_111615(self):
         # See gh-111615
         import_helper.import_module('_multiprocessing')  # see gh-113692
@@ -5165,7 +5163,6 @@ class ModuleLevelMiscTest(BaseTest):
             h.close()
             logging.setLoggerClass(logging.Logger)
 
-    @unittest.expectedFailure  # TODO: RUSTPYTHON; AttributeError during module teardown in __del__
     def test_logging_at_shutdown(self):
         # bpo-20037: Doing text I/O late at interpreter shutdown must not crash
         code = textwrap.dedent("""
@@ -5185,7 +5182,6 @@ class ModuleLevelMiscTest(BaseTest):
         self.assertIn("exception in __del__", err)
         self.assertIn("ValueError: some error", err)
 
-    @unittest.expectedFailure  # TODO: RUSTPYTHON; AttributeError during module teardown in __del__
     def test_logging_at_shutdown_open(self):
         # bpo-26789: FileHandler keeps a reference to the builtin open()
         # function to be able to open or reopen the file during Python

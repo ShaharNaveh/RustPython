@@ -1000,29 +1000,39 @@ mod _io {
             vm: &VirtualMachine,
         ) -> PyResult<Option<usize>> {
             let len = buf_range.len();
-            let res = if let Some(buf) = buf {
-                let mem_obj = PyMemoryView::from_buffer_range(buf, buf_range, vm)?.to_pyobject(vm);
 
-                // TODO: loop if write() raises an interrupt
-                vm.call_method(self.raw.as_ref().unwrap(), "write", (mem_obj,))?
+            // Prepare the memoryview; if using the internal buffer, stash it
+            // in write_buf so we can restore it after the write.
+            let (mem_obj, write_buf) = if let Some(buf) = buf {
+                let mem_obj =
+                    PyMemoryView::from_buffer_range(buf, buf_range, vm)?.into_ref(&vm.ctx);
+                (mem_obj, None)
             } else {
                 let v = core::mem::take(&mut self.buffer);
-                let write_buf = VecBuffer::from(v).into_ref(&vm.ctx);
-                let mem_obj = PyMemoryView::from_buffer_range(
-                    write_buf.clone().into_pybuffer(true),
-                    buf_range,
-                    vm,
-                )?
-                .into_ref(&vm.ctx);
-
-                // TODO: loop if write() raises an interrupt
-                let res = vm.call_method(self.raw.as_ref().unwrap(), "write", (mem_obj.clone(),));
-
-                mem_obj.release();
-                self.buffer = write_buf.take();
-
-                res?
+                let wb = VecBuffer::from(v).into_ref(&vm.ctx);
+                let mem_obj =
+                    PyMemoryView::from_buffer_range(wb.clone().into_pybuffer(true), buf_range, vm)?
+                        .into_ref(&vm.ctx);
+                (mem_obj, Some(wb))
             };
+
+            // Loop if write() raises EINTR (PEP 475)
+            let res = loop {
+                let res = vm.call_method(self.raw.as_ref().unwrap(), "write", (mem_obj.clone(),));
+                match trap_eintr(res, vm) {
+                    Ok(Some(val)) => break Ok(val),
+                    Ok(None) => continue,
+                    Err(e) => break Err(e),
+                }
+            };
+
+            // Restore internal buffer if we borrowed it
+            if let Some(wb) = write_buf {
+                mem_obj.release();
+                self.buffer = wb.take();
+            }
+
+            let res = res?;
 
             if vm.is_none(&res) {
                 return Ok(None);
@@ -2607,6 +2617,92 @@ mod _io {
         }
     }
 
+    #[pyclass(module = "_io", name, no_attr)]
+    #[derive(Debug, PyPayload)]
+    struct StatelessIncrementalEncoder {
+        encode: PyObjectRef,
+        errors: Option<PyStrRef>,
+        name: Option<PyStrRef>,
+    }
+
+    #[pyclass]
+    impl StatelessIncrementalEncoder {
+        #[pymethod]
+        fn encode(
+            &self,
+            input: PyObjectRef,
+            _final: OptionalArg<bool>,
+            vm: &VirtualMachine,
+        ) -> PyResult {
+            let mut args: Vec<PyObjectRef> = vec![input];
+            if let Some(errors) = &self.errors {
+                args.push(errors.to_owned().into());
+            }
+            let res = self.encode.call(args, vm)?;
+            let tuple: PyTupleRef = res.try_into_value(vm)?;
+            if tuple.len() != 2 {
+                return Err(vm.new_type_error("encoder must return a tuple (object, integer)"));
+            }
+            Ok(tuple[0].clone())
+        }
+
+        #[pymethod]
+        fn reset(&self) {}
+
+        #[pymethod]
+        fn setstate(&self, _state: PyObjectRef) {}
+
+        #[pymethod]
+        fn getstate(&self, vm: &VirtualMachine) -> PyObjectRef {
+            vm.ctx.new_int(0).into()
+        }
+
+        #[pygetset]
+        fn name(&self) -> Option<PyStrRef> {
+            self.name.clone()
+        }
+    }
+
+    #[pyclass(module = "_io", name, no_attr)]
+    #[derive(Debug, PyPayload)]
+    struct StatelessIncrementalDecoder {
+        decode: PyObjectRef,
+        errors: Option<PyStrRef>,
+    }
+
+    #[pyclass]
+    impl StatelessIncrementalDecoder {
+        #[pymethod]
+        fn decode(
+            &self,
+            input: PyObjectRef,
+            _final: OptionalArg<bool>,
+            vm: &VirtualMachine,
+        ) -> PyResult {
+            let mut args: Vec<PyObjectRef> = vec![input];
+            if let Some(errors) = &self.errors {
+                args.push(errors.to_owned().into());
+            }
+            let res = self.decode.call(args, vm)?;
+            let tuple: PyTupleRef = res.try_into_value(vm)?;
+            if tuple.len() != 2 {
+                return Err(vm.new_type_error("decoder must return a tuple (object, integer)"));
+            }
+            Ok(tuple[0].clone())
+        }
+
+        #[pymethod]
+        fn getstate(&self, vm: &VirtualMachine) -> (PyBytesRef, u64) {
+            (vm.ctx.empty_bytes.to_owned(), 0)
+        }
+
+        #[pymethod]
+        fn setstate(&self, _state: PyTupleRef, _vm: &VirtualMachine) {}
+
+        #[pymethod]
+        fn reset(&self) {}
+    }
+
     #[pyattr]
     #[pyclass(name = "TextIOWrapper", base = _TextIOBase)]
     #[derive(Debug, Default)]
@@ -2830,7 +2926,25 @@ mod _io {
 
             let encoder = if vm.call_method(buffer, "writable", ())?.try_to_bool(vm)? {
                 let incremental_encoder =
-                    codec.get_incremental_encoder(Some(errors.to_owned()), vm)?;
+                    match codec.get_incremental_encoder(Some(errors.to_owned()), vm) {
+                        Ok(encoder) => encoder,
+                        Err(err)
+                            if err.fast_isinstance(vm.ctx.exceptions.type_error)
+                                || err.fast_isinstance(vm.ctx.exceptions.attribute_error) =>
+                        {
+                            let name = vm
+                                .get_attribute_opt(codec.as_tuple().to_owned().into(), "name")?
+                                .and_then(|obj| obj.downcast::<PyStr>().ok());
+                            StatelessIncrementalEncoder {
+                                encode: codec.get_encode_func().to_owned(),
+                                errors: Some(errors.to_owned()),
+                                name,
+                            }
+                            .into_ref(&vm.ctx)
+                            .into()
+                        }
+                        Err(err) => return Err(err),
+                    };
                 let encoding_name = vm.get_attribute_opt(incremental_encoder.clone(), "name")?;
                 let encode_func = encoding_name.and_then(|name| {
                     let name = name.downcast_ref::<PyStr>()?;
@@ -2845,7 +2959,21 @@ mod _io {
             };
 
             let decoder = if vm.call_method(buffer, "readable", ())?.try_to_bool(vm)? {
-                let decoder = codec.get_incremental_decoder(Some(errors.to_owned()), vm)?;
+                let decoder = match codec.get_incremental_decoder(Some(errors.to_owned()), vm) {
+                    Ok(decoder) => decoder,
+                    Err(err)
+                        if err.fast_isinstance(vm.ctx.exceptions.type_error)
+                            || err.fast_isinstance(vm.ctx.exceptions.attribute_error) =>
+                    {
+                        StatelessIncrementalDecoder {
+                            decode: codec.get_decode_func().to_owned(),
+                            errors: Some(errors.to_owned()),
+                        }
+                        .into_ref(&vm.ctx)
+                        .into()
+                    }
+                    Err(err) => return Err(err),
+                };
                 if let Newlines::Universal | Newlines::Passthrough = newline {
                     let args = IncrementalNewlineDecoderArgs {
                         decoder,
@@ -5619,11 +5747,18 @@ mod fileio {
 
             let mut handle = zelf.get_fd(vm)?;
 
-            let len = match obj.with_ref(|b| handle.write(b)) {
-                Ok(n) => n,
-                // Non-blocking mode: return None if EAGAIN
-                Err(e) if e.raw_os_error() == Some(libc::EAGAIN) => return Ok(None),
-                Err(e) => return Err(Self::io_error(zelf, e, vm)),
+            // Loop on EINTR (PEP 475)
+            let len = loop {
+                match obj.with_ref(|b| handle.write(b)) {
+                    Ok(n) => break n,
+                    Err(e) if e.raw_os_error() == Some(libc::EINTR) => {
+                        vm.check_signals()?;
+                        continue;
+                    }
+                    // Non-blocking mode: return None if EAGAIN
+                    Err(e) if e.raw_os_error() == Some(libc::EAGAIN) => return Ok(None),
+                    Err(e) => return Err(Self::io_error(zelf, e, vm)),
+                }
             };
 
             //return number of bytes written

@@ -41,7 +41,8 @@ use crate::{
 };
 use alloc::{borrow::Cow, collections::BTreeMap};
 use core::{
-    cell::{Cell, OnceCell, Ref, RefCell},
+    cell::{Cell, OnceCell, RefCell},
+    ptr::NonNull,
     sync::atomic::{AtomicBool, Ordering},
 };
 use crossbeam_utils::atomic::AtomicCell;
@@ -72,7 +73,7 @@ pub struct VirtualMachine {
     pub builtins: PyRef<PyModule>,
     pub sys_module: PyRef<PyModule>,
     pub ctx: PyRc<Context>,
-    pub frames: RefCell<Vec<FrameRef>>,
+    pub frames: RefCell<Vec<FramePtr>>,
     pub wasm_id: Option<String>,
     exceptions: RefCell<ExceptionStack>,
     pub import_func: PyObjectRef,
@@ -99,10 +100,26 @@ pub struct VirtualMachine {
     pub asyncio_running_task: RefCell<Option<PyObjectRef>>,
 }
 
+/// Non-owning frame pointer for the frames stack.
+/// The pointed-to frame is kept alive by the caller of with_frame_exc/resume_gen_frame.
+#[derive(Copy, Clone)]
+pub struct FramePtr(NonNull<Py<Frame>>);
+
+impl FramePtr {
+    /// # Safety
+    /// The pointed-to frame must still be alive.
+    pub unsafe fn as_ref(&self) -> &Py<Frame> {
+        unsafe { self.0.as_ref() }
+    }
+}
+
+// SAFETY: FramePtr is only stored in the VM's frames Vec while the corresponding
+// FrameRef is alive on the call stack. The Vec is always empty when the VM moves between threads.
+unsafe impl Send for FramePtr {}
+
 #[derive(Debug, Default)]
 struct ExceptionStack {
-    exc: Option<PyBaseExceptionRef>,
-    prev: Option<Box<ExceptionStack>>,
+    stack: Vec<Option<PyBaseExceptionRef>>,
 }
 
 pub struct PyGlobalState {
@@ -129,7 +146,7 @@ pub struct PyGlobalState {
     /// Main thread identifier (pthread_self on Unix)
     #[cfg(feature = "threading")]
     pub main_thread_ident: AtomicCell<u64>,
-    /// Registry of all threads' current frames for sys._current_frames()
+    /// Registry of all threads' slots for sys._current_frames() and sys._current_exceptions()
     #[cfg(feature = "threading")]
     pub thread_frames: parking_lot::Mutex<HashMap<u64, stdlib::thread::CurrentFrameSlot>>,
     /// Registry of all ThreadHandles for fork cleanup
@@ -314,6 +331,21 @@ impl VirtualMachine {
         self.state
             .codec_registry
             .register_manual("utf8", utf8_codec)?;
+
+        // Register latin-1 / iso8859-1 aliases needed very early for stdio
+        // bootstrap (e.g. PYTHONIOENCODING=latin-1).
+        if cfg!(feature = "freeze-stdlib") {
+            self.import("encodings.latin_1", 0)?;
+            let latin1_module = sys_modules.get_item("encodings.latin_1", self)?;
+            let getregentry = latin1_module.get_attr("getregentry", self)?;
+            let codec_info = getregentry.call((), self)?;
+            let latin1_codec: crate::codecs::PyCodec = codec_info.try_into_value(self)?;
+            for name in ["latin-1", "latin_1", "latin1", "iso8859-1", "iso8859_1"] {
+                self.state
+                    .codec_registry
+                    .register_manual(name, latin1_codec.clone())?;
+            }
+        }
         Ok(())
     }
 
@@ -350,8 +382,8 @@ impl VirtualMachine {
                 let io = import::import_builtin(self, "_io")?;
 
                 // Full stdio: FileIO → BufferedWriter → TextIOWrapper
-                #[cfg(feature = "host_env")]
-                let make_stdio = |name: &str, fd: i32, write: bool| {
+                #[cfg(all(feature = "host_env", feature = "stdio"))]
+                let make_stdio = |name: &str, fd: i32, write: bool| -> PyResult<PyObjectRef> {
                     let buffered_stdio = self.state.config.settings.buffered_stdio;
                     let unbuffered = write && !buffered_stdio;
                     let buf = crate::stdlib::io::open(
@@ -380,7 +412,13 @@ impl VirtualMachine {
                     let errors = if fd == 2 {
                         Some("backslashreplace")
                     } else {
-                        self.state.config.settings.stdio_errors.as_deref()
+                        self.state.config.settings.stdio_errors.as_deref().or(
+                            if self.state.config.settings.stdio_encoding.is_some() {
+                                Some("strict")
+                            } else {
+                                Some("surrogateescape")
+                            },
+                        )
                     };
 
                     let stdio = self.call_method(
@@ -692,26 +730,25 @@ impl VirtualMachine {
 
         // Phase 2: Remove all modules from sys.modules (set values to None),
         // and collect weakrefs to modules preserving import order.
-        // Also keeps strong refs (module_refs) to prevent premature deallocation.
-        // CPython uses _PyGC_CollectNoFail() here to collect __globals__ cycles;
-        // since RustPython has no working GC, we keep modules alive through
-        // Phase 4 so their dicts can be explicitly cleared.
-        let (module_weakrefs, module_refs) = self.finalize_remove_modules();
+        // No strong refs are kept — modules freed when their last ref drops.
+        let module_weakrefs = self.finalize_remove_modules();
 
         // Phase 3: Clear sys.modules dict
         self.finalize_clear_modules_dict();
 
-        // Phase 4: Clear module dicts in reverse import order using 2-pass algorithm.
-        // All modules are still alive (held by module_refs), so all weakrefs are valid.
-        // This breaks __globals__ cycles: dict entries set to None → functions freed →
-        // __globals__ refs dropped → dict refcount decreases.
+        // Phase 4: GC collect — modules removed from sys.modules are freed,
+        // exposing cycles (e.g., dict ↔ function.__globals__). GC collects
+        // these and calls __del__ while module dicts are still intact.
+        crate::gc_state::gc_state().collect_force(2);
+
+        // Phase 5: Clear module dicts in reverse import order using 2-pass algorithm.
+        // Skip builtins and sys — those are cleared last.
         self.finalize_clear_module_dicts(&module_weakrefs);
 
-        // Drop strong refs → modules freed with already-cleared dicts.
-        // No __globals__ cycles remain (broken by Phase 4).
-        drop(module_refs);
+        // Phase 6: GC collect — pick up anything freed by dict clearing.
+        crate::gc_state::gc_state().collect_force(2);
 
-        // Phase 5: Clear sys and builtins dicts last
+        // Phase 7: Clear sys and builtins dicts last
         self.finalize_clear_sys_builtins_dict();
     }
 
@@ -755,17 +792,17 @@ impl VirtualMachine {
         let _ = self.builtins.dict().set_item("_", none, self);
     }
 
-    /// Phase 2: Set all sys.modules values to None and collect weakrefs to modules.
-    /// Returns (weakrefs for Phase 4, strong refs to keep modules alive).
-    fn finalize_remove_modules(&self) -> (Vec<(String, PyRef<PyWeak>)>, Vec<PyObjectRef>) {
+    /// Phase 2: Set all sys.modules values to None and collect weakrefs.
+    /// No strong refs are kept — modules are freed when removed from sys.modules
+    /// (if nothing else references them), allowing GC to collect their cycles.
+    fn finalize_remove_modules(&self) -> Vec<(String, PyRef<PyWeak>)> {
         let mut module_weakrefs = Vec::new();
-        let mut module_refs = Vec::new();
 
         let Ok(modules) = self.sys_module.get_attr(identifier!(self, modules), self) else {
-            return (module_weakrefs, module_refs);
+            return module_weakrefs;
         };
         let Some(modules_dict) = modules.downcast_ref::<PyDict>() else {
-            return (module_weakrefs, module_refs);
+            return module_weakrefs;
         };
 
         let none = self.ctx.none();
@@ -777,19 +814,18 @@ impl VirtualMachine {
                 .map(|s| s.as_str().to_owned())
                 .unwrap_or_default();
 
-            // Save weakref and strong ref to module for later clearing
-            if value.downcast_ref::<PyModule>().is_some() {
-                if let Ok(weak) = value.downgrade(None, self) {
-                    module_weakrefs.push((name, weak));
-                }
-                module_refs.push(value.clone());
+            // Save weakref to module (for later dict clearing)
+            if value.downcast_ref::<PyModule>().is_some()
+                && let Ok(weak) = value.downgrade(None, self)
+            {
+                module_weakrefs.push((name, weak));
             }
 
             // Set the value to None in sys.modules
             let _ = modules_dict.set_item(&*key, none.clone(), self);
         }
 
-        (module_weakrefs, module_refs)
+        module_weakrefs
     }
 
     /// Phase 3: Clear sys.modules dict.
@@ -801,18 +837,13 @@ impl VirtualMachine {
         }
     }
 
-    /// Phase 4: Clear module dicts in reverse import order using 2-pass algorithm.
-    /// Without GC, only clear __main__ — other modules' __del__ handlers
-    /// need their globals intact. CPython can clear ALL module dicts because
-    /// _PyGC_CollectNoFail() finalizes cycle-participating objects beforehand.
+    /// Phase 5: Clear module dicts in reverse import order.
+    /// Skip builtins and sys — those are cleared last in Phase 7.
     fn finalize_clear_module_dicts(&self, module_weakrefs: &[(String, PyRef<PyWeak>)]) {
-        for (name, weakref) in module_weakrefs.iter().rev() {
-            // Only clear __main__ — user objects with __del__ get finalized
-            // while other modules' globals remain intact for their __del__ handlers.
-            if name != "__main__" {
-                continue;
-            }
+        let builtins_dict = self.builtins.dict();
+        let sys_dict = self.sys_module.dict();
 
+        for (_name, weakref) in module_weakrefs.iter().rev() {
             let Some(module_obj) = weakref.upgrade() else {
                 continue;
             };
@@ -820,7 +851,13 @@ impl VirtualMachine {
                 continue;
             };
 
-            Self::module_clear_dict(&module.dict(), self);
+            let dict = module.dict();
+            // Skip builtins and sys — they are cleared last
+            if dict.is(&builtins_dict) || dict.is(&sys_dict) {
+                continue;
+            }
+
+            Self::module_clear_dict(&dict, self);
         }
     }
 
@@ -837,7 +874,7 @@ impl VirtualMachine {
             }
             if let Some(key_str) = key.downcast_ref::<PyStr>() {
                 let name = key_str.as_str();
-                if name.starts_with('_') && name != "__builtins__" && name != "__spec__" {
+                if name.starts_with('_') && name != "__builtins__" {
                     let _ = dict.set_item(name, none.clone(), vm);
                 }
             }
@@ -850,14 +887,13 @@ impl VirtualMachine {
             }
             if let Some(key_str) = key.downcast_ref::<PyStr>()
                 && key_str.as_str() != "__builtins__"
-                && key_str.as_str() != "__spec__"
             {
                 let _ = dict.set_item(key_str.as_str(), none.clone(), vm);
             }
         }
     }
 
-    /// Phase 5: Clear sys and builtins dicts last.
+    /// Phase 7: Clear sys and builtins dicts last.
     fn finalize_clear_sys_builtins_dict(&self) {
         Self::module_clear_dict(&self.sys_module.dict(), self);
         Self::module_clear_dict(&self.builtins.dict(), self);
@@ -998,30 +1034,54 @@ impl VirtualMachine {
         frame: FrameRef,
         f: F,
     ) -> PyResult<R> {
+        self.with_frame_exc(frame, None, f)
+    }
+
+    /// Like `with_frame` but allows specifying the initial exception state.
+    pub fn with_frame_exc<R, F: FnOnce(FrameRef) -> PyResult<R>>(
+        &self,
+        frame: FrameRef,
+        exc: Option<PyBaseExceptionRef>,
+        f: F,
+    ) -> PyResult<R> {
         self.with_recursion("", || {
-            self.frames.borrow_mut().push(frame.clone());
+            // SAFETY: `frame` (FrameRef) stays alive for the entire closure scope,
+            // keeping the FramePtr valid. We pass a clone to `f` so that `f`
+            // consuming its FrameRef doesn't invalidate our pointer.
+            let fp = FramePtr(NonNull::from(&*frame));
+            self.frames.borrow_mut().push(fp);
             // Update the shared frame stack for sys._current_frames() and faulthandler
             #[cfg(feature = "threading")]
-            crate::vm::thread::push_thread_frame(frame.clone());
+            crate::vm::thread::push_thread_frame(fp);
             // Link frame into the signal-safe frame chain (previous pointer)
-            let frame_ptr: *const Frame = &**frame;
-            let old_frame = crate::vm::thread::set_current_frame(frame_ptr);
+            let old_frame = crate::vm::thread::set_current_frame((&**frame) as *const Frame);
             frame.previous.store(
                 old_frame as *mut Frame,
                 core::sync::atomic::Ordering::Relaxed,
             );
-            // Push a new exception context for frame isolation
-            // Each frame starts with no active exception (None)
-            // This prevents exceptions from leaking between function calls
-            self.push_exception(None);
+            // Push exception context for frame isolation.
+            // For normal calls: None (clean slate).
+            // For generators: the saved exception from last yield.
+            self.push_exception(exc);
             let old_owner = frame.owner.swap(
                 crate::frame::FrameOwner::Thread as i8,
                 core::sync::atomic::Ordering::AcqRel,
             );
+
+            // Ensure cleanup on panic: restore owner, pop exception, frame chain, and frames Vec.
+            scopeguard::defer! {
+                frame.owner.store(old_owner, core::sync::atomic::Ordering::Release);
+                self.pop_exception();
+                crate::vm::thread::set_current_frame(old_frame);
+                self.frames.borrow_mut().pop();
+                #[cfg(feature = "threading")]
+                crate::vm::thread::pop_thread_frame();
+            }
+
             use crate::protocol::TraceEvent;
             // Fire 'call' trace event after pushing frame
             // (current_frame() now returns the callee's frame)
-            let result = match self.trace_event(TraceEvent::Call, None) {
+            match self.trace_event(TraceEvent::Call, None) {
                 Ok(()) => {
                     // Set per-frame trace function so line events fire for this frame.
                     // Frames entered before sys.settrace() keep trace=None and skip line events.
@@ -1031,7 +1091,7 @@ impl VirtualMachine {
                             *frame.trace.lock() = trace_func;
                         }
                     }
-                    let result = f(frame);
+                    let result = f(frame.clone());
                     // Fire 'return' trace event on success
                     if result.is_ok() {
                         let _ = self.trace_event(TraceEvent::Return, None);
@@ -1039,23 +1099,68 @@ impl VirtualMachine {
                     result
                 }
                 Err(e) => Err(e),
-            };
-            // SAFETY: frame_ptr is valid because self.frames holds a clone
-            // of the frame, keeping the underlying allocation alive.
-            unsafe { &*frame_ptr }
-                .owner
-                .store(old_owner, core::sync::atomic::Ordering::Release);
-            // Pop the exception context - restores caller's exception state
-            self.pop_exception();
-            // Restore previous frame as current (unlink from chain)
+            }
+        })
+    }
+
+    /// Lightweight frame execution for generator/coroutine resume.
+    /// Pushes to the thread frame stack and fires trace/profile events,
+    /// but skips the thread exception update for performance.
+    pub fn resume_gen_frame<R, F: FnOnce(&Py<Frame>) -> PyResult<R>>(
+        &self,
+        frame: &FrameRef,
+        exc: Option<PyBaseExceptionRef>,
+        f: F,
+    ) -> PyResult<R> {
+        self.check_recursive_call("")?;
+        if self.check_c_stack_overflow() {
+            return Err(self.new_recursion_error(String::new()));
+        }
+        self.recursion_depth.update(|d| d + 1);
+
+        // SAFETY: frame (&FrameRef) stays alive for the duration, so NonNull is valid until pop.
+        let fp = FramePtr(NonNull::from(&**frame));
+        self.frames.borrow_mut().push(fp);
+        #[cfg(feature = "threading")]
+        crate::vm::thread::push_thread_frame(fp);
+        let old_frame = crate::vm::thread::set_current_frame((&***frame) as *const Frame);
+        frame.previous.store(
+            old_frame as *mut Frame,
+            core::sync::atomic::Ordering::Relaxed,
+        );
+        // Inline exception push without thread exception update
+        self.exceptions.borrow_mut().stack.push(exc);
+        let old_owner = frame.owner.swap(
+            crate::frame::FrameOwner::Thread as i8,
+            core::sync::atomic::Ordering::AcqRel,
+        );
+
+        // Ensure cleanup on panic: restore owner, pop exception, frame chain, frames Vec,
+        // and recursion depth.
+        scopeguard::defer! {
+            frame.owner.store(old_owner, core::sync::atomic::Ordering::Release);
+            self.exceptions.borrow_mut().stack
+                .pop()
+                .expect("pop_exception() without nested exc stack");
             crate::vm::thread::set_current_frame(old_frame);
-            // defer dec frame
-            let _popped = self.frames.borrow_mut().pop();
-            // Pop from shared frame stack
+            self.frames.borrow_mut().pop();
             #[cfg(feature = "threading")]
             crate::vm::thread::pop_thread_frame();
-            result
-        })
+
+            self.recursion_depth.update(|d| d - 1);
+        }
+
+        use crate::protocol::TraceEvent;
+        match self.trace_event(TraceEvent::Call, None) {
+            Ok(()) => {
+                let result = f(frame);
+                if result.is_ok() {
+                    let _ = self.trace_event(TraceEvent::Return, None);
+                }
+                result
+            }
+            Err(e) => Err(e),
+        }
     }
 
     /// Returns a basic CompileOpts instance with options accurate to the vm. Used
@@ -1077,15 +1182,11 @@ impl VirtualMachine {
         }
     }
 
-    pub fn current_frame(&self) -> Option<Ref<'_, FrameRef>> {
-        let frames = self.frames.borrow();
-        if frames.is_empty() {
-            None
-        } else {
-            Some(Ref::map(self.frames.borrow(), |frames| {
-                frames.last().unwrap()
-            }))
-        }
+    pub fn current_frame(&self) -> Option<FrameRef> {
+        self.frames.borrow().last().map(|fp| {
+            // SAFETY: the caller keeps the FrameRef alive while it's in the Vec
+            unsafe { fp.as_ref() }.to_owned()
+        })
     }
 
     pub fn current_locals(&self) -> PyResult<ArgMapping> {
@@ -1094,11 +1195,11 @@ impl VirtualMachine {
             .locals(self)
     }
 
-    pub fn current_globals(&self) -> Ref<'_, PyDictRef> {
-        let frame = self
-            .current_frame()
-            .expect("called current_globals but no frames on the stack");
-        Ref::map(frame, |f| &f.globals)
+    pub fn current_globals(&self) -> PyDictRef {
+        self.current_frame()
+            .expect("called current_globals but no frames on the stack")
+            .globals
+            .clone()
     }
 
     pub fn try_class(&self, module: &'static str, class: &'static str) -> PyResult<PyTypeRef> {
@@ -1351,27 +1452,44 @@ impl VirtualMachine {
     }
 
     pub(crate) fn push_exception(&self, exc: Option<PyBaseExceptionRef>) {
-        let mut excs = self.exceptions.borrow_mut();
-        let prev = core::mem::take(&mut *excs);
-        excs.prev = Some(Box::new(prev));
-        excs.exc = exc
+        self.exceptions.borrow_mut().stack.push(exc);
+        #[cfg(feature = "threading")]
+        thread::update_thread_exception(self.topmost_exception());
     }
 
     pub(crate) fn pop_exception(&self) -> Option<PyBaseExceptionRef> {
-        let mut excs = self.exceptions.borrow_mut();
-        let cur = core::mem::take(&mut *excs);
-        *excs = *cur.prev.expect("pop_exception() without nested exc stack");
-        cur.exc
+        let exc = self
+            .exceptions
+            .borrow_mut()
+            .stack
+            .pop()
+            .expect("pop_exception() without nested exc stack");
+        #[cfg(feature = "threading")]
+        thread::update_thread_exception(self.topmost_exception());
+        exc
     }
 
     pub(crate) fn current_exception(&self) -> Option<PyBaseExceptionRef> {
-        self.exceptions.borrow().exc.clone()
+        self.exceptions.borrow().stack.last().cloned().flatten()
     }
 
     pub(crate) fn set_exception(&self, exc: Option<PyBaseExceptionRef>) {
         // don't be holding the RefCell guard while __del__ is called
-        let prev = core::mem::replace(&mut self.exceptions.borrow_mut().exc, exc);
-        drop(prev);
+        let mut excs = self.exceptions.borrow_mut();
+        debug_assert!(
+            !excs.stack.is_empty(),
+            "set_exception called with empty exception stack"
+        );
+        if let Some(top) = excs.stack.last_mut() {
+            let prev = core::mem::replace(top, exc);
+            drop(excs);
+            drop(prev);
+        } else {
+            excs.stack.push(exc);
+            drop(excs);
+        }
+        #[cfg(feature = "threading")]
+        thread::update_thread_exception(self.topmost_exception());
     }
 
     pub(crate) fn contextualize_exception(&self, exception: &Py<PyBaseException>) {
@@ -1404,13 +1522,7 @@ impl VirtualMachine {
 
     pub(crate) fn topmost_exception(&self) -> Option<PyBaseExceptionRef> {
         let excs = self.exceptions.borrow();
-        let mut cur = &*excs;
-        loop {
-            if let Some(exc) = &cur.exc {
-                return Some(exc.clone());
-            }
-            cur = cur.prev.as_deref()?;
-        }
+        excs.stack.iter().rev().find_map(|e| e.clone())
     }
 
     pub fn handle_exit_exception(&self, exc: PyBaseExceptionRef) -> u32 {

@@ -64,9 +64,12 @@ mod _wmi;
 pub(crate) mod signal;
 pub mod sys;
 #[cfg(all(feature = "host_env", windows))]
+#[path = "_winapi.rs"]
 mod winapi;
 #[cfg(all(feature = "host_env", windows))]
 mod winreg;
+#[cfg(all(feature = "host_env", windows))]
+mod winsound;
 
 use crate::{Context, builtins::PyModuleDef};
 
@@ -131,6 +134,8 @@ pub fn builtin_module_defs(ctx: &Context) -> Vec<&'static PyModuleDef> {
         winapi::module_def(ctx),
         #[cfg(all(feature = "host_env", windows))]
         winreg::module_def(ctx),
+        #[cfg(all(feature = "host_env", windows))]
+        winsound::module_def(ctx),
         #[cfg(all(feature = "host_env", windows))]
         _wmi::module_def(ctx),
     ]

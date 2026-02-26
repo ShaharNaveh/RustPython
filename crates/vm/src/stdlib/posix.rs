@@ -707,6 +707,23 @@ pub mod module {
         #[cfg(feature = "threading")]
         crate::object::reset_weakref_locks_after_fork();
 
+        // Force-unlock all global VM locks that may have been held by
+        // threads that no longer exist in the child process after fork.
+        // SAFETY: After fork, only the forking thread survives. Any lock
+        // held by another thread is permanently stuck. The forking thread
+        // does not hold these locks during fork() (a high-level Python op).
+        unsafe {
+            vm.ctx.string_pool.force_unlock_after_fork();
+            vm.state.codec_registry.force_unlock_after_fork();
+            force_unlock_mutex_after_fork(&vm.state.atexit_funcs);
+            force_unlock_mutex_after_fork(&vm.state.before_forkers);
+            force_unlock_mutex_after_fork(&vm.state.after_forkers_child);
+            force_unlock_mutex_after_fork(&vm.state.after_forkers_parent);
+            force_unlock_mutex_after_fork(&vm.state.global_trace_func);
+            force_unlock_mutex_after_fork(&vm.state.global_profile_func);
+            crate::gc_state::gc_state().force_unlock_after_fork();
+        }
+
         // Mark all other threads as done before running Python callbacks
         #[cfg(feature = "threading")]
         crate::stdlib::thread::after_fork_child(vm);
@@ -718,6 +735,17 @@ pub mod module {
 
         let after_forkers_child: Vec<PyObjectRef> = vm.state.after_forkers_child.lock().clone();
         run_at_forkers(after_forkers_child, false, vm);
+    }
+
+    /// Force-unlock a PyMutex if held by a dead thread after fork.
+    ///
+    /// # Safety
+    /// Must only be called after fork() in the child process.
+    unsafe fn force_unlock_mutex_after_fork<T>(mutex: &crate::common::lock::PyMutex<T>) {
+        if mutex.try_lock().is_none() {
+            // SAFETY: Lock is held by a dead thread after fork.
+            unsafe { mutex.force_unlock() };
+        }
     }
 
     fn py_os_after_fork_parent(vm: &VirtualMachine) {
@@ -1073,21 +1101,6 @@ pub mod module {
             .map_err(|err| err.into_pyexception(vm))
     }
 
-    fn envobj_to_dict(env: ArgMapping, vm: &VirtualMachine) -> PyResult<PyDictRef> {
-        let obj = env.obj();
-        if let Some(dict) = obj.downcast_ref_if_exact::<crate::builtins::PyDict>(vm) {
-            return Ok(dict.to_owned());
-        }
-        let keys = vm.call_method(obj, "keys", ())?;
-        let dict = vm.ctx.new_dict();
-        for key in keys.get_iter(vm)?.into_iter::<PyObjectRef>(vm)? {
-            let key = key?;
-            let val = obj.get_item(&*key, vm)?;
-            dict.set_item(&*key, val, vm)?;
-        }
-        Ok(dict)
-    }
-
     #[pyfunction]
     fn execve(
         path: OsPath,
@@ -1110,7 +1123,7 @@ pub mod module {
             return Err(vm.new_value_error("execve() arg 2 first element cannot be empty"));
         }
 
-        let env = envobj_to_dict(env, vm)?;
+        let env = crate::stdlib::os::envobj_to_dict(env, vm)?;
         let env = env
             .into_iter()
             .map(|(k, v)| -> PyResult<_> {
