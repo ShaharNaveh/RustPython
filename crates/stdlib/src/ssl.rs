@@ -2012,7 +2012,11 @@ mod _ssl {
         ) -> PyResult<(Option<String>, Option<PyObjectRef>)> {
             match password {
                 OptionalArg::Present(p) => {
-                    // Try string first
+                    if vm.is_none(&p) {
+                        return Ok((None, None));
+                    }
+
+                    // Try string
                     if let Ok(pwd_str) = PyStrRef::try_from_object(vm, p.clone()) {
                         Ok((Some(pwd_str.as_str().to_owned()), None))
                     }
