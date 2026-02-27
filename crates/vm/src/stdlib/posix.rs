@@ -62,7 +62,7 @@ pub mod module {
     use strum::IntoEnumIterator;
     use strum_macros::{EnumIter, EnumString};
 
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(target_os = "android")]
     #[pyattr]
     use libc::{SCHED_DEADLINE, SCHED_NORMAL};
 
