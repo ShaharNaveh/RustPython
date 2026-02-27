@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 import collections
+import pathlib
 import re
 import urllib.request
 from typing import TYPE_CHECKING
+
+import tomllib
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -12,8 +15,12 @@ OS_CONSTS_PAT = re.compile(
     r"\bos\.(_*[A-Z]+(?:_+[A-Z]+)*_*)"
 )  # TODO: Exclude matches if they have `(` after (those are functions)
 
+CARGO_TOML_FILE = pathlib.Path(__file__).parents[1] / "Cargo.toml"
+CARGO_TOML = tomllib.loads(CARGO_TOML_FILE.read_text())
+LIBC_DATA = CARGO_TOML["workspace"]["dependencies"]["libc"]
 
-LIBC_VERSION = "0.2.180"
+
+LIBC_VERSION = LIBC_DATA["version"] if isinstance(LIBC_DATA, dict) else LIBC_DATA
 
 EXCLUDE = frozenset(
     {
