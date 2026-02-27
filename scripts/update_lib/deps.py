@@ -33,30 +33,35 @@ from update_lib.file_utils import (
 
 class ImportVisitor(ast.NodeVisitor):
     def __init__(self) -> None:
-        self.test_imports = set()
-        self.lib_imports = set()
+        self.__imports = set()
 
-    def add_import(self, name: str) -> None:
-        """
-        Add an `import` to its correct slot (`test_imports` or `lib_imports`).
+    @property
+    def test_imports(self) -> frozenset[str]:
+        imports = set()
+        for module in self.__imports:
+            if not module.startswith("test."):
+                continue
+            name = module.removeprefix("test.")
 
-        Parameters
-        ----------
-        name : str
-            Module name.
-        """
-        if name.startswith("test.support"):
-            return
+            if name == "support" or name.startswith("support."):
+                continue
 
-        real_name = name.split(".", 1)[-1]
-        if name.startswith("test."):
-            self.test_imports.add(real_name)
-        else:
-            self.lib_imports.add(real_name)
+            imports.add(name)
+
+        return frozenset(imports)
+
+    @property
+    def lib_imports(self) -> frozenset[str]:
+        return frozenset(
+            # module.split(".", 1)[0]
+            module
+            for module in self.__imports
+            if not module.startswith("test.")
+        )
 
     def visit_Import(self, node):
         for alias in node.names:
-            self.add_import(alias.name)
+            self.__imports.add(alias.name)
 
     def visit_ImportFrom(self, node):
         try:
@@ -65,8 +70,17 @@ class ImportVisitor(ast.NodeVisitor):
             # Ignore `from . import my_internal_module`
             return
 
-        for name in node.names:
-            self.add_import(f"{module}.{name}")
+        if module is None:  # Ignore `from . import my_internal_module`
+            return
+
+        for alias in node.names:
+            # We only care about what we import if it was from the "test" module
+            if module == "test":
+                name = f"{module}.{alias.name}"
+            else:
+                name = module
+
+            self.__imports.add(name)
 
     def visit_Call(self, node) -> None:
         """
