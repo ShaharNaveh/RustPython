@@ -116,7 +116,7 @@ class ImportVisitor(ast.NodeVisitor):
             return
 
         target = target.removesuffix(".py")
-        self.add_import(f"test.{target}")
+        self.__imports.add(f"test.{target}")
 
 
 def parse_test_imports(content: str) -> set[str]:
