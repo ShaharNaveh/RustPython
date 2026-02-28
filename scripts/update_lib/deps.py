@@ -11,7 +11,6 @@ import ast
 import difflib
 import functools
 import pathlib
-import re
 import shelve
 import subprocess
 
@@ -32,62 +31,109 @@ from update_lib.file_utils import (
 # === Import parsing utilities ===
 
 
-def _extract_top_level_code(content: str) -> str:
-    """Extract only top-level code from Python content for faster parsing."""
-    def_idx = content.find("\ndef ")
-    class_idx = content.find("\nclass ")
+class ImportVisitor(ast.NodeVisitor):
+    def __init__(self) -> None:
+        self.__imports = set()
 
-    indices = [i for i in (def_idx, class_idx) if i != -1]
-    if indices:
-        content = content[: min(indices)]
-    return content.rstrip("\n")
+    @property
+    def test_imports(self) -> frozenset[str]:
+        imports = set()
+        for module in self.__imports:
+            if not module.startswith("test."):
+                continue
+            name = module.removeprefix("test.")
+
+            if name == "support" or name.startswith("support."):
+                continue
+
+            imports.add(name)
+
+        return frozenset(imports)
+
+    @property
+    def lib_imports(self) -> frozenset[str]:
+        return frozenset(
+            module for module in self.__imports if not module.startswith("test.")
+        )
+
+    def visit_Import(self, node):
+        for alias in node.names:
+            self.__imports.add(alias.name)
+
+    def visit_ImportFrom(self, node):
+        try:
+            module = node.module
+        except AttributeError:
+            # Ignore `from . import my_internal_module`
+            return
+
+        if module is None:  # Ignore `from . import my_internal_module`
+            return
+
+        for alias in node.names:
+            # We only care about what we import if it was from the "test" module
+            if module == "test":
+                name = f"{module}.{alias.name}"
+            else:
+                name = module
+
+            self.__imports.add(name)
+
+    def visit_Call(self, node) -> None:
+        """
+        In test files, there's sometimes use of:
+
+        ```python
+        import test.support
+        from test.support import script_helper
+
+        script = support.findfile("_test_atexit.py")
+        script_helper.run_test_script(script)
+        ```
+
+        This imports "_test_atexit.py" but does not show as an import node.
+        """
+        func = node.func
+        if not isinstance(func, ast.Attribute):
+            return
+
+        value = func.value
+        if not isinstance(value, ast.Name):
+            return
+
+        if (value.id != "support") or (func.attr != "findfile"):
+            return
+
+        arg = node.args[0]
+        if not isinstance(arg, ast.Constant):
+            return
+
+        target = arg.value
+        if not target.endswith(".py"):
+            return
+
+        target = target.removesuffix(".py")
+        self.__imports.add(f"test.{target}")
 
 
-_FROM_TEST_IMPORT_RE = re.compile(r"^from test import (.+)", re.MULTILINE)
-_FROM_TEST_DOT_RE = re.compile(r"^from test\.(\w+)", re.MULTILINE)
-_IMPORT_TEST_DOT_RE = re.compile(r"^import test\.(\w+)", re.MULTILINE)
-
-
-def parse_test_imports(content: str) -> set[str]:
+def parse_test_imports(content: str) -> frozenset[str]:
     """Parse test file content and extract test package dependencies."""
-    content = _extract_top_level_code(content)
-    imports = set()
+    if not (tree := safe_parse_ast(content)):
+        return set()
 
-    for match in _FROM_TEST_IMPORT_RE.finditer(content):
-        import_list = match.group(1)
-        for part in import_list.split(","):
-            name = part.split()[0].strip()
-            if name and name not in ("support", "__init__"):
-                imports.add(name)
-
-    for match in _FROM_TEST_DOT_RE.finditer(content):
-        dep = match.group(1)
-        if dep not in ("support", "__init__"):
-            imports.add(dep)
-
-    for match in _IMPORT_TEST_DOT_RE.finditer(content):
-        dep = match.group(1)
-        if dep not in ("support", "__init__"):
-            imports.add(dep)
-
-    return imports
+    visitor = ImportVisitor()
+    visitor.visit(tree)
+    return visitor.test_imports
 
 
-_IMPORT_RE = re.compile(r"^import\s+(\w[\w.]*)", re.MULTILINE)
-_FROM_IMPORT_RE = re.compile(r"^from\s+(\w[\w.]*)\s+import", re.MULTILINE)
-
-
-def parse_lib_imports(content: str) -> set[str]:
+def parse_lib_imports(content: str) -> frozenset[str]:
     """Parse library file and extract all imported module names."""
-    imports = set()
+    if not (tree := safe_parse_ast(content)):
+        return set()
 
-    for match in _IMPORT_RE.finditer(content):
-        imports.add(match.group(1))
-
-    for match in _FROM_IMPORT_RE.finditer(content):
-        imports.add(match.group(1))
-
-    return imports
+    visitor = ImportVisitor()
+    visitor.visit(tree)
+    return visitor.lib_imports
 
 
 # === TODO marker utilities ===
@@ -98,13 +144,12 @@ TODO_MARKER = "TODO: RUSTPYTHON"
 def filter_rustpython_todo(content: str) -> str:
     """Remove lines containing RustPython TODO markers."""
     lines = content.splitlines(keepends=True)
-    filtered = [line for line in lines if TODO_MARKER not in line]
-    return "".join(filtered)
+    return "".join(line for line in lines if TODO_MARKER not in line)
 
 
 def count_rustpython_todo(content: str) -> int:
     """Count lines containing RustPython TODO markers."""
-    return sum(1 for line in content.splitlines() if TODO_MARKER in line)
+    return content.count(TODO_MARKER)
 
 
 def count_todo_in_path(path: pathlib.Path) -> int:
@@ -113,10 +158,7 @@ def count_todo_in_path(path: pathlib.Path) -> int:
         content = safe_read_text(path)
         return count_rustpython_todo(content) if content else 0
 
-    total = 0
-    for _, content in read_python_files(path):
-        total += count_rustpython_todo(content)
-    return total
+    return sum(count_rustpython_todo(content) for _, content in read_python_files(path))
 
 
 # === Test utilities ===
@@ -296,7 +338,7 @@ DEPENDENCIES = {
     },
     "codecs": {
         "test": [
-            "test_codecs.py",
+            "test_charmapcodec.py",
             "test_codeccallbacks.py",
             "test_codecencodings_cn.py",
             "test_codecencodings_hk.py",
@@ -309,8 +351,9 @@ DEPENDENCIES = {
             "test_codecmaps_jp.py",
             "test_codecmaps_kr.py",
             "test_codecmaps_tw.py",
-            "test_charmapcodec.py",
+            "test_codecs.py",
             "test_multibytecodec.py",
+            "testcodec.py",
         ],
     },
     # Non-pattern hard_deps (can't be auto-detected)
@@ -377,6 +420,7 @@ DEPENDENCIES = {
             "test_multiprocessing_forkserver",
             "test_multiprocessing_spawn",
             "test_multiprocessing_main_handling.py",
+            "_test_multiprocessing.py",
         ],
     },
     "urllib": {
@@ -699,12 +743,9 @@ def resolve_hard_dep_parent(name: str, cpython_prefix: str) -> str | None:
     # Auto-detect _py{module} or _py_{module} patterns
     # Only if the parent module actually exists
     if name.startswith("_py"):
-        if name.startswith("_py_"):
-            # _py_abc -> abc
-            parent = name[4:]
-        else:
-            # _pydatetime -> datetime
-            parent = name[3:]
+        # _py_abc -> abc
+        # _pydatetime -> datetime
+        parent = name.removeprefix("_py_").removeprefix("_py")
 
         # Verify the parent module exists
         lib_dir = pathlib.Path(cpython_prefix) / "Lib"
@@ -735,7 +776,7 @@ def resolve_test_to_lib(test_name: str) -> str | None:
         tests = dep_info.get("test", [])
         for test_path in tests:
             # test_path is like "test_urllib2.py" or "test_multiprocessing_fork"
-            path_stem = test_path[:-3] if test_path.endswith(".py") else test_path
+            path_stem = test_path.removesuffix(".py")
             if path_stem == test_name:
                 return lib_name
 

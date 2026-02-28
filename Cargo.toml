@@ -54,7 +54,7 @@ rustyline = { workspace = true }
 
 [dev-dependencies]
 criterion = { workspace = true }
-pyo3 = { version = "0.28", features = ["auto-initialize"] }
+pyo3 = { version = "0.28.2", features = ["auto-initialize"] }
 rustpython-stdlib = { workspace = true }
 
 [[bench]]
@@ -144,12 +144,12 @@ rustpython-sre_engine = { path = "crates/sre_engine", version = "0.4.0" }
 rustpython-wtf8 = { path = "crates/wtf8", version = "0.4.0" }
 rustpython-doc = { path = "crates/doc", version = "0.4.0" }
 
-# Ruff tag 0.15.1 is based on commit a2f11d239f91cf8daedb0764ec15fcfe29c5ae6d
+# Ruff tag 0.15.4 is based on commit f14edd8661e2803254f89265548c7487f47a09f6
 # at the time of this capture. We use the commit hash to ensure reproducible builds.
-ruff_python_parser = { git = "https://github.com/astral-sh/ruff.git", rev = "a2f11d239f91cf8daedb0764ec15fcfe29c5ae6d" }
-ruff_python_ast = { git = "https://github.com/astral-sh/ruff.git", rev = "a2f11d239f91cf8daedb0764ec15fcfe29c5ae6d" }
-ruff_text_size = { git = "https://github.com/astral-sh/ruff.git", rev = "a2f11d239f91cf8daedb0764ec15fcfe29c5ae6d" }
-ruff_source_file = { git = "https://github.com/astral-sh/ruff.git", rev = "a2f11d239f91cf8daedb0764ec15fcfe29c5ae6d" }
+ruff_python_parser = { git = "https://github.com/astral-sh/ruff.git", rev = "f14edd8661e2803254f89265548c7487f47a09f6" }
+ruff_python_ast = { git = "https://github.com/astral-sh/ruff.git", rev = "f14edd8661e2803254f89265548c7487f47a09f6" }
+ruff_text_size = { git = "https://github.com/astral-sh/ruff.git", rev = "f14edd8661e2803254f89265548c7487f47a09f6" }
+ruff_source_file = { git = "https://github.com/astral-sh/ruff.git", rev = "f14edd8661e2803254f89265548c7487f47a09f6" }
 
 phf = { version = "0.13.1", default-features = false, features = ["macros"]}
 ahash = "0.8.12"
@@ -158,7 +158,7 @@ bitflags = "2.11.0"
 bstr = "1"
 bytes = "1.11.1"
 cfg-if = "1.0"
-chrono = { version = "0.4.43", default-features = false, features = ["clock", "oldtime", "std"] }
+chrono = { version = "0.4.44", default-features = false, features = ["clock", "oldtime", "std"] }
 constant_time_eq = "0.4"
 criterion = { version = "0.8", features = ["html_reports"] }
 crossbeam-utils = "0.8.21"
@@ -170,8 +170,9 @@ indexmap = { version = "2.13.0", features = ["std"] }
 insta = "1.46"
 itertools = "0.14.0"
 is-macro = "0.3.7"
-junction = "1.4.1"
 libc = "0.2.182"
+junction = "1.4.2"
+libc = "0.2.180"
 libffi = "5"
 log = "0.4.29"
 nix = { version = "0.30", features = ["fs", "user", "process", "term", "time", "signal", "ioctl", "socket", "sched", "zerocopy", "dir", "hostname", "net", "poll"] }
