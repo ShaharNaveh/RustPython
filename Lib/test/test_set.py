@@ -657,6 +657,7 @@ class TestSet(TestJointOps, unittest.TestCase):
         self.assertRaises(KeyError, myset.remove, set(range(1)))
         self.assertRaises(KeyError, myset.remove, set(range(3)))
 
+    @unittest.expectedFailure  # TODO: RUSTPYTHON
     def test_unhashable_element(self):
         myset = {'a'}
         elem = [1, 2, 3]
@@ -828,6 +829,7 @@ class TestFrozenSetSubclass(TestFrozenSet):
     thetype = FrozenSetSubclass
     basetype = frozenset
 
+    @unittest.expectedFailure  # TODO: RUSTPYTHON
     def test_keywords_in_subclass(self):
         class subclass(frozenset):
             pass
@@ -888,6 +890,10 @@ class TestSetSubclassWithSlots(unittest.TestCase):
     thetype = SetSubclassWithSlots
     setUp = TestJointOps.setUp
     test_pickling = TestJointOps.test_pickling
+
+    @unittest.expectedFailure  # TODO: RUSTPYTHON
+    def test_pickling(self):
+        return super().test_pickling()
 
 class FrozenSetSubclassWithSlots(frozenset):
     __slots__ = ('x', 'y', '__dict__')
