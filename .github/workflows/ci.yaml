@@ -97,6 +97,9 @@ env:
     test_unpack_ex
     test_weakref
     test_yield_from
+
+  ENV_POLLUTING_TESTS_COMMON: >-
+
   # Python version targeted by the CI.
   PYTHON_VERSION: "3.14.3"
   X86_64_PC_WINDOWS_MSVC_OPENSSL_LIB_DIR: C:\Program Files\OpenSSL\lib\VC\x64\MD
@@ -282,11 +285,11 @@ jobs:
         job: 
           - os: macos-latest
             env_polluting_tests: ""
-            skips: ""
+            skip: ""
           - os: ubuntu-latest
             cargo_args: "--features=jit"
             env_polluting_tests: ""
-            skips: ""
+            skip: ""
           - os: windows-2025
             cargo_args: "--features=jit"
             env_polluting_tests: ""
@@ -294,7 +297,7 @@ jobs:
           # test_pathlib: panic by surrogate chars
           # test_posixpath: OSError: (22, 'The filename, directory name, or volume label syntax is incorrect. (os error 123)')
           # test_venv: couple of failing tests
-            skips: >-
+            skip: >-
               test_rlcompleter
               test_pathlib
               test_posixpath
@@ -335,7 +338,7 @@ jobs:
 
       - name: Run CPython platform-dependent tests
         run: |
-          target/release/rustpython -m test -j 1 -u all --slowest --fail-env-changed --timeout 600 -v -x ${{ env.PLATFORM_INDEPENDENT_TESTS }} ${{ matrix.job.skips }}
+          target/release/rustpython -m test -j 1 -u all --slowest --fail-env-changed --timeout 600 -v -x ${{ env.PLATFORM_INDEPENDENT_TESTS }} ${{ matrix.job.skip }}
         env:
           RUSTPYTHON_SKIP_ENV_POLLUTERS: true
         timeout-minutes: 60
