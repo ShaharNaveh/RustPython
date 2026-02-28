@@ -276,17 +276,19 @@ jobs:
     env:
       RUST_BACKTRACE: full
     name: Run snippets and cpython tests
-    runs-on: ${{ matrix.platform.os }}
+    runs-on: ${{ matrix.job.os }}
     strategy:
       matrix:
-        platform: 
+        job: 
           - os: macos-latest
             env_polluting_tests: ""
             skips: ""
           - os: ubuntu-latest
+            cargo_args: "--features=jit"
             env_polluting_tests: ""
             skips: ""
           - os: windows-2025
+            cargo_args: "--features=jit"
             env_polluting_tests: ""
           # Skip additional tests on Windows. They are checked on Linux and MacOS.
           # test_pathlib: panic by surrogate chars
@@ -313,13 +315,11 @@ jobs:
         run: brew install autoconf automake libtool openssl@3
         if: runner.os == 'macOS'
 
-      - name: build rustpython
-        run: cargo build --release --verbose --features=threading ${{ env.CARGO_ARGS }}
-        if: runner.os == 'macOS'
-
-      - name: build rustpython
-        run: cargo build --release --verbose --features=threading ${{ env.CARGO_ARGS }},jit
-        if: runner.os != 'macOS'
+      - name: Build RustPython
+        run: |
+          cargo build --release --verbose --features=threading ${{ env.CARGO_ARGS }} ${{ env.EXTRA_CARGO_ARGS }}
+        env:
+          EXTRA_CARGO_ARGS: ${{ matrix.job.cargo_args || '' }}
 
       - name: run snippets
         run: python -m pip install -r requirements.txt && pytest -v
@@ -335,7 +335,7 @@ jobs:
 
       - name: Run CPython platform-dependent tests
         run: |
-          target/release/rustpython -m test -j 1 -u all --slowest --fail-env-changed --timeout 600 -v -x ${{ env.PLATFORM_INDEPENDENT_TESTS }} ${{ matrix.target.skips }}
+          target/release/rustpython -m test -j 1 -u all --slowest --fail-env-changed --timeout 600 -v -x ${{ env.PLATFORM_INDEPENDENT_TESTS }} ${{ matrix.job.skips }}
         env:
           RUSTPYTHON_SKIP_ENV_POLLUTERS: true
         timeout-minutes: 60
@@ -343,7 +343,7 @@ jobs:
       - name: Run cpython tests to check if env polluters have stopped polluting
         shell: bash
         run: |
-          for thing in ${{ env.ENV_POLLUTING_TESTS_COMMON }} ${{ matrix.platform.env_polluting_tests }}; do
+          for thing in ${{ env.ENV_POLLUTING_TESTS_COMMON }} ${{ matrix.job.env_polluting_tests }}; do
             for i in $(seq 1 10); do
               set +e
               target/release/rustpython -m test -j 1 --slowest --fail-env-changed --timeout 600 -v ${thing}
@@ -356,7 +356,7 @@ jobs:
             done
             if [ ${exit_code} -ne 3 ]; then
               echo "Test ${thing} is no longer polluting the environment after ${i} attempts!"
-              echo "Please remove ${thing} from either ENV_POLLUTING_TESTS_COMMON or matrix.platform.env_polluting_tests in '.github/workflows/ci.yaml'."
+              echo "Please remove ${thing} from either ENV_POLLUTING_TESTS_COMMON or matrix.job.env_polluting_tests in '.github/workflows/ci.yaml'."
               echo "Please also remove the skip decorators that include the word 'POLLUTERS' in ${thing}."
               if [ ${exit_code} -ne 0 ]; then
                 echo "Test ${thing} failed with exit code ${exit_code}."
