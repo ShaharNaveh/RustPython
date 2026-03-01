@@ -948,7 +948,7 @@ impl Compiler {
                         )));
                     }
                 };
-                self.emit_arg(idx, Instruction::LoadDeref);
+                emit!(self, Instruction::LoadDeref { i: idx });
 
                 // Load first parameter (typically 'self').
                 // Safety: can_optimize_super_call() ensures argcount > 0, and
@@ -1690,7 +1690,7 @@ impl Compiler {
                 value: value.into(),
             });
             let doc = self.name("__doc__");
-            emit!(self, Instruction::StoreGlobal(doc))
+            emit!(self, Instruction::StoreGlobal { namei: doc })
         }
 
         // Handle annotations based on future_annotations flag
@@ -1972,61 +1972,57 @@ impl Compiler {
         // Generate appropriate instructions based on operation type
         match op_type {
             NameOp::Deref => {
-                let idx = match actual_scope {
+                let i = match actual_scope {
                     SymbolScope::Free => self.get_free_var_index(&name)?,
                     SymbolScope::Cell => self.get_cell_var_index(&name)?,
                     _ => unreachable!("Invalid scope for Deref operation"),
                 };
 
-                let op = match usage {
+                match usage {
                     NameUsage::Load => {
                         // ClassBlock (not inlined comp): LOAD_LOCALS first, then LOAD_FROM_DICT_OR_DEREF
                         if self.ctx.in_class && !self.ctx.in_func() {
                             emit!(self, Instruction::LoadLocals);
-                            Instruction::LoadFromDictOrDeref
+                            emit!(self, Instruction::LoadFromDictOrDeref { i });
                         // can_see_class_scope: LOAD_DEREF(__classdict__) first
                         } else if can_see_class_scope {
                             let classdict_idx = self.get_free_var_index("__classdict__")?;
-                            self.emit_arg(classdict_idx, Instruction::LoadDeref);
-                            Instruction::LoadFromDictOrDeref
+                            emit!(self, Instruction::LoadDeref { i: classdict_idx });
+                            emit!(self, Instruction::LoadFromDictOrDeref { i });
                         } else {
-                            Instruction::LoadDeref
+                            emit!(self, Instruction::LoadDeref { i });
                         }
                     }
-                    NameUsage::Store => Instruction::StoreDeref,
-                    NameUsage::Delete => Instruction::DeleteDeref,
+                    NameUsage::Store => emit!(self, Instruction::StoreDeref { i }),
+                    NameUsage::Delete => emit!(self, Instruction::DeleteDeref { i }),
                 };
-                self.emit_arg(idx, op);
             }
             NameOp::Fast => {
-                let idx = self.get_local_var_index(&name)?;
-                let op = match usage {
-                    NameUsage::Load => Instruction::LoadFast,
-                    NameUsage::Store => Instruction::StoreFast,
-                    NameUsage::Delete => Instruction::DeleteFast,
+                let var_num = self.get_local_var_index(&name)?;
+                match usage {
+                    NameUsage::Load => emit!(self, Instruction::LoadFast { var_num }),
+                    NameUsage::Store => emit!(self, Instruction::StoreFast { var_num }),
+                    NameUsage::Delete => emit!(self, Instruction::DeleteFast { var_num }),
                 };
-                self.emit_arg(idx, op);
             }
             NameOp::Global => {
-                let idx = self.get_global_name_index(&name);
-                let op = match usage {
+                let namei = self.get_global_name_index(&name);
+                match usage {
                     NameUsage::Load => {
-                        self.emit_load_global(idx, false);
+                        self.emit_load_global(namei, false);
                         return Ok(());
                     }
-                    NameUsage::Store => Instruction::StoreGlobal,
-                    NameUsage::Delete => Instruction::DeleteGlobal,
+                    NameUsage::Store => emit!(self, Instruction::StoreGlobal { namei }),
+                    NameUsage::Delete => emit!(self, Instruction::DeleteGlobal { namei }),
                 };
-                self.emit_arg(idx, op);
             }
             NameOp::Name => {
-                let idx = self.get_global_name_index(&name);
-                let op = match usage {
-                    NameUsage::Load => Instruction::LoadName,
-                    NameUsage::Store => Instruction::StoreName,
-                    NameUsage::Delete => Instruction::DeleteName,
+                let namei = self.get_global_name_index(&name);
+                match usage {
+                    NameUsage::Load => emit!(self, Instruction::LoadName { namei }),
+                    NameUsage::Store => emit!(self, Instruction::StoreName { namei }),
+                    NameUsage::Delete => emit!(self, Instruction::DeleteName { namei }),
                 };
-                self.emit_arg(idx, op);
             }
             NameOp::DictOrGlobals => {
                 // PEP 649: First check classdict (from __classdict__ freevar), then globals
