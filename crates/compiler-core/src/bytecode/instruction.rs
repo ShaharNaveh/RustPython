@@ -79,28 +79,28 @@ pub enum Instruction {
     ///
     /// Stack: [value, expression_str, format_spec?] -> [interpolation]
     BuildInterpolation {
-        oparg: Arg<u32>,
+        format: Arg<u32>,
     } = 45,
     BuildList {
-        size: Arg<u32>,
+        count: Arg<u32>,
     } = 46,
     BuildMap {
-        size: Arg<u32>,
+        count: Arg<u32>,
     } = 47,
     BuildSet {
-        size: Arg<u32>,
+        count: Arg<u32>,
     } = 48,
     BuildSlice {
         argc: Arg<BuildSliceArgCount>,
     } = 49,
     BuildString {
-        size: Arg<u32>,
+        count: Arg<u32>,
     } = 50,
     BuildTuple {
-        size: Arg<u32>,
+        count: Arg<u32>,
     } = 51,
     Call {
-        nargs: Arg<u32>,
+        argc: Arg<u32>,
     } = 52,
     CallIntrinsic1 {
         func: Arg<IntrinsicFunction1>,
@@ -109,57 +109,69 @@ pub enum Instruction {
         func: Arg<IntrinsicFunction2>,
     } = 54,
     CallKw {
-        nargs: Arg<u32>,
+        argc: Arg<u32>,
     } = 55,
     CompareOp {
-        op: Arg<ComparisonOperator>,
+        opnmae: Arg<ComparisonOperator>,
     } = 56,
-    ContainsOp(Arg<Invert>) = 57,
+    ContainsOp {
+        invert: Arg<Invert>,
+    } = 57,
     ConvertValue {
         oparg: Arg<ConvertValueOparg>,
     } = 58,
     Copy {
-        index: Arg<u32>,
+        i: Arg<u32>,
     } = 59,
     CopyFreeVars {
-        count: Arg<u32>,
+        n: Arg<u32>,
     } = 60,
     DeleteAttr {
-        idx: Arg<NameIdx>,
+        nami: Arg<NameIdx>,
     } = 61,
-    DeleteDeref(Arg<NameIdx>) = 62,
-    DeleteFast(Arg<NameIdx>) = 63,
-    DeleteGlobal(Arg<NameIdx>) = 64,
-    DeleteName(Arg<NameIdx>) = 65,
+    DeleteDeref {
+        i: Arg<NameIdx>,
+    } = 62,
+    DeleteFast {
+        var_num: Arg<NameIdx>,
+    } = 63,
+    DeleteGlobal {
+        namei: Arg<NameIdx>,
+    } = 64,
+    DeleteName {
+        namei: Arg<NameIdx>,
+    } = 65,
     DictMerge {
-        index: Arg<u32>,
+        i: Arg<u32>,
     } = 66,
     DictUpdate {
-        index: Arg<u32>,
+        i: Arg<u32>,
     } = 67,
     EndAsyncFor = 68,
     ExtendedArg = 69,
     ForIter {
-        target: Arg<Label>,
+        delta: Arg<Label>,
     } = 70,
     GetAwaitable {
-        arg: Arg<u32>,
+        r#where: Arg<u32>,
     } = 71,
     ImportFrom {
-        idx: Arg<NameIdx>,
+        namei: Arg<NameIdx>,
     } = 72,
     ImportName {
-        idx: Arg<NameIdx>,
+        namei: Arg<NameIdx>,
     } = 73,
-    IsOp(Arg<Invert>) = 74,
+    IsOp {
+        invert: Arg<Invert>,
+    } = 74,
     JumpBackward {
-        target: Arg<Label>,
+        delta: Arg<Label>,
     } = 75,
     JumpBackwardNoInterrupt {
-        target: Arg<Label>,
+        delta: Arg<Label>,
     } = 76, // Placeholder
     JumpForward {
-        target: Arg<Label>,
+        delta: Arg<Label>,
     } = 77,
     ListAppend {
         i: Arg<u32>,
@@ -168,101 +180,131 @@ pub enum Instruction {
         i: Arg<u32>,
     } = 79,
     LoadAttr {
-        idx: Arg<LoadAttr>,
+        namei: Arg<LoadAttr>,
     } = 80,
     LoadCommonConstant {
         idx: Arg<CommonConstant>,
     } = 81,
     LoadConst {
-        idx: Arg<u32>,
+        consti: Arg<u32>,
     } = 82,
-    LoadDeref(Arg<NameIdx>) = 83,
-    LoadFast(Arg<NameIdx>) = 84,
-    LoadFastAndClear(Arg<NameIdx>) = 85,
-    LoadFastBorrow(Arg<NameIdx>) = 86,
+    LoadDeref {
+        i: Arg<NameIdx>,
+    } = 83,
+    LoadFast {
+        var_num: Arg<NameIdx>,
+    } = 84,
+    LoadFastAndClear {
+        var_num: Arg<NameIdx>,
+    } = 85,
+    LoadFastBorrow {
+        var_num: Arg<NameIdx>,
+    } = 86,
     LoadFastBorrowLoadFastBorrow {
-        arg: Arg<u32>,
+        var_nums: Arg<u32>,
     } = 87,
-    LoadFastCheck(Arg<NameIdx>) = 88,
+    LoadFastCheck {
+        var_num: Arg<NameIdx>,
+    } = 88,
     LoadFastLoadFast {
-        arg: Arg<u32>,
+        var_nums: Arg<u32>,
     } = 89,
-    LoadFromDictOrDeref(Arg<NameIdx>) = 90,
-    LoadFromDictOrGlobals(Arg<NameIdx>) = 91,
-    LoadGlobal(Arg<NameIdx>) = 92,
-    LoadName(Arg<NameIdx>) = 93,
+    LoadFromDictOrDeref {
+        i: Arg<NameIdx>,
+    } = 90,
+    LoadFromDictOrGlobals {
+        i: Arg<NameIdx>,
+    } = 91,
+    LoadGlobal {
+        namei: Arg<NameIdx>,
+    } = 92,
+    LoadName {
+        namei: Arg<NameIdx>,
+    } = 93,
     LoadSmallInt {
-        idx: Arg<u32>,
+        i: Arg<u32>,
     } = 94,
     LoadSpecial {
         method: Arg<SpecialMethod>,
     } = 95,
     LoadSuperAttr {
-        arg: Arg<LoadSuperAttr>,
+        nami: Arg<LoadSuperAttr>,
     } = 96,
-    MakeCell(Arg<NameIdx>) = 97,
+    MakeCell {
+        i: Arg<NameIdx>,
+    } = 97,
     MapAdd {
         i: Arg<u32>,
     } = 98,
-    MatchClass(Arg<u32>) = 99,
+    MatchClass {
+        count: Arg<u32>,
+    } = 99,
     PopJumpIfFalse {
-        target: Arg<Label>,
+        delta: Arg<Label>,
     } = 100,
     PopJumpIfNone {
-        target: Arg<Label>,
+        delta: Arg<Label>,
     } = 101,
     PopJumpIfNotNone {
-        target: Arg<Label>,
+        delta: Arg<Label>,
     } = 102,
     PopJumpIfTrue {
-        target: Arg<Label>,
+        delta: Arg<Label>,
     } = 103,
     RaiseVarargs {
-        kind: Arg<RaiseKind>,
+        argc: Arg<RaiseKind>,
     } = 104,
     Reraise {
         depth: Arg<u32>,
     } = 105,
     Send {
-        target: Arg<Label>,
+        delta: Arg<Label>,
     } = 106,
     SetAdd {
         i: Arg<u32>,
     } = 107,
     SetFunctionAttribute {
-        attr: Arg<MakeFunctionFlags>,
+        flag: Arg<MakeFunctionFlags>,
     } = 108,
     SetUpdate {
         i: Arg<u32>,
     } = 109,
     StoreAttr {
-        idx: Arg<NameIdx>,
+        namei: Arg<NameIdx>,
     } = 110,
-    StoreDeref(Arg<NameIdx>) = 111,
-    StoreFast(Arg<NameIdx>) = 112,
+    StoreDeref {
+        i: Arg<NameIdx>,
+    } = 111,
+    StoreFast {
+        var_num: Arg<NameIdx>,
+    } = 112,
     StoreFastLoadFast {
         var_nums: Arg<StoreFastLoadFast>,
     } = 113,
     StoreFastStoreFast {
-        arg: Arg<u32>,
+        var_nums: Arg<u32>,
     } = 114,
-    StoreGlobal(Arg<NameIdx>) = 115,
-    StoreName(Arg<NameIdx>) = 116,
+    StoreGlobal {
+        namei: Arg<NameIdx>,
+    } = 115,
+    StoreName {
+        namei: Arg<NameIdx>,
+    } = 116,
     Swap {
-        index: Arg<u32>,
+        i: Arg<u32>,
     } = 117,
     UnpackEx {
-        args: Arg<UnpackExArgs>,
+        counts: Arg<UnpackExArgs>,
     } = 118,
     UnpackSequence {
-        size: Arg<u32>,
+        count: Arg<u32>,
     } = 119,
     YieldValue {
         arg: Arg<u32>,
     } = 120,
     // CPython 3.14 RESUME (128)
     Resume {
-        arg: Arg<u32>,
+        context: Arg<u32>,
     } = 128,
     // CPython 3.14 specialized opcodes (129-211)
     BinaryOpAddFloat = 129,                     // Placeholder
@@ -349,28 +391,28 @@ pub enum Instruction {
     UnpackSequenceTuple = 210,                  // Placeholder
     UnpackSequenceTwoTuple = 211,               // Placeholder
     // CPython 3.14 instrumented opcodes (234-254)
-    InstrumentedEndFor = 234,      // Placeholder
-    InstrumentedPopIter = 235,     // Placeholder
-    InstrumentedEndSend = 236,     // Placeholder
-    InstrumentedForIter = 237,     // Placeholder
-    InstrumentedInstruction = 238, // Placeholder
-    InstrumentedJumpForward = 239, // Placeholder
+    InstrumentedEndFor = 234,
+    InstrumentedPopIter = 235,
+    InstrumentedEndSend = 236,
+    InstrumentedForIter = 237,
+    InstrumentedInstruction = 238,
+    InstrumentedJumpForward = 239,
     InstrumentedNotTaken = 240,
-    InstrumentedPopJumpIfTrue = 241,    // Placeholder
-    InstrumentedPopJumpIfFalse = 242,   // Placeholder
-    InstrumentedPopJumpIfNone = 243,    // Placeholder
-    InstrumentedPopJumpIfNotNone = 244, // Placeholder
-    InstrumentedResume = 245,           // Placeholder
-    InstrumentedReturnValue = 246,      // Placeholder
-    InstrumentedYieldValue = 247,       // Placeholder
-    InstrumentedEndAsyncFor = 248,      // Placeholder
-    InstrumentedLoadSuperAttr = 249,    // Placeholder
-    InstrumentedCall = 250,             // Placeholder
-    InstrumentedCallKw = 251,           // Placeholder
-    InstrumentedCallFunctionEx = 252,   // Placeholder
-    InstrumentedJumpBackward = 253,     // Placeholder
-    InstrumentedLine = 254,             // Placeholder
-    EnterExecutor = 255,                // Placeholder
+    InstrumentedPopJumpIfTrue = 241,
+    InstrumentedPopJumpIfFalse = 242,
+    InstrumentedPopJumpIfNone = 243,
+    InstrumentedPopJumpIfNotNone = 244,
+    InstrumentedResume = 245,
+    InstrumentedReturnValue = 246,
+    InstrumentedYieldValue = 247,
+    InstrumentedEndAsyncFor = 248,
+    InstrumentedLoadSuperAttr = 249,
+    InstrumentedCall = 250,
+    InstrumentedCallKw = 251,
+    InstrumentedCallFunctionEx = 252,
+    InstrumentedJumpBackward = 253,
+    InstrumentedLine = 254,
+    EnterExecutor = 255, // Placeholder
 }
 
 const _: () = assert!(mem::size_of::<Instruction>() == 1);
