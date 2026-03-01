@@ -1253,16 +1253,16 @@ impl InstructionMetadata for Instruction {
 pub enum PseudoInstruction {
     // CPython 3.14.2 pseudo instructions (256-266)
     AnnotationsPlaceholder = 256,
-    Jump { target: Arg<Label> } = 257,
-    JumpIfFalse { target: Arg<Label> } = 258,
-    JumpIfTrue { target: Arg<Label> } = 259,
-    JumpNoInterrupt { target: Arg<Label> } = 260,
-    LoadClosure(Arg<NameIdx>) = 261,
+    Jump { delta: Arg<Label> } = 257,
+    JumpIfFalse { delta: Arg<Label> } = 258,
+    JumpIfTrue { delta: Arg<Label> } = 259,
+    JumpNoInterrupt { delta: Arg<Label> } = 260,
+    LoadClosure { i: Arg<NameIdx> } = 261,
     PopBlock = 262,
-    SetupCleanup { target: Arg<Label> } = 263,
-    SetupFinally { target: Arg<Label> } = 264,
-    SetupWith { target: Arg<Label> } = 265,
-    StoreFastMaybeNull(Arg<NameIdx>) = 266,
+    SetupCleanup { delta: Arg<Label> } = 263,
+    SetupFinally { delta: Arg<Label> } = 264,
+    SetupWith { delta: Arg<Label> } = 265,
+    StoreFastMaybeNull { var_num: Arg<NameIdx> } = 266,
 }
 
 const _: () = assert!(mem::size_of::<PseudoInstruction>() == 2);
