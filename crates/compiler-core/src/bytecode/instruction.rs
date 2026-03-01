@@ -435,7 +435,9 @@ impl TryFrom<u8> for Instruction {
         let cpython_end = u8::from(Self::YieldValue { arg: Arg::marker() });
 
         // Resume has a non-contiguous opcode (128)
-        let resume_id = u8::from(Self::Resume { arg: Arg::marker() });
+        let resume_id = u8::from(Self::Resume {
+            context: Arg::marker(),
+        });
         let enter_executor_id = u8::from(Self::EnterExecutor);
 
         let specialized_start = u8::from(Self::BinaryOpAddFloat);
@@ -513,17 +515,21 @@ impl Instruction {
     /// only the opcode byte matters since `replace_op` preserves the arg byte.
     pub fn to_base(self) -> Option<Self> {
         Some(match self {
-            Self::InstrumentedResume => Self::Resume { arg: Arg::marker() },
+            Self::InstrumentedResume => Self::Resume {
+                context: Arg::marker(),
+            },
             Self::InstrumentedReturnValue => Self::ReturnValue,
             Self::InstrumentedYieldValue => Self::YieldValue { arg: Arg::marker() },
             Self::InstrumentedCall => Self::Call {
-                nargs: Arg::marker(),
+                argc: Arg::marker(),
             },
             Self::InstrumentedCallKw => Self::CallKw {
-                nargs: Arg::marker(),
+                argc: Arg::marker(),
             },
             Self::InstrumentedCallFunctionEx => Self::CallFunctionEx,
-            Self::InstrumentedLoadSuperAttr => Self::LoadSuperAttr { arg: Arg::marker() },
+            Self::InstrumentedLoadSuperAttr => Self::LoadSuperAttr {
+                namei: Arg::marker(),
+            },
             Self::InstrumentedJumpForward => Self::JumpForward {
                 delta: Arg::marker(),
             },
@@ -1029,7 +1035,7 @@ impl InstructionMetadata for Instruction {
             Self::DeleteAttr { namei } => w!(DELETE_ATTR, name = namei),
             Self::DeleteDeref { i } => w!(DELETE_DEREF, cell_name = i),
             Self::DeleteFast { var_num } => w!(DELETE_FAST, varname = var_num),
-            Self::DeleteGlobal { namei } => w!(DELETE_GLOBAL, name = nmaei),
+            Self::DeleteGlobal { namei } => w!(DELETE_GLOBAL, name = namei),
             Self::DeleteName { namei } => w!(DELETE_NAME, name = namei),
             Self::DeleteSubscr => w!(DELETE_SUBSCR),
             Self::DictMerge { i } => w!(DICT_MERGE, i),
