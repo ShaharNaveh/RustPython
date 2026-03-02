@@ -732,8 +732,8 @@ impl ExecutingFrame<'_> {
                     // new traceback entries.
                     // EndAsyncFor and CleanupThrow also re-raise non-matching exceptions.
                     let is_reraise = match op {
-                        Instruction::RaiseVarargs { kind } => matches!(
-                            kind.get(arg),
+                        Instruction::RaiseVarargs { argc } => matches!(
+                            argc.get(arg),
                             bytecode::RaiseKind::BareRaise | bytecode::RaiseKind::ReraiseFromStack
                         ),
                         Instruction::Reraise { .. }
@@ -746,9 +746,9 @@ impl ExecutingFrame<'_> {
                     // need contextualization even if the exception has prior traceback
                     let is_new_raise = matches!(
                         op,
-                        Instruction::RaiseVarargs { kind }
+                        Instruction::RaiseVarargs { argc }
                             if matches!(
-                                kind.get(arg),
+                                argc.get(arg),
                                 bytecode::RaiseKind::Raise | bytecode::RaiseKind::RaiseCause
                             )
                     );
@@ -1122,17 +1122,17 @@ impl ExecutingFrame<'_> {
                 self.push_value(result);
                 Ok(None)
             }
-            Instruction::BuildList { size } => {
-                let sz = size.get(arg) as usize;
+            Instruction::BuildList { count } => {
+                let sz = count.get(arg) as usize;
                 let elements = self.pop_multiple(sz).collect();
                 let list_obj = vm.ctx.new_list(elements);
                 self.push_value(list_obj.into());
                 Ok(None)
             }
-            Instruction::BuildMap { size } => self.execute_build_map(vm, size.get(arg)),
-            Instruction::BuildSet { size } => {
+            Instruction::BuildMap { count } => self.execute_build_map(vm, count.get(arg)),
+            Instruction::BuildSet { count } => {
                 let set = PySet::default().into_ref(&vm.ctx);
-                for element in self.pop_multiple(size.get(arg) as usize) {
+                for element in self.pop_multiple(count.get(arg) as usize) {
                     set.add(element, vm)?;
                 }
                 self.push_value(set.into());
@@ -1149,16 +1149,16 @@ impl ExecutingFrame<'_> {
                  Ok(None)
             }
             */
-            Instruction::BuildString { size } => {
+            Instruction::BuildString { count } => {
                 let s: Wtf8Buf = self
-                    .pop_multiple(size.get(arg) as usize)
+                    .pop_multiple(count.get(arg) as usize)
                     .map(|pyobj| pyobj.downcast::<PyStr>().unwrap())
                     .collect();
                 self.push_value(vm.ctx.new_str(s).into());
                 Ok(None)
             }
-            Instruction::BuildTuple { size } => {
-                let elements = self.pop_multiple(size.get(arg) as usize).collect();
+            Instruction::BuildTuple { count } => {
+                let elements = self.pop_multiple(count.get(arg) as usize).collect();
                 let list_obj = vm.ctx.new_tuple(elements);
                 self.push_value(list_obj.into());
                 Ok(None)
@@ -1179,10 +1179,10 @@ impl ExecutingFrame<'_> {
                 self.push_value(template.into_pyobject(vm));
                 Ok(None)
             }
-            Instruction::BuildInterpolation { oparg } => {
+            Instruction::BuildInterpolation { format } => {
                 // oparg encoding: (conversion << 2) | has_format_spec
                 // Stack: [value, expression_str, (format_spec)?] -> [interpolation]
-                let oparg_val = oparg.get(arg);
+                let oparg_val = format.get(arg);
                 let has_format_spec = (oparg_val & 1) != 0;
                 let conversion_code = oparg_val >> 2;
 
@@ -1213,14 +1213,14 @@ impl ExecutingFrame<'_> {
                 self.push_value(interpolation.into_pyobject(vm));
                 Ok(None)
             }
-            Instruction::Call { nargs } => {
+            Instruction::Call { argc } => {
                 // Stack: [callable, self_or_null, arg1, ..., argN]
-                let args = self.collect_positional_args(nargs.get(arg));
+                let args = self.collect_positional_args(argc.get(arg));
                 self.execute_call(args, vm)
             }
-            Instruction::CallKw { nargs } => {
+            Instruction::CallKw { argc } => {
                 // Stack: [callable, self_or_null, arg1, ..., argN, kwarg_names]
-                let args = self.collect_keyword_args(nargs.get(arg));
+                let args = self.collect_keyword_args(argc.get(arg));
                 self.execute_call(args, vm)
             }
             Instruction::CallFunctionEx => {
@@ -1259,8 +1259,8 @@ impl ExecutingFrame<'_> {
                 self.push_value(matched);
                 Ok(None)
             }
-            Instruction::CompareOp { op } => self.execute_compare(vm, op.get(arg)),
-            Instruction::ContainsOp(invert) => {
+            Instruction::CompareOp { opname } => self.execute_compare(vm, opname.get(arg)),
+            Instruction::ContainsOp { invert } => {
                 let b = self.pop_value();
                 let a = self.pop_value();
 
@@ -1271,14 +1271,12 @@ impl ExecutingFrame<'_> {
                 self.push_value(vm.ctx.new_bool(value).into());
                 Ok(None)
             }
-            Instruction::ConvertValue { oparg: conversion } => {
-                self.convert_value(conversion.get(arg), vm)
-            }
-            Instruction::Copy { index } => {
+            Instruction::ConvertValue { oparg } => self.convert_value(oparg.get(arg), vm),
+            Instruction::Copy { i } => {
                 // CopyItem { index: 1 } copies TOS
                 // CopyItem { index: 2 } copies second from top
                 // This is 1-indexed to match CPython
-                let idx = index.get(arg) as usize;
+                let idx = i.get(arg) as usize;
                 let stack_len = self.state.stack.len();
                 if stack_len < idx {
                     eprintln!("CopyItem ERROR: stack_len={}, idx={}", stack_len, idx);
@@ -1294,14 +1292,14 @@ impl ExecutingFrame<'_> {
                 // Free vars are already set up at frame creation time in RustPython
                 Ok(None)
             }
-            Instruction::DeleteAttr { idx } => self.delete_attr(vm, idx.get(arg)),
-            Instruction::DeleteDeref(i) => {
+            Instruction::DeleteAttr { namei } => self.delete_attr(vm, namei.get(arg)),
+            Instruction::DeleteDeref { i } => {
                 self.state.cells_frees[i.get(arg) as usize].set(None);
                 Ok(None)
             }
-            Instruction::DeleteFast(idx) => {
+            Instruction::DeleteFast { var_num } => {
                 let fastlocals = unsafe { self.fastlocals.borrow_mut() };
-                let idx = idx.get(arg) as usize;
+                let idx = var_num.get(arg) as usize;
                 if fastlocals[idx].is_none() {
                     return Err(vm.new_exception_msg(
                         vm.ctx.exceptions.unbound_local_error.to_owned(),
@@ -1315,8 +1313,8 @@ impl ExecutingFrame<'_> {
                 fastlocals[idx] = None;
                 Ok(None)
             }
-            Instruction::DeleteGlobal(idx) => {
-                let name = self.code.names[idx.get(arg) as usize];
+            Instruction::DeleteGlobal { namei } => {
+                let name = self.code.names[namei.get(arg) as usize];
                 match self.globals.del_item(name, vm) {
                     Ok(()) => {}
                     Err(e) if e.fast_isinstance(vm.ctx.exceptions.key_error) => {
@@ -1326,8 +1324,8 @@ impl ExecutingFrame<'_> {
                 }
                 Ok(None)
             }
-            Instruction::DeleteName(idx) => {
-                let name = self.code.names[idx.get(arg) as usize];
+            Instruction::DeleteName { namei } => {
+                let name = self.code.names[namei.get(arg) as usize];
                 let res = self.locals.mapping().ass_subscript(name, None, vm);
 
                 match res {
@@ -1340,12 +1338,12 @@ impl ExecutingFrame<'_> {
                 Ok(None)
             }
             Instruction::DeleteSubscr => self.execute_delete_subscript(vm),
-            Instruction::DictUpdate { index } => {
+            Instruction::DictUpdate { i } => {
                 // Stack before: [..., dict, ..., source]  (source at TOS)
                 // Stack after:  [..., dict, ...]  (source consumed)
                 // The dict to update is at position TOS-i (before popping source)
 
-                let idx = index.get(arg);
+                let idx = i.get(arg);
 
                 // Pop the source from TOS
                 let source = self.pop_value();
@@ -1376,9 +1374,9 @@ impl ExecutingFrame<'_> {
                 dict.merge_object(source, vm)?;
                 Ok(None)
             }
-            Instruction::DictMerge { index } => {
+            Instruction::DictMerge { i } => {
                 let source = self.pop_value();
-                let idx = index.get(arg);
+                let idx = i.get(arg);
 
                 // Get the dict to merge into (same logic as DICT_UPDATE)
                 let dict_ref = if idx <= 1 {
@@ -1518,7 +1516,7 @@ impl ExecutingFrame<'_> {
                 debug_assert_eq!(orig_stack_len + 1, self.state.stack.len());
                 Ok(None)
             }
-            Instruction::GetAwaitable { arg: oparg } => {
+            Instruction::GetAwaitable { r#where: oparg } => {
                 let iterable = self.pop_value();
 
                 let iter = match crate::coroutine::get_awaitable_iter(iterable.clone(), vm) {
@@ -1601,16 +1599,16 @@ impl ExecutingFrame<'_> {
                 self.push_value(vm.ctx.new_int(len).into());
                 Ok(None)
             }
-            Instruction::ImportFrom { idx } => {
-                let obj = self.import_from(vm, idx.get(arg))?;
+            Instruction::ImportFrom { namei } => {
+                let obj = self.import_from(vm, namei.get(arg))?;
                 self.push_value(obj);
                 Ok(None)
             }
-            Instruction::ImportName { idx } => {
-                self.import(vm, Some(self.code.names[idx.get(arg) as usize]))?;
+            Instruction::ImportName { namei } => {
+                self.import(vm, Some(self.code.names[namei.get(arg) as usize]))?;
                 Ok(None)
             }
-            Instruction::IsOp(invert) => {
+            Instruction::IsOp { invert } => {
                 let b = self.pop_value();
                 let a = self.pop_value();
                 let res = a.is(&b);
@@ -1670,8 +1668,8 @@ impl ExecutingFrame<'_> {
                 })?;
                 Ok(None)
             }
-            Instruction::LoadAttr { idx } => self.load_attr(vm, idx.get(arg)),
-            Instruction::LoadSuperAttr { arg: idx } => self.load_super_attr(vm, idx.get(arg)),
+            Instruction::LoadAttr { namei } => self.load_attr(vm, namei.get(arg)),
+            Instruction::LoadSuperAttr { namei } => self.load_super_attr(vm, namei.get(arg)),
             Instruction::LoadBuildClass => {
                 let build_class =
                     if let Some(builtins_dict) = self.builtins.downcast_ref::<PyDict>() {
@@ -1706,7 +1704,7 @@ impl ExecutingFrame<'_> {
                 self.push_value(locals);
                 Ok(None)
             }
-            Instruction::LoadFromDictOrDeref(i) => {
+            Instruction::LoadFromDictOrDeref { i } => {
                 // Pop dict from stack (locals or classdict depending on context)
                 let class_dict = self.pop_value();
                 let i = i.get(arg) as usize;
@@ -1733,10 +1731,10 @@ impl ExecutingFrame<'_> {
                 });
                 Ok(None)
             }
-            Instruction::LoadFromDictOrGlobals(idx) => {
+            Instruction::LoadFromDictOrGlobals { i } => {
                 // PEP 649: Pop dict from stack (classdict), check there first, then globals
                 let dict = self.pop_value();
-                let name = self.code.names[idx.get(arg) as usize];
+                let name = self.code.names[i.get(arg) as usize];
 
                 // Only treat KeyError as "not found", propagate other exceptions
                 let value = if let Some(dict_obj) = dict.downcast_ref::<PyDict>() {
@@ -1756,8 +1754,8 @@ impl ExecutingFrame<'_> {
                 });
                 Ok(None)
             }
-            Instruction::LoadConst { idx } => {
-                self.push_value(self.code.constants[idx.get(arg) as usize].clone().into());
+            Instruction::LoadConst { consti } => {
+                self.push_value(self.code.constants[consti.get(arg) as usize].clone().into());
                 Ok(None)
             }
             Instruction::LoadCommonConstant { idx } => {
@@ -1776,13 +1774,13 @@ impl ExecutingFrame<'_> {
                 self.push_value(value);
                 Ok(None)
             }
-            Instruction::LoadSmallInt { idx } => {
+            Instruction::LoadSmallInt { i } => {
                 // Push small integer (-5..=256) directly without constant table lookup
-                let value = vm.ctx.new_int(idx.get(arg) as i32);
+                let value = vm.ctx.new_int(i.get(arg) as i32);
                 self.push_value(value.into());
                 Ok(None)
             }
-            Instruction::LoadDeref(i) => {
+            Instruction::LoadDeref { i } => {
                 let idx = i.get(arg) as usize;
                 let x = self.state.cells_frees[idx]
                     .get()
@@ -1790,7 +1788,7 @@ impl ExecutingFrame<'_> {
                 self.push_value(x);
                 Ok(None)
             }
-            Instruction::LoadFast(idx) => {
+            Instruction::LoadFast { var_num } => {
                 #[cold]
                 fn reference_error(
                     varname: &'static PyStrInterned,
@@ -1801,27 +1799,27 @@ impl ExecutingFrame<'_> {
                         format!("local variable '{varname}' referenced before assignment").into(),
                     )
                 }
-                let idx = idx.get(arg) as usize;
+                let idx = var_num.get(arg) as usize;
                 let x = unsafe { self.fastlocals.borrow() }[idx]
                     .clone()
                     .ok_or_else(|| reference_error(self.code.varnames[idx], vm))?;
                 self.push_value(x);
                 Ok(None)
             }
-            Instruction::LoadFastAndClear(idx) => {
+            Instruction::LoadFastAndClear { var_num } => {
                 // Load value and clear the slot (for inlined comprehensions)
                 // If slot is empty, push None (not an error - variable may not exist yet)
-                let idx = idx.get(arg) as usize;
+                let idx = var_num.get(arg) as usize;
                 let x = unsafe { self.fastlocals.borrow_mut() }[idx]
                     .take()
                     .unwrap_or_else(|| vm.ctx.none());
                 self.push_value(x);
                 Ok(None)
             }
-            Instruction::LoadFastCheck(idx) => {
+            Instruction::LoadFastCheck { var_num } => {
                 // Same as LoadFast but explicitly checks for unbound locals
                 // (LoadFast in RustPython already does this check)
-                let idx = idx.get(arg) as usize;
+                let idx = var_num.get(arg) as usize;
                 let x = unsafe { self.fastlocals.borrow() }[idx]
                     .clone()
                     .ok_or_else(|| {
@@ -1837,10 +1835,10 @@ impl ExecutingFrame<'_> {
                 self.push_value(x);
                 Ok(None)
             }
-            Instruction::LoadFastLoadFast { arg: packed } => {
+            Instruction::LoadFastLoadFast { var_nums } => {
                 // Load two local variables at once
                 // oparg encoding: (idx1 << 4) | idx2
-                let oparg = packed.get(arg);
+                let oparg = var_nums.get(arg);
                 let idx1 = (oparg >> 4) as usize;
                 let idx2 = (oparg & 15) as usize;
                 let fastlocals = unsafe { self.fastlocals.borrow() };
@@ -1870,8 +1868,8 @@ impl ExecutingFrame<'_> {
             }
             // TODO: Implement true borrow optimization (skip Arc::clone).
             // Currently this just clones like LoadFast.
-            Instruction::LoadFastBorrow(idx) => {
-                let idx = idx.get(arg) as usize;
+            Instruction::LoadFastBorrow { var_num } => {
+                let idx = var_num.get(arg) as usize;
                 let x = unsafe { self.fastlocals.borrow() }[idx]
                     .clone()
                     .ok_or_else(|| {
@@ -1887,8 +1885,8 @@ impl ExecutingFrame<'_> {
                 self.push_value(x);
                 Ok(None)
             }
-            Instruction::LoadFastBorrowLoadFastBorrow { arg: packed } => {
-                let oparg = packed.get(arg);
+            Instruction::LoadFastBorrowLoadFastBorrow { var_nums } => {
+                let oparg = var_nums.get(arg);
                 let idx1 = (oparg >> 4) as usize;
                 let idx2 = (oparg & 15) as usize;
                 let fastlocals = unsafe { self.fastlocals.borrow() };
@@ -1916,8 +1914,8 @@ impl ExecutingFrame<'_> {
                 self.push_value(x2);
                 Ok(None)
             }
-            Instruction::LoadGlobal(idx) => {
-                let oparg = idx.get(arg);
+            Instruction::LoadGlobal { namei } => {
+                let oparg = namei.get(arg);
                 let name = &self.code.names[(oparg >> 1) as usize];
                 let x = self.load_global_or_builtin(name, vm)?;
                 self.push_value(x);
@@ -1926,8 +1924,8 @@ impl ExecutingFrame<'_> {
                 }
                 Ok(None)
             }
-            Instruction::LoadName(idx) => {
-                let name = self.code.names[idx.get(arg) as usize];
+            Instruction::LoadName { namei } => {
+                let name = self.code.names[namei.get(arg) as usize];
                 let result = self.locals.mapping().subscript(name, vm);
                 match result {
                     Ok(x) => self.push_value(x),
@@ -1968,7 +1966,7 @@ impl ExecutingFrame<'_> {
                 Ok(None)
             }
             Instruction::MakeFunction => self.execute_make_function(vm),
-            Instruction::MakeCell(_) => {
+            Instruction::MakeCell { .. } => {
                 // Cell creation is handled at frame creation time in RustPython
                 Ok(None)
             }
@@ -1983,14 +1981,14 @@ impl ExecutingFrame<'_> {
                 dict.set_item(&*key, value, vm)?;
                 Ok(None)
             }
-            Instruction::MatchClass(nargs) => {
+            Instruction::MatchClass { count } => {
                 // STACK[-1] is a tuple of keyword attribute names, STACK[-2] is the class being matched against, and STACK[-3] is the match subject.
                 // nargs is the number of positional sub-patterns.
                 let kwd_attrs = self.pop_value();
                 let kwd_attrs = kwd_attrs.downcast_ref::<PyTuple>().unwrap();
                 let cls = self.pop_value();
                 let subject = self.pop_value();
-                let nargs_val = nargs.get(arg) as usize;
+                let nargs_val = count.get(arg) as usize;
 
                 // Check if subject is an instance of cls
                 if subject.is_instance(cls.as_ref(), vm)? {
@@ -2261,7 +2259,7 @@ impl ExecutingFrame<'_> {
                 self.push_null();
                 Ok(None)
             }
-            Instruction::RaiseVarargs { kind } => self.execute_raise(vm, kind.get(arg)),
+            Instruction::RaiseVarargs { argc } => self.execute_raise(vm, argc.get(arg)),
             Instruction::Resume { .. } => {
                 // Check if bytecode needs re-instrumentation
                 let global_ver = vm
@@ -2383,20 +2381,20 @@ impl ExecutingFrame<'_> {
                     Err(exc)
                 }
             }
-            Instruction::SetFunctionAttribute { attr } => {
-                self.execute_set_function_attribute(vm, attr.get(arg))
+            Instruction::SetFunctionAttribute { flag } => {
+                self.execute_set_function_attribute(vm, flag.get(arg))
             }
             Instruction::SetupAnnotations => self.setup_annotations(vm),
-            Instruction::StoreAttr { idx } => self.store_attr(vm, idx.get(arg)),
-            Instruction::StoreDeref(i) => {
+            Instruction::StoreAttr { namei } => self.store_attr(vm, namei.get(arg)),
+            Instruction::StoreDeref { i } => {
                 let value = self.pop_value();
                 self.state.cells_frees[i.get(arg) as usize].set(Some(value));
                 Ok(None)
             }
-            Instruction::StoreFast(idx) => {
+            Instruction::StoreFast { var_num } => {
                 let value = self.pop_value();
                 let fastlocals = unsafe { self.fastlocals.borrow_mut() };
-                fastlocals[idx.get(arg) as usize] = Some(value);
+                fastlocals[var_num.get(arg) as usize] = Some(value);
                 Ok(None)
             }
             Instruction::StoreFastLoadFast { var_nums } => {
@@ -2410,8 +2408,8 @@ impl ExecutingFrame<'_> {
                 self.push_value(load_value);
                 Ok(None)
             }
-            Instruction::StoreFastStoreFast { arg: packed } => {
-                let oparg = packed.get(arg);
+            Instruction::StoreFastStoreFast { var_nums } => {
+                let oparg = var_nums.get(arg);
                 let idx1 = (oparg >> 4) as usize;
                 let idx2 = (oparg & 15) as usize;
                 let value1 = self.pop_value();
@@ -2421,14 +2419,14 @@ impl ExecutingFrame<'_> {
                 fastlocals[idx2] = Some(value2);
                 Ok(None)
             }
-            Instruction::StoreGlobal(idx) => {
+            Instruction::StoreGlobal { namei } => {
                 let value = self.pop_value();
                 self.globals
-                    .set_item(self.code.names[idx.get(arg) as usize], value, vm)?;
+                    .set_item(self.code.names[namei.get(arg) as usize], value, vm)?;
                 Ok(None)
             }
-            Instruction::StoreName(idx) => {
-                let name = self.code.names[idx.get(arg) as usize];
+            Instruction::StoreName { namei } => {
+                let name = self.code.names[namei.get(arg) as usize];
                 let value = self.pop_value();
                 self.locals.mapping().ass_subscript(name, Some(value), vm)?;
                 Ok(None)
@@ -2450,7 +2448,7 @@ impl ExecutingFrame<'_> {
                 Ok(None)
             }
             Instruction::StoreSubscr => self.execute_store_subscript(vm),
-            Instruction::Swap { index } => {
+            Instruction::Swap { i: index } => {
                 let len = self.state.stack.len();
                 debug_assert!(len > 0, "stack underflow in SWAP");
                 let i = len - 1; // TOS index
@@ -2473,11 +2471,11 @@ impl ExecutingFrame<'_> {
                 self.push_value(vm.ctx.new_bool(bool_val).into());
                 Ok(None)
             }
-            Instruction::UnpackEx { args } => {
-                let args = args.get(arg);
+            Instruction::UnpackEx { counts } => {
+                let args = counts.get(arg);
                 self.execute_unpack_ex(vm, args.before, args.after)
             }
-            Instruction::UnpackSequence { size } => self.unpack_sequence(size.get(arg), vm),
+            Instruction::UnpackSequence { count } => self.unpack_sequence(count.get(arg), vm),
             Instruction::WithExceptStart => {
                 // Stack: [..., __exit__, lasti, prev_exc, exc]
                 // Call __exit__(type, value, tb) and push result
