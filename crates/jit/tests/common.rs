@@ -199,8 +199,8 @@ impl StackMachine {
             Instruction::LoadName { namei } => self
                 .stack
                 .push(StackValue::String(names[namei.get(arg) as usize].clone())),
-            Instruction::StoreName(idx) => {
-                let idx = idx.get(arg);
+            Instruction::StoreName { namei } => {
+                let idx = namei.get(arg);
                 self.locals
                     .insert(names[idx as usize].clone(), self.stack.pop().unwrap());
             }
