@@ -634,14 +634,14 @@ impl<'a, 'b> FunctionCompiler<'a, 'b> {
                 self.stack.push(val);
                 Ok(())
             }
-            Instruction::LoadSmallInt { idx } => {
-                let small_int = idx.get(arg) as i64;
+            Instruction::LoadSmallInt { i } => {
+                let small_int = i.get(arg) as i64;
                 let val = self.builder.ins().iconst(types::I64, small_int);
                 self.stack.push(JitValue::Int(val));
                 Ok(())
             }
-            Instruction::LoadFast { namei } | Instruction::LoadFastBorrow { namei } => {
-                let local = self.variables[namei.get(arg) as usize]
+            Instruction::LoadFast { var_num } | Instruction::LoadFastBorrow { var_num } => {
+                let local = self.variables[var_num.get(arg) as usize]
                     .as_ref()
                     .ok_or(JitCompileError::BadBytecode)?;
                 self.stack.push(JitValue::from_type_and_value(
@@ -650,9 +650,9 @@ impl<'a, 'b> FunctionCompiler<'a, 'b> {
                 ));
                 Ok(())
             }
-            Instruction::LoadFastLoadFast { var_num }
-            | Instruction::LoadFastBorrowLoadFastBorrow { var_nums: var_num } => {
-                let oparg = var_num.get(arg);
+            Instruction::LoadFastLoadFast { var_nums }
+            | Instruction::LoadFastBorrowLoadFastBorrow { var_nums } => {
+                let oparg = var_nums.get(arg);
                 let idx1 = oparg >> 4;
                 let idx2 = oparg & 0xF;
                 for idx in [idx1, idx2] {
@@ -723,9 +723,9 @@ impl<'a, 'b> FunctionCompiler<'a, 'b> {
                 let val = self.stack.pop().ok_or(JitCompileError::BadBytecode)?;
                 self.return_value(val)
             }
-            Instruction::StoreFast { namei } => {
+            Instruction::StoreFast { var_num } => {
                 let val = self.stack.pop().ok_or(JitCompileError::BadBytecode)?;
-                self.store_variable(namei.get(arg), val)
+                self.store_variable(var_num.get(arg), val)
             }
             Instruction::Swap { i: index } => {
                 let len = self.stack.len();
