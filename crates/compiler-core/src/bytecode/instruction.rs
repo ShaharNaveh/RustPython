@@ -577,7 +577,9 @@ impl Instruction {
             | Self::LoadAttrNondescriptorWithValues
             | Self::LoadAttrProperty
             | Self::LoadAttrSlot
-            | Self::LoadAttrWithHint => Self::LoadAttr { idx: Arg::marker() },
+            | Self::LoadAttrWithHint => Self::LoadAttr {
+                namei: Arg::marker(),
+            },
             // BINARY_OP specializations
             Self::BinaryOpAddFloat
             | Self::BinaryOpAddInt
@@ -615,11 +617,11 @@ impl Instruction {
             | Self::CallStr1
             | Self::CallTuple1
             | Self::CallType1 => Self::Call {
-                nargs: Arg::marker(),
+                argc: Arg::marker(),
             },
             // CALL_KW specializations
             Self::CallKwBoundMethod | Self::CallKwNonPy | Self::CallKwPy => Self::CallKw {
-                nargs: Arg::marker(),
+                argc: Arg::marker(),
             },
             // TO_BOOL specializations
             Self::ToBoolAlwaysTrue
@@ -629,48 +631,56 @@ impl Instruction {
             | Self::ToBoolNone
             | Self::ToBoolStr => Self::ToBool,
             // COMPARE_OP specializations
-            Self::CompareOpFloat | Self::CompareOpInt | Self::CompareOpStr => {
-                Self::CompareOp { op: Arg::marker() }
-            }
+            Self::CompareOpFloat | Self::CompareOpInt | Self::CompareOpStr => Self::CompareOp {
+                opname: Arg::marker(),
+            },
             // CONTAINS_OP specializations
-            Self::ContainsOpDict | Self::ContainsOpSet => Self::ContainsOp(Arg::marker()),
+            Self::ContainsOpDict | Self::ContainsOpSet => Self::ContainsOp {
+                invert: Arg::marker(),
+            },
             // FOR_ITER specializations
             Self::ForIterGen | Self::ForIterList | Self::ForIterRange | Self::ForIterTuple => {
                 Self::ForIter {
-                    target: Arg::marker(),
+                    delta: Arg::marker(),
                 }
             }
             // LOAD_GLOBAL specializations
-            Self::LoadGlobalBuiltin | Self::LoadGlobalModule => Self::LoadGlobal(Arg::marker()),
+            Self::LoadGlobalBuiltin | Self::LoadGlobalModule => Self::LoadGlobal {
+                namei: Arg::marker(),
+            },
             // STORE_ATTR specializations
             Self::StoreAttrInstanceValue | Self::StoreAttrSlot | Self::StoreAttrWithHint => {
-                Self::StoreAttr { idx: Arg::marker() }
+                Self::StoreAttr {
+                    namei: Arg::marker(),
+                }
             }
             // LOAD_SUPER_ATTR specializations
-            Self::LoadSuperAttrAttr | Self::LoadSuperAttrMethod => {
-                Self::LoadSuperAttr { arg: Arg::marker() }
-            }
+            Self::LoadSuperAttrAttr | Self::LoadSuperAttrMethod => Self::LoadSuperAttr {
+                namei: Arg::marker(),
+            },
             // STORE_SUBSCR specializations
             Self::StoreSubscrDict | Self::StoreSubscrListInt => Self::StoreSubscr,
             // UNPACK_SEQUENCE specializations
             Self::UnpackSequenceList | Self::UnpackSequenceTuple | Self::UnpackSequenceTwoTuple => {
                 Self::UnpackSequence {
-                    size: Arg::marker(),
+                    count: Arg::marker(),
                 }
             }
             // SEND specializations
             Self::SendGen => Self::Send {
-                target: Arg::marker(),
+                delta: Arg::marker(),
             },
             // LOAD_CONST specializations
-            Self::LoadConstImmortal | Self::LoadConstMortal => {
-                Self::LoadConst { idx: Arg::marker() }
-            }
+            Self::LoadConstImmortal | Self::LoadConstMortal => Self::LoadConst {
+                consti: Arg::marker(),
+            },
             // RESUME specializations
-            Self::ResumeCheck => Self::Resume { arg: Arg::marker() },
+            Self::ResumeCheck => Self::Resume {
+                context: Arg::marker(),
+            },
             // JUMP_BACKWARD specializations
             Self::JumpBackwardJit | Self::JumpBackwardNoJit => Self::JumpBackward {
-                target: Arg::marker(),
+                delta: Arg::marker(),
             },
             // Instrumented opcodes map back to their base
             _ => match self.to_base() {
