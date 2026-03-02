@@ -310,7 +310,7 @@ macro_rules! emit {
         $c.emit_arg($arg_val, |x| $enum::$op { $arg: x })
     };
 
-    // Tuple variant (e.g., Foo::B(42))
+    // Tuple variant (e.g., Foo::B(42)). Should never be reached, here for validation.
     ($c:expr, $enum:ident :: $op:ident($arg_val:expr $(,)? ) $(,)?) => {
         panic!("No inatruction should be defined as `Instruction::Foo(value)` use `Instruction::Foo { x: value }` instead")
     };
