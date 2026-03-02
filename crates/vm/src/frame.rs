@@ -1256,7 +1256,6 @@ impl ExecutingFrame<'_> {
             }
             Instruction::Call { argc } => {
                 // Stack: [callable, self_or_null, arg1, ..., argN]
-                let args = self.collect_positional_args(argc.get(arg));
                 let nargs_val = argc.get(arg);
                 let instr_idx = self.lasti() as usize - 1;
                 let cache_base = instr_idx + 1;
