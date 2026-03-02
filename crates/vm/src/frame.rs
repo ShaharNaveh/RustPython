@@ -1257,7 +1257,7 @@ impl ExecutingFrame<'_> {
             Instruction::Call { argc } => {
                 // Stack: [callable, self_or_null, arg1, ..., argN]
                 let args = self.collect_positional_args(argc.get(arg));
-                let nargs_val = nargs.get(arg);
+                let nargs_val = argc.get(arg);
                 let instr_idx = self.lasti() as usize - 1;
                 let cache_base = instr_idx + 1;
                 let counter = self.code.instructions.read_adaptive_counter(cache_base);
@@ -1271,7 +1271,6 @@ impl ExecutingFrame<'_> {
                     self.specialize_call(vm, nargs_val, instr_idx, cache_base);
                 }
                 let args = self.collect_positional_args(nargs_val);
->>>>>>> upstream/main
                 self.execute_call(args, vm)
             }
             Instruction::CallKw { argc } => {
@@ -1919,7 +1918,7 @@ impl ExecutingFrame<'_> {
             // Borrow optimization not yet active; falls back to clone.
             // push_borrowed() is available but disabled until stack
             // lifetime issues at yield/exception points are resolved.
-            Instruction::LoadFastBorrow{var_num} => {
+            Instruction::LoadFastBorrow { var_num } => {
                 let idx = var_num.get(arg) as usize;
                 let x = unsafe { self.fastlocals.borrow() }[idx]
                     .clone()
@@ -2698,9 +2697,12 @@ impl ExecutingFrame<'_> {
                 } else {
                     // De-optimize
                     unsafe {
-                        self.code
-                            .instructions
-                            .replace_op(instr_idx, Instruction::LoadAttr { idx: Arg::marker() });
+                        self.code.instructions.replace_op(
+                            instr_idx,
+                            Instruction::LoadAttr {
+                                namei: Arg::marker(),
+                            },
+                        );
                         self.code
                             .instructions
                             .write_adaptive_counter(cache_base, ADAPTIVE_BACKOFF_VALUE);
@@ -2728,7 +2730,9 @@ impl ExecutingFrame<'_> {
                                 unsafe {
                                     self.code.instructions.replace_op(
                                         instr_idx,
-                                        Instruction::LoadAttr { idx: Arg::marker() },
+                                        Instruction::LoadAttr {
+                                            namei: Arg::marker(),
+                                        },
                                     );
                                     self.code
                                         .instructions
@@ -2753,9 +2757,12 @@ impl ExecutingFrame<'_> {
                 }
                 // De-optimize
                 unsafe {
-                    self.code
-                        .instructions
-                        .replace_op(instr_idx, Instruction::LoadAttr { idx: Arg::marker() });
+                    self.code.instructions.replace_op(
+                        instr_idx,
+                        Instruction::LoadAttr {
+                            namei: Arg::marker(),
+                        },
+                    );
                     self.code
                         .instructions
                         .write_adaptive_counter(cache_base, ADAPTIVE_BACKOFF_VALUE);
@@ -2785,9 +2792,12 @@ impl ExecutingFrame<'_> {
                 }
                 // De-optimize
                 unsafe {
-                    self.code
-                        .instructions
-                        .replace_op(instr_idx, Instruction::LoadAttr { idx: Arg::marker() });
+                    self.code.instructions.replace_op(
+                        instr_idx,
+                        Instruction::LoadAttr {
+                            namei: Arg::marker(),
+                        },
+                    );
                     self.code
                         .instructions
                         .write_adaptive_counter(cache_base, ADAPTIVE_BACKOFF_VALUE);
@@ -2921,7 +2931,7 @@ impl ExecutingFrame<'_> {
                         self.code.instructions.replace_op(
                             instr_idx,
                             Instruction::Call {
-                                nargs: Arg::marker(),
+                                argc: Arg::marker(),
                             },
                         );
                         self.code
@@ -2959,7 +2969,7 @@ impl ExecutingFrame<'_> {
                         self.code.instructions.replace_op(
                             instr_idx,
                             Instruction::Call {
-                                nargs: Arg::marker(),
+                                argc: Arg::marker(),
                             },
                         );
                         self.code
