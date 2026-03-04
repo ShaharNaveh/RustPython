@@ -266,7 +266,7 @@ jobs:
 
   test_misc:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
-    name: Test tools
+    name: Misc tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -322,28 +322,57 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-2025]
+        include: 
+        - os: macos-latest
+          cargo_args: "" # TODO: Fix jit on macOS
+          timeout: 50
+        - os: ubuntu-latest
+          cargo_args: "--features jit"
+          timeout: 60
+        - os: windows-latest
+          cargo_args: "--features jit"
+          timeout: 50
       fail-fast: false
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+	  - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        with:
+          # key won't match, will rely on restore-keys
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-
+          # See .github/workflows/update-caches.yml for how keys are generated
+          restore-keys: |
+            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-
+            ${{ runner.os }}-
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+
       - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+
       - uses: actions/setup-python@v6.2.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Set up the Mac environment
-        run: brew install autoconf automake libtool openssl@3
-        if: runner.os == 'macOS'
+
+      - name: Install macOS dependencies
+        uses: ./.github/actions/install-macos-deps
+        with:
+          openssl: true
+
       - name: build rustpython
-        run: cargo build --release --verbose --features=threading ${{ env.CARGO_ARGS }}
-        if: runner.os == 'macOS'
-      - name: build rustpython
-        run: cargo build --release --verbose --features=threading ${{ env.CARGO_ARGS }},jit
-        if: runner.os != 'macOS'
+        run: |
+          cargo build --release --verbose --features=threading ${{ env.CARGO_ARGS_SSL_THREADS }} ${{ matrix.cargo_args }}
+
       - name: run snippets
         run: python -m pip install -r requirements.txt && pytest -v
         working-directory: ./extra_tests
 
+        # MOVE TO OWN JOB
       - if: runner.os == 'Linux'
         name: run cpython platform-independent tests
         env:
@@ -351,12 +380,12 @@ jobs:
         run: target/release/rustpython -m test -j 1 -u all --slowest --fail-env-changed --timeout 600 -v ${{ env.PLATFORM_INDEPENDENT_TESTS }}
         timeout-minutes: 45
 
-      - if: runner.os == 'Linux'
-        name: run cpython platform-dependent tests (Linux)
+      - name: run CPython tests
+        run: |
+          target/release/rustpython -m test -j 1 -u all --slowest --fail-env-changed --timeout 600 -v -x ${{ env.PLATFORM_INDEPENDENT_TESTS }}
+        timeout-minutes: ${{ matrix.timeout }}
         env:
           RUSTPYTHON_SKIP_ENV_POLLUTERS: true
-        run: target/release/rustpython -m test -j 1 -u all --slowest --fail-env-changed --timeout 600 -v -x ${{ env.PLATFORM_INDEPENDENT_TESTS }}
-        timeout-minutes: 60
 
       - if: runner.os == 'macOS'
         name: run cpython platform-dependent tests (MacOS)
@@ -372,6 +401,7 @@ jobs:
         run: target/release/rustpython -m test -j 1 --slowest --fail-env-changed --timeout 600 -v -x ${{ env.PLATFORM_INDEPENDENT_TESTS }} ${{ env.WINDOWS_SKIPS }}
         timeout-minutes: 50
 
+        # MOVE TO OWN JOB
       - if: runner.os == 'Linux'
         name: run cpython tests to check if env polluters have stopped polluting (Common/Linux)
         shell: bash
@@ -466,15 +496,18 @@ jobs:
         run: |
           target/release/rustpython -m ensurepip
           target/release/rustpython -c "import pip"
+
       - if: runner.os != 'Windows'
         name: Check if pip inside venv is functional
         run: |
           target/release/rustpython -m venv testvenv
           testvenv/bin/rustpython -m pip install wheel
+
       - if: runner.os != 'macOS'
         name: Check whats_left is not broken
         shell: bash
         run: python -I scripts/whats_left.py --no-default-features --features "$(sed -e 's/--[^ ]*//g' <<< "${{ env.CARGO_ARGS }}" | tr -d '[:space:]'),threading,jit"
+
       - if: runner.os == 'macOS' # TODO fix jit on macOS
         name: Check whats_left is not broken (macOS)
         shell: bash
