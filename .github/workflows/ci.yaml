@@ -181,42 +181,10 @@ jobs:
           cargo clippy ${{ env.CARGO_ARGS_SSL }} --workspace ${{ env.EXCLUDES }} --all-targets -- -Dwarnings
 
       - name: cargo test
-        run: >
+        run: |
           cargo test --verbose --workspace ${{ env.EXCLUDES }} ${{ env.CARGO_ARGS_SSL_THREADS }} ${{ matrix.test_args }}
 
-      - name: check compilation without threading
-        run: cargo check ${{ env.CARGO_ARGS }}
-
-      - name: check compilation without host_env (sandbox mode)
-        run: |
-          cargo check -p rustpython-vm --no-default-features --features compiler
-          cargo check -p rustpython-stdlib --no-default-features --features compiler
-          cargo build --no-default-features --features stdlib,importlib,stdio,encodings,freeze-stdlib
-        if: runner.os == 'Linux'
-
-      - name: sandbox smoke test
-        run: |
-          target/debug/rustpython extra_tests/snippets/sandbox_smoke.py
-          target/debug/rustpython extra_tests/snippets/stdlib_re.py
-        if: runner.os == 'Linux'
-
-      - name: Test openssl build
-        run: cargo build --no-default-features --features ssl-openssl
-        if: runner.os == 'Linux'
-
-      - name: Test example projects
-        run: |
-          cargo run --manifest-path example_projects/barebone/Cargo.toml
-          cargo run --manifest-path example_projects/frozen_stdlib/Cargo.toml
-        if: runner.os == 'Linux'
-
-      - name: run update_lib tests
-        run: cargo run -- -m unittest discover -s scripts/update_lib/tests -v
-        env:
-          PYTHONPATH: scripts
-        if: runner.os == 'Linux'
-
-  exotic_targets:
+  cargo_check:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
     name: Ensure compilation on various targets
     runs-on: ${{ matrix.os }}
@@ -228,6 +196,8 @@ jobs:
           dependencies:
             gcc-multilib: true
             musl-tools: true
+        - os: ubuntu-slim 
+          target: '' # check compilation without threading
         - os: ubuntu-slim
           target: aarch64-linux-android
         - os: ubuntu-slim
@@ -293,6 +263,56 @@ jobs:
       - name: Check compilation
         if: ${{ matrix.target != 'aarch64-linux-android' }}
         run: cargo check --target ${{ matrix.target }} ${{ env.CARGO_ARGS }}
+
+  test_misc:
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
+    name: Test tools
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+	  - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        with:
+          # key won't match, will rely on restore-keys
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-
+          # See .github/workflows/update-caches.yml for how keys are generated
+          restore-keys: |
+            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-
+            ${{ runner.os }}-
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: sandbox smoke test
+        run: |
+          cargo run extra_tests/snippets/sandbox_smoke.py
+          cargo run extra_tests/snippets/stdlib_re.py
+
+      - name: Test example projects
+        run: |
+          cargo run --manifest-path example_projects/barebone/Cargo.toml
+          cargo run --manifest-path example_projects/frozen_stdlib/Cargo.toml
+
+      - name: run update_lib tests
+        run: cargo run -- -m unittest discover -s scripts/update_lib/tests -v
+        env:
+          PYTHONPATH: scripts
+
+      - name: check compilation without host_env (sandbox mode)
+        run: |
+          cargo check -p rustpython-vm --no-default-features --features compiler
+          cargo check -p rustpython-stdlib --no-default-features --features compiler
+          cargo build --no-default-features --features stdlib,importlib,stdio,encodings,freeze-stdlib
+
+      - name: Test openssl build
+        run: cargo build --no-default-features --features ssl-openssl
 
   snippets_cpython:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
