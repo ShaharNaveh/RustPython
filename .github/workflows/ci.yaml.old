@@ -1,14 +1,8 @@
 on:
   push:
-    branches: 
-      - main
-      - release
+    branches: [main, release]
   pull_request:
-    types: 
-      - opened
-      - synchronize
-      - reopened
-      - unlabeled
+    types: [unlabeled, opened, synchronize, reopened]
   merge_group:
   workflow_dispatch:
 
@@ -22,10 +16,13 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CARGO_ARGS: "--no-default-features --features stdlib,importlib,stdio,encodings,sqlite,host_env"
-  CARGO_ARGS_SSL: "${{ env.CARGO_ARGS }} --features ssl-rustls"
-  CARGO_ARGS_THREADS: "${{ env.CARGO_ARGS }} --features threads"
-  CARGO_ARGS_SSL_THREADS: "${{ env.CARGO_ARGS_SSL }} --features threads"
+  CARGO_ARGS: --no-default-features --features stdlib,importlib,stdio,encodings,sqlite,ssl-rustls,host_env
+  CARGO_ARGS_NO_SSL: --no-default-features --features stdlib,importlib,stdio,encodings,sqlite,host_env
+  # Crates excluded from workspace builds:
+  # - rustpython_wasm: requires wasm target
+  # - rustpython-compiler-source: deprecated
+  # - rustpython-venvlauncher: Windows-only
+  WORKSPACE_EXCLUDES: --exclude rustpython_wasm --exclude rustpython-compiler-source --exclude rustpython-venvlauncher
   # Skip additional tests on Windows. They are checked on Linux and MacOS.
   # test_glob: many failing tests
   # test_pathlib: panic by surrogate chars
@@ -129,58 +126,28 @@ jobs:
     timeout-minutes: 45
     strategy:
       matrix:
-        include: 
-        - os: macos-latest
-          test_args: "--exclude rustpython-jit" # TODO: Fix jit on macos
-        - os: ubuntu-latest
-          test_args: ""
-        - os: windows-latest
-          test_args: ""
+        os: [macos-latest, ubuntu-latest, windows-2025]
       fail-fast: false
-    env:
-      # Crates excluded from workspace builds:
-      # - rustpython_wasm: requires wasm target
-      # - rustpython-compiler-source: deprecated
-      # - rustpython-venvlauncher: Windows-only
-      EXCLUDES: >
-        --exclude rustpython_wasm
-        --exclude rustpython-compiler-source
-        --exclude rustpython-venvlauncher
-
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-
-	  - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
-        with:
-          # key won't match, will rely on restore-keys
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-
-          # See .github/workflows/update-caches.yml for how keys are generated
-          restore-keys: |
-            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-
-            ${{ runner.os }}-
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-
+      - uses: actions/checkout@v6.0.2
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
+      - uses: Swatinem/rust-cache@v2
 
-      - name: Install macOS dependencies
-        uses: ./.github/actions/install-macos-deps
+      - name: Set up the Mac environment
+        run: brew install autoconf automake libtool
+        if: runner.os == 'macOS'
 
-      - name: Clippy
-        run: |
-          cargo clippy ${{ env.CARGO_ARGS_SSL }} --workspace ${{ env.EXCLUDES }} --all-targets -- -Dwarnings
+      - name: run clippy
+        run: cargo clippy ${{ env.CARGO_ARGS }} --workspace --all-targets ${{ env.WORKSPACE_EXCLUDES }} -- -Dwarnings
 
-      - name: cargo test
-        run: >
-          cargo test --verbose --workspace ${{ env.EXCLUDES }} ${{ env.CARGO_ARGS_SSL_THREADS }} ${{ matrix.test_args }}
+      - name: run rust tests
+        run: cargo test --workspace ${{ env.WORKSPACE_EXCLUDES }} --verbose --features threading ${{ env.CARGO_ARGS }}
+        if: runner.os != 'macOS'
+      - name: run rust tests
+        run: cargo test --workspace ${{ env.WORKSPACE_EXCLUDES }} --exclude rustpython-jit --verbose --features threading ${{ env.CARGO_ARGS }}
+        if: runner.os == 'macOS'
 
       - name: check compilation without threading
         run: cargo check ${{ env.CARGO_ARGS }}
@@ -202,6 +169,14 @@ jobs:
         run: cargo build --no-default-features --features ssl-openssl
         if: runner.os == 'Linux'
 
+      # - name: Install tk-dev for tkinter build
+      #   run: sudo apt-get update && sudo apt-get install -y tk-dev
+      #   if: runner.os == 'Linux'
+
+      # - name: Test tkinter build
+      #   run: cargo build --features tkinter
+      #   if: runner.os == 'Linux'
+
       - name: Test example projects
         run: |
           cargo run --manifest-path example_projects/barebone/Cargo.toml
@@ -219,17 +194,14 @@ jobs:
         with:
           target: x86_64-apple-darwin
         if: runner.os == 'macOS'
-
       - name: Check compilation for Intel MacOS
         run: cargo check --target x86_64-apple-darwin
         if: runner.os == 'macOS'
-
       - name: prepare iOS build
         uses: dtolnay/rust-toolchain@stable
         with:
           target: aarch64-apple-ios
         if: runner.os == 'macOS'
-
       - name: Check compilation for iOS
         run: cargo check --target aarch64-apple-ios ${{ env.CARGO_ARGS_NO_SSL }}
         if: runner.os == 'macOS'
@@ -339,6 +311,9 @@ jobs:
       - name: build rustpython
         run: cargo build --release --verbose --features=threading ${{ env.CARGO_ARGS }},jit
         if: runner.os != 'macOS'
+      - uses: actions/setup-python@v6.2.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
       - name: run snippets
         run: python -m pip install -r requirements.txt && pytest -v
         working-directory: ./extra_tests

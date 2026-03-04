@@ -23,10 +23,10 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
-            cargo_build_args: "${{ env.COMMON_CARGO_BUILD_ARGS }} --features jit"
           - os: macos-latest
             cargo_build_args: "${{ env.COMMON_CARGO_BUILD_ARGS }}" # TODO: Fix jit on macos
+          - os: ubuntu-latest
+            cargo_build_args: "${{ env.COMMON_CARGO_BUILD_ARGS }} --features jit"
           - os: windows-latest
             cargo_build_args: "${{ env.COMMON_CARGO_BUILD_ARGS }} --features jit"
     steps:
