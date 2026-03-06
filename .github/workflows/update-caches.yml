@@ -16,6 +16,10 @@ env:
   CARGO_PROFILE_RELEASE_DEBUG: 0
   CARGO_BUILD_ARGS: "--no-default-features --features threading,stdlib,importlib,stdio,encodings,sqlite,ssl-rustls,host_env"
 
+concurrency:
+  group: cache
+  cancel-in-progress: true
+
 jobs:
   build-caches:
     #if: false # DELETE BEFORE MERGE
