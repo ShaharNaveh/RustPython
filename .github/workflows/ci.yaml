@@ -194,6 +194,7 @@ jobs:
             - aarch64-unknown-linux-gnu
           dependencies:
             gcc-multilib: true
+            musl-tools: true
             gcc-aarch64-linux-gnu: true # conflict with `gcc-multilib`. it will install gcc-multilib first, and then remove it. it's dumb but works (thus not dumb)
         - os: macos-latest
           targets:
