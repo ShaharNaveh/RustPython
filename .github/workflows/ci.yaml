@@ -671,8 +671,9 @@ jobs:
       - name: Setup Wasmer
         uses: wasmerio/setup-wasmer@v3
 
-      - name: Install clang
-        run: sudo apt-get update && sudo apt-get install clang -y
+      - uses: .github/actions/install-linux-deps
+        with:
+          clang: true
 
       - name: build rustpython
         run: cargo build --release --target wasm32-wasip1 --features freeze-stdlib,stdlib --verbose
