@@ -177,19 +177,19 @@ jobs:
         include: 
         - os: ubuntu-latest
           targets:
-            - i686-unknown-linux-gnu
             - aarch64-linux-android
+            - aarch64-unknown-linux-gnu
+            - i686-unknown-linux-gnu
+            - i686-unknown-linux-musl
             - wasm32-wasip2
             - x86_64-unknown-freebsd
-            - i686-unknown-linux-musl
           dependencies:
             gcc-multilib: true
             musl-tools: true
-        - os: ubuntu-latest
-          targets:
-            - aarch64-unknown-linux-gnu
-          dependencies:
-            gcc-aarch64-linux-gnu: true # conflict with `gcc-multilib`
+        #- os: ubuntu-latest
+         # targets:
+          #dependencies:
+            #gcc-aarch64-linux-gnu: true # conflict with `gcc-multilib`
         - os: macos-latest
           targets:
             - x86_64-apple-darwin
