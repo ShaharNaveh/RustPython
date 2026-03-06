@@ -213,20 +213,10 @@ jobs:
           targets: ${{ join(matrix.targets, ',') }}
 
       - name: Install dependencies
-        if: false
         uses: ./.github/actions/install-linux-deps
         with: 
           gcc-multilib: true
           musl-tools: true
-          gcc-aarch64-linux-gnu: false
-
-      - name: Install dependencies
-        uses: ./.github/actions/install-linux-deps
-        with: 
-          gcc-multilib: true
-          musl-tools: true
-          gcc-aarch64-linux-gnu: true
-
 
       - name: Setup Android NDK
         if: runner.os == 'Linux'
@@ -235,6 +225,11 @@ jobs:
         with:
           ndk-version: r27
           add-to-path: true
+
+      - name: Install dependencies
+        uses: ./.github/actions/install-linux-deps
+        with: 
+          gcc-aarch64-linux-gnu: true
 
       - name: Check compilation
         run: |
