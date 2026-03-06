@@ -24,6 +24,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  CARGO_INCREMENTAL: 0
+  CARGO_PROFILE_TEST_DEBUG: 0
+  CARGO_PROFILE_DEV_DEBUG: 0
+  CARGO_PROFILE_RELEASE_DEBUG: 0
   CARGO_ARGS: --no-default-features --features stdlib,importlib,stdio,encodings,sqlite,host_env
   CARGO_ARGS_SSL: --no-default-features --features stdlib,importlib,stdio,encodings,sqlite,host_env,ssl-rustls
   CARGO_ARGS_THREADING: --no-default-features --features stdlib,importlib,stdio,encodings,sqlite,host_env,threading
@@ -193,8 +197,8 @@ jobs:
             gcc-aarch64-linux-gnu: true # conflict with `gcc-multilib`. it will install gcc-multilib first, and then remove it. it's dumb but works (thus not dumb)
         - os: macos-latest
           targets:
-            - x86_64-apple-darwin
             - aarch64-apple-ios
+            - x86_64-apple-darwin
       fail-fast: false
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
