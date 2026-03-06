@@ -231,7 +231,9 @@ jobs:
         run: |
           for target in ${{ join(matrix.targets, ' ') }}
           do
+            echo "::group::${target}"
             cargo check --target $target ${{ env.CARGO_ARGS }}
+            echo "::endgroup::"
           done
         env:
           CC_aarch64_linux_android: ${{ steps.setup-ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang
