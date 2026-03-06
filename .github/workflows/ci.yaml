@@ -664,7 +664,7 @@ jobs:
       - name: Setup Wasmer
         uses: wasmerio/setup-wasmer@v3
 
-      - uses: .github/actions/install-linux-deps
+      - uses: ./.github/actions/install-linux-deps
         with:
           clang: true
 
