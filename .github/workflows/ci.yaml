@@ -216,7 +216,7 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ join(matrix.targets, ",") }}
+          targets: ${{ join(matrix.targets, ',') }}
 
       - name: Setup Android NDK
         if: runner.os == 'Linux'
@@ -228,7 +228,7 @@ jobs:
 
       - name: Check compilation
         run: |
-          for target in ${{ join(matrix.targets, " ") }}
+          for target in ${{ join(matrix.targets, ' ') }}
           do
             cargo check --target $target ${{ env.CARGO_ARGS }}
           done
