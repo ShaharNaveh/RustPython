@@ -37,7 +37,7 @@ jobs:
     steps:
       - name: Get Date
         id: get-date
-        run: echo "date=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
+        run: echo "date=$(/bin/date -u "+%Y%m%d%H%M%S")" >> $GITHUB_OUTPUT
         shell: bash
 
       - name: Checkout RustPython main branch
@@ -48,16 +48,6 @@ jobs:
           ref: main
           persist-credentials: false
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install RustPython dependencies
-        uses: ./.github/actions/install-macos-deps
-        with:
-          autoconf: true
-          automake: true
-          libtool: true
-          openssl: true
 
       # Fetch the cache using the complete key - to avoid rebuilding the cache if nothing changed
       - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
@@ -70,6 +60,19 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}-${{ steps.get-date.outputs.date }}
+
+      - name: Setup Rust
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install RustPython dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: ./.github/actions/install-macos-deps
+        with:
+          autoconf: true
+          automake: true
+          libtool: true
+          openssl: true
 
       # Build RustPython for the dev profile, used by check, doc, ...
       - name: Build dev cache
