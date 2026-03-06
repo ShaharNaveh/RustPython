@@ -25,8 +25,8 @@ concurrency:
 env:
   CARGO_ARGS: --no-default-features --features stdlib,importlib,stdio,encodings,sqlite,host_env
   CARGO_ARGS_SSL: --no-default-features --features stdlib,importlib,stdio,encodings,sqlite,host_env,ssl-rustls
-  CARGO_ARGS_THREADS: --no-default-features --features stdlib,importlib,stdio,encodings,sqlite,host_env,threads
-  CARGO_ARGS_SSL_THREADS: --no-default-features --features stdlib,importlib,stdio,encodings,sqlite,host_env,ssl-rustls,threads
+  CARGO_ARGS_THREADING: --no-default-features --features stdlib,importlib,stdio,encodings,sqlite,host_env,threading
+  CARGO_ARGS_SSL_THREADING: --no-default-features --features stdlib,importlib,stdio,encodings,sqlite,host_env,ssl-rustls,threading
   # PLATFORM_INDEPENDENT_TESTS are tests that do not depend on the underlying OS. They are currently
   # only run on Linux to speed up the CI.
   PLATFORM_INDEPENDENT_TESTS: >-
@@ -165,7 +165,7 @@ jobs:
 
       - name: cargo test
         run: |
-          cargo test --verbose --workspace ${{ env.EXCLUDES }} ${{ env.CARGO_ARGS_SSL_THREADS }} ${{ matrix.cargo_args }}
+          cargo test --verbose --workspace ${{ env.EXCLUDES }} ${{ env.CARGO_ARGS_SSL_THREADING }} ${{ matrix.cargo_args }}
 
   cargo_check:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
@@ -358,7 +358,7 @@ jobs:
 
       - name: build rustpython
         run: |
-          cargo build --release --verbose ${{ env.CARGO_ARGS_SSL_THREADS }} ${{ matrix.cargo_args }}
+          cargo build --release --verbose ${{ env.CARGO_ARGS_SSL_THREADING }} ${{ matrix.cargo_args }}
 
       - name: run snippets
         run: python -m pip install -r requirements.txt && pytest -v
@@ -425,7 +425,7 @@ jobs:
 
       - name: Check whats_left is not broken
         shell: bash
-        run: python -I scripts/whats_left.py ${{ env.CARGO_ARGS_SSL_THREADS }} ${{ matrix.cargo_args }}
+        run: python -I scripts/whats_left.py ${{ env.CARGO_ARGS_SSL_THREADING }} ${{ matrix.cargo_args }}
 
   lint:
     name: Lint Rust & Python code
