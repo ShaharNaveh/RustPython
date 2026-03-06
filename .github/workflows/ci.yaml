@@ -178,7 +178,6 @@ jobs:
         - os: ubuntu-latest
           targets:
             - aarch64-linux-android
-            - aarch64-unknown-linux-gnu
             - i686-unknown-linux-gnu
             - i686-unknown-linux-musl
             - wasm32-wasip2
@@ -186,10 +185,12 @@ jobs:
           dependencies:
             gcc-multilib: true
             musl-tools: true
-        #- os: ubuntu-latest
-         # targets:
-          #dependencies:
-            #gcc-aarch64-linux-gnu: true # conflict with `gcc-multilib`
+        - os: ubuntu-latest
+          targets:
+            - aarch64-unknown-linux-gnu
+          dependencies:
+            gcc-multilib: true
+            gcc-aarch64-linux-gnu: true # conflict with `gcc-multilib`. it will install gcc-multilib first, and then remove it. it's dumb but works (thus not dumb)
         - os: macos-latest
           targets:
             - x86_64-apple-darwin
