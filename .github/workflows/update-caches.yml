@@ -14,7 +14,7 @@ env:
   CARGO_PROFILE_TEST_DEBUG: 0
   CARGO_PROFILE_DEV_DEBUG: 0
   CARGO_PROFILE_RELEASE_DEBUG: 0
-  COMMON_CARGO_BUILD_ARGS: "--no-default-features --features threading,stdlib,importlib,stdio,encodings,sqlite,ssl-rustls,host_env"
+  CARGO_BUILD_ARGS: "--no-default-features --features threading,stdlib,importlib,stdio,encodings,sqlite,ssl-rustls,host_env"
 
 jobs:
   build-caches:
@@ -24,11 +24,11 @@ jobs:
       matrix:
         include:
           - os: macos-latest
-            cargo_build_args: "${{ env.COMMON_CARGO_BUILD_ARGS }}" # TODO: Fix jit on macos
+            cargo_args: "" # TODO: Fix jit on macos
           - os: ubuntu-latest
-            cargo_build_args: "${{ env.COMMON_CARGO_BUILD_ARGS }} --features jit"
+            cargo_args: "--features jit"
           - os: windows-latest
-            cargo_build_args: "${{ env.COMMON_CARGO_BUILD_ARGS }} --features jit"
+            cargo_args: "--features jit"
     steps:
       - name: Get Date
         id: get-date
@@ -68,17 +68,17 @@ jobs:
       # Build RustPython for the dev profile, used by check, doc, ...
       - name: Build dev cache
         if: steps.cache.outputs.cache-hit != 'true'
-        run: cargo build ${{ matrix.cargo_build_args }} --profile dev
+        run: cargo build ${{ env.CARGO_BUILD_ARGS }} ${{ matrix.cargo_args }} --profile dev
 
       # Build RustPython for the test profile, used by test
       - name: Build test cache
         if: steps.cache.outputs.cache-hit != 'true'
-        run: cargo build ${{ matrix.cargo_build_args }} --profile test
+        run: cargo build ${{ env.CARGO_BUILD_ARGS }} ${{ matrix.cargo_args }} --profile test
 
       # Build RustPython for the release profile, used by cpython tests + snippepts
       - name: Build release cache
         if: steps.cache.outputs.cache-hit != 'true'
-        run: cargo build ${{ matrix.cargo_build_args }} --profile release
+        run: cargo build ${{ env.CARGO_BUILD_ARGS }} ${{ matrix.cargo_args }} --profile release
 
       - name: Save cache
         if: steps.cache.outputs.cache-hit != 'true'
