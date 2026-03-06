@@ -1,10 +1,10 @@
 on:
   push:
-    branches: 
+    branches:
       - main
       - release
   pull_request:
-    types: 
+    types:
       - opened
       - synchronize
       - reopened
@@ -182,7 +182,7 @@ jobs:
           dependencies:
             gcc-multilib: true
             musl-tools: true
-        - os: ubuntu-slim 
+        - os: ubuntu-slim
           target: '' # check compilation without threading
         - os: ubuntu-slim
           target: aarch64-linux-android
