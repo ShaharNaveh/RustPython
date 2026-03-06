@@ -173,29 +173,22 @@ jobs:
     strategy:
       matrix:
         include: 
-        - os: ubuntu-slim
-          target: i686-unknown-linux-gnu
+        - os: ubuntu-latest
+          targets:
+            - i686-unknown-linux-gnu
+            - aarch64-linux-android
+            - aarch64-unknown-linux-gnu
+            - wasm32-wasip2
+            - x86_64-unknown-freebsd
+            - i686-unknown-linux-musl
           dependencies:
             gcc-multilib: true
             musl-tools: true
-        - os: ubuntu-slim
-          target: '' # check compilation without threading
-        - os: ubuntu-slim
-          target: aarch64-linux-android
-        - os: ubuntu-slim
-          target: aarch64-unknown-linux-gnu
-          dependencies:
             gcc-aarch64-linux-gnu: true
-        - os: ubuntu-slim
-          target: i686-unknown-linux-musl
-        - os: ubuntu-slim
-          target: x86_64-unknown-freebsd
-        - os: ubuntu-slim
-          target: wasm32-wasip2
         - os: macos-latest
-          target: x86_64-apple-darwin
-        - os: macos-latest
-          target: aarch64-apple-ios
+          targets:
+            - x86_64-apple-darwin
+            - aarch64-apple-ios
       fail-fast: false
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -218,16 +211,15 @@ jobs:
             target/
 
       - name: Install dependencies
-        if: ${{ matrix.dependencies != '' }}
         uses: ./.github/actions/install-linux-deps
         with: ${{ matrix.dependencies }}
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          target: ${{ matrix.target }}
+          targets: ${{ join(matrix.targets, ",") }}
 
       - name: Setup Android NDK
-        if: ${{ matrix.target == 'aarch64-linux-android' }}
+        if: runner.os == 'Linux'
         id: setup-ndk
         uses: nttld/setup-ndk@v1
         with:
@@ -235,16 +227,15 @@ jobs:
           add-to-path: true
 
       - name: Check compilation
-        if: ${{ matrix.target == 'aarch64-linux-android' }}
-        run: cargo check --target aarch64-linux-android ${{ env.CARGO_ARGS }}
+        run: |
+          for target in ${{ join(matrix.targets, " ") }}
+          do
+            cargo check --target $target ${{ env.CARGO_ARGS }}
+          done
         env:
           CC_aarch64_linux_android: ${{ steps.setup-ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang
           AR_aarch64_linux_android: ${{ steps.setup-ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar
           CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER: ${{ steps.setup-ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang
-
-      - name: Check compilation
-        if: ${{ matrix.target != 'aarch64-linux-android' }}
-        run: cargo check --target ${{ matrix.target }} ${{ env.CARGO_ARGS }}
 
   test_misc:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
@@ -292,6 +283,9 @@ jobs:
           cargo check -p rustpython-vm --no-default-features --features compiler
           cargo check -p rustpython-stdlib --no-default-features --features compiler
           cargo build --no-default-features --features stdlib,importlib,stdio,encodings,freeze-stdlib
+
+      - name: Check without threading
+        run: cargo check ${{ env.CARGO_ARGS_SSL }}
 
       - name: Test openssl build
         run: cargo build --no-default-features --features ssl-openssl
