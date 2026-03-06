@@ -213,6 +213,7 @@ jobs:
           targets: ${{ join(matrix.targets, ',') }}
 
       - name: Install dependencies
+        if: false
         uses: ./.github/actions/install-linux-deps
         with: 
           gcc-multilib: true
@@ -229,6 +230,8 @@ jobs:
       - name: Install dependencies
         uses: ./.github/actions/install-linux-deps
         with: 
+          gcc-multilib: true
+          musl-tools: true
           gcc-aarch64-linux-gnu: true
 
       - name: Check compilation
