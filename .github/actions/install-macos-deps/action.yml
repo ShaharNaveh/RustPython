@@ -40,8 +40,6 @@ runs:
       shell: bash
       if: ${{ runner.os == 'macOS' }}
       run: >
-        brew up
-
         brew install
         ${{ fromJSON(inputs.autoconf) && 'autoconf' || '' }}
         ${{ fromJSON(inputs.automake) && 'automake' || '' }}
