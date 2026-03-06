@@ -38,7 +38,8 @@ jobs:
       - name: Checkout RustPython main branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          repository: "RustPython/RustPython"
+          # repository: "RustPython/RustPython" # UNCOMMENT BEFORE MERGE
+          repository: "ShaharNaveh/RustPython" # DELETE BEFORE MERGE
           ref: main
           persist-credentials: false
 
