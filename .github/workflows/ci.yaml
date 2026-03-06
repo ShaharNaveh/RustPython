@@ -212,6 +212,13 @@ jobs:
         with: 
           gcc-multilib: true
           musl-tools: true
+          gcc-aarch64-linux-gnu: false
+
+      - name: Install dependencies
+        uses: ./.github/actions/install-linux-deps
+        with: 
+          gcc-multilib: true
+          musl-tools: true
           gcc-aarch64-linux-gnu: true
 
       - uses: dtolnay/rust-toolchain@stable
