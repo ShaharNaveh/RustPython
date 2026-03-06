@@ -22,10 +22,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CARGO_ARGS: "--no-default-features --features stdlib,importlib,stdio,encodings,sqlite,host_env"
-  CARGO_ARGS_SSL: "${{ env.CARGO_ARGS }} --features ssl-rustls"
-  CARGO_ARGS_THREADS: "${{ env.CARGO_ARGS }} --features threads"
-  CARGO_ARGS_SSL_THREADS: "${{ env.CARGO_ARGS_SSL }} --features threads"
+  CARGO_ARGS: --no-default-features --features stdlib,importlib,stdio,encodings,sqlite,host_env
+  CARGO_ARGS_SSL: --no-default-features --features stdlib,importlib,stdio,encodings,sqlite,host_env,ssl-rustls
+  CARGO_ARGS_THREADS: --no-default-features --features stdlib,importlib,stdio,encodings,sqlite,host_env,threads
+  CARGO_ARGS_SSL_THREADS: --no-default-features --features stdlib,importlib,stdio,encodings,sqlite,host_env,ssl-rustls,threads
   # PLATFORM_INDEPENDENT_TESTS are tests that do not depend on the underlying OS. They are currently
   # only run on Linux to speed up the CI.
   PLATFORM_INDEPENDENT_TESTS: >-
