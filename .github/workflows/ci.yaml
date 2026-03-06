@@ -129,9 +129,9 @@ jobs:
       # - rustpython-compiler-source: deprecated
       # - rustpython-venvlauncher: Windows-only
       EXCLUDES: >
-        --exclude rustpython_wasm
-        --exclude rustpython-compiler-source
-        --exclude rustpython-venvlauncher
+          --exclude rustpython_wasm
+          --exclude rustpython-compiler-source
+          --exclude rustpython-venvlauncher
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
