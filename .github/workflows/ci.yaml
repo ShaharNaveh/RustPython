@@ -208,7 +208,12 @@ jobs:
             ~/.cargo/git/db/
             target/
 
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ join(matrix.targets, ',') }}
+
       - name: Install dependencies
+        if: false
         uses: ./.github/actions/install-linux-deps
         with: 
           gcc-multilib: true
@@ -222,9 +227,6 @@ jobs:
           musl-tools: true
           gcc-aarch64-linux-gnu: true
 
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ join(matrix.targets, ',') }}
 
       - name: Setup Android NDK
         if: runner.os == 'Linux'
