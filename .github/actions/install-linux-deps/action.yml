@@ -45,5 +45,10 @@ runs:
         sudo apt-get install --no-install-recommends
         ${{ fromJSON(inputs.gcc-multilib) && 'gcc-multilib' || '' }}
         ${{ fromJSON(inputs.musl-tools) && 'musl-tools' || '' }}
-        ${{ fromJSON(inputs.gcc-aarch64-linux-gnu) && 'gcc-aarch64-linux-gnu' || '' }}
         ${{ fromJSON(inputs.clang) && 'clang' || '' }}
+
+    # 'gcc-aarch64-linux-gnu' must be installed after 'gcc-multilib' (and maybe musl-tools)
+    - name: Install Linux dependencies
+      shell: bash
+      if: ${{ runner.os == 'linux' && fromJSON(inputs.gcc-aarch64-linux-gnu) }}
+      run: sudo apt-get install --no-install-recommends gcc-aarch64-linux-gnu
