@@ -224,7 +224,7 @@ jobs:
           targets: ${{ join(matrix.targets, ',') }}
 
       - name: Setup Android NDK
-        if: ${{ contains('aarch64-linux-android', matrix.targets) }}
+        if: ${{ contains(matrix.targets, 'aarch64-linux-android') }}
         id: setup-ndk
         uses: nttld/setup-ndk@v1
         with:
