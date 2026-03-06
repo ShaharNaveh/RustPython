@@ -67,9 +67,9 @@ def parse_args():
     )
     parser.add_argument(
         "--features",
-        action="store",
-        help="which features to enable when building RustPython (default: ssl)",
-        default="ssl",
+        action="append",
+        help="which features to enable when building RustPython (default: [ssl])",
+        default=["ssl"],
     )
 
     args = parser.parse_args()
@@ -450,7 +450,7 @@ cargo_build_command = ["cargo", "build", "--release"]
 if args.no_default_features:
     cargo_build_command.append("--no-default-features")
 if args.features:
-    cargo_build_command.extend(["--features", args.features])
+    cargo_build_command.extend(["--features", ",".join(args.features)])
 
 subprocess.run(cargo_build_command, check=True)
 
@@ -458,7 +458,7 @@ cargo_run_command = ["cargo", "run", "--release"]
 if args.no_default_features:
     cargo_run_command.append("--no-default-features")
 if args.features:
-    cargo_run_command.extend(["--features", args.features])
+    cargo_run_command.extend(["--features", ",".join(args.features)])
 cargo_run_command.extend(["-q", "--", GENERATED_FILE])
 
 result = subprocess.run(

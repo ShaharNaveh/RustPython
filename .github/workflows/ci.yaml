@@ -309,14 +309,11 @@ jobs:
         - os: macos-latest
           cargo_args: "" # TODO: Fix jit on macOS
           timeout: 50
-          whats_left_args: "${{ env.CARGO_ARGS_SSL_THREADS }}" # TODO: Fix jit on macOS
         - os: ubuntu-latest
           cargo_args: "--features jit"
-          whats_left_args: "${{ env.CARGO_ARGS_SSL_THREADS }},jit"
           timeout: 60
         - os: windows-latest
           cargo_args: "--features jit"
-          whats_left_args: "${{ env.CARGO_ARGS_SSL_THREADS }},jit"
           timeout: 50
           # Skip additional tests on Windows. They are checked on Linux and MacOS.
           # test_pathlib: panic by surrogate chars
@@ -428,7 +425,7 @@ jobs:
 
       - name: Check whats_left is not broken
         shell: bash
-        run: python -I scripts/whats_left.py ${{ matrix.whats_left_args }}
+        run: python -I scripts/whats_left.py ${{ env.CARGO_ARGS_SSL_THREADS }} ${{ matrix.cargo_args }}
 
   lint:
     name: Lint Rust & Python code
