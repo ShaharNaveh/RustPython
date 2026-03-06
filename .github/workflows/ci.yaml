@@ -19,7 +19,8 @@ name: CI
 # This setting will help reduce the number of duplicated workflows.
 concurrency:
   #group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
-  group: ${{ github.workflow }}-${{ github.ref }}
+  #group: ${{ github.workflow }}-${{ github.ref }}
+  group: ci
   cancel-in-progress: true
 
 env:
