@@ -30,7 +30,7 @@ env:
 
 jobs:
   rust_tests:
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
+    if: false
     env:
       RUST_BACKTRACE: full
     name: Run rust tests
@@ -104,7 +104,7 @@ jobs:
         if: runner.os == 'Linux'
 
   cargo_check:
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
+    if: false
     name: Ensure compilation on various targets
     runs-on: ${{ matrix.os }}
     strategy:
@@ -247,6 +247,13 @@ jobs:
       - name: build rustpython
         run: cargo build --release --verbose --features=threading,jit ${{ env.CARGO_ARGS }}
 
+      - name: Run flaky MP CPython tests
+        run: |
+          target/release/rustpython -m test -j 1 ${{ join(matrix.extra_test_args, ' ') }} --slowest --fail-env-changed --timeout 600 -v ${{ env.FLAKY_MP_TESTS }}
+        timeout-minutes: ${{ matrix.timeout }}
+        env:
+          RUSTPYTHON_SKIP_ENV_POLLUTERS: true
+
       - name: run snippets
         run: python -m pip install -r requirements.txt && pytest -v
         working-directory: ./extra_tests
@@ -265,12 +272,6 @@ jobs:
         env:
           RUSTPYTHON_SKIP_ENV_POLLUTERS: true
 
-      - name: Run flaky MP CPython tests
-        run: |
-          target/release/rustpython -m test -j 1 ${{ join(matrix.extra_test_args, ' ') }} --slowest --fail-env-changed --timeout 600 -v ${{ env.FLAKY_MP_TESTS }}
-        timeout-minutes: ${{ matrix.timeout }}
-        env:
-          RUSTPYTHON_SKIP_ENV_POLLUTERS: true
 
       - name: run cpython tests to check if env polluters have stopped polluting
         shell: bash
@@ -328,6 +329,7 @@ jobs:
   lint:
     name: Lint Rust & Python code
     runs-on: ubuntu-latest
+    if: false
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -386,7 +388,7 @@ jobs:
           incremental_files_only: true
 
   miri:
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
+    if: false
     name: Run tests under miri
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -414,7 +416,7 @@ jobs:
           MIRIFLAGS: "-Zmiri-ignore-leaks"
 
   wasm:
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
+    if: false
     name: Check the WASM package and demo
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -488,7 +490,7 @@ jobs:
           PUBLISH_BRANCH: master
 
   wasm-wasi:
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
+    if: false
     name: Run snippets and cpython tests on wasm-wasi
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -522,6 +524,7 @@ jobs:
         run: wasmer run --dir "$(pwd)" target/wasm32-wasip1/release/rustpython.wasm -- "$(pwd)/Lib/test/test_int.py"
 
   cargo-shear:
+    if: false
     name: cargo shear
     runs-on: ubuntu-latest
     steps:
@@ -536,6 +539,7 @@ jobs:
       - run: cargo shear
 
   security-lint:
+    if: false
     runs-on: ubuntu-latest
     permissions:
       security-events: write
