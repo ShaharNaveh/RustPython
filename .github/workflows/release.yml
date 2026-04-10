@@ -195,6 +195,7 @@ jobs:
               $PRERELEASE_ARG \
               bin/rustpython-release-*
         env:
+          GH_TOKEN: ${{ github.token }}
           tag: ${{ github.ref_name }}
           run: ${{ github.run_number }}
           PRE_RELEASE_INPUT: ${{ github.event.inputs.pre-release }}
