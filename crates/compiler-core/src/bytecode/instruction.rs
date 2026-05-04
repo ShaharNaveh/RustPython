@@ -1732,7 +1732,7 @@ impl StackEffect {
 
 impl From<StackEffect> for i32 {
     fn from(effect: StackEffect) -> Self {
-        (effect.pushed() as i32) - (effect.popped() as i32)
+        (effect.pushed() as Self) - (effect.popped() as Self)
     }
 }
 
