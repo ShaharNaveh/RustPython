@@ -94,9 +94,9 @@ mod _ssl {
     };
     use openssl_sys as sys;
     use rustpython_vm::ospath::OsPath;
+
+    use core::{ffi::CStr, fmt};
     use std::{
-        ffi::CStr,
-        fmt,
         io::{Read, Write},
         path::{Path, PathBuf},
         time::Instant,
@@ -441,7 +441,7 @@ mod _ssl {
             #[cfg(unix)]
             {
                 use std::os::unix::ffi::OsStrExt;
-                std::ffi::OsStr::from_bytes(c.to_bytes()).into()
+                core::ffi::OsStr::from_bytes(c.to_bytes()).into()
             }
             #[cfg(windows)]
             {
@@ -578,7 +578,7 @@ mod _ssl {
         static SNI_EX_DATA_IDX: LazyLock<libc::c_int> = LazyLock::new(|| unsafe {
             sys::SSL_get_ex_new_index(
                 0,
-                std::ptr::null_mut(),
+                core::ptr::null_mut(),
                 None,
                 None,
                 Some(sni_callback_data_free),
@@ -611,7 +611,7 @@ mod _ssl {
                 // Free the Box<SniCallbackData> - this releases references to context and socket
                 let _ = Box::from_raw(data_ptr as *mut SniCallbackData);
                 // Clear the ex_data to prevent double-free
-                sys::SSL_set_ex_data(ssl_ptr, idx, std::ptr::null_mut());
+                sys::SSL_set_ex_data(ssl_ptr, idx, core::ptr::null_mut());
             }
         }
     }
@@ -622,7 +622,7 @@ mod _ssl {
         static MSG_CB_EX_DATA_IDX: LazyLock<libc::c_int> = LazyLock::new(|| unsafe {
             sys::SSL_get_ex_new_index(
                 0,
-                std::ptr::null_mut(),
+                core::ptr::null_mut(),
                 None,
                 None,
                 Some(msg_callback_data_free),
@@ -643,7 +643,7 @@ mod _ssl {
         if !ptr.is_null() {
             unsafe {
                 // Reconstruct PyObjectRef and drop to decrement reference count
-                let raw = std::ptr::NonNull::new_unchecked(ptr as *mut PyObject);
+                let raw = core::ptr::NonNull::new_unchecked(ptr as *mut PyObject);
                 let _ = PyObjectRef::from_raw(raw);
             }
         }
@@ -695,7 +695,7 @@ mod _ssl {
             let server_name_arg = if servername.is_null() {
                 vm.ctx.none()
             } else {
-                let name_cstr = std::ffi::CStr::from_ptr(servername);
+                let name_cstr = core::ffi::CStr::from_ptr(servername);
                 match name_cstr.to_str() {
                     Ok(name_str) => vm.ctx.new_str(name_str).into(),
                     Err(_) => vm.ctx.none(),
@@ -811,7 +811,7 @@ mod _ssl {
                 .unwrap_or_else(|| vm.ctx.none());
 
             // Create the message bytes
-            let buf_slice = std::slice::from_raw_parts(buf as *const u8, len);
+            let buf_slice = core::slice::from_raw_parts(buf as *const u8, len);
             let msg_bytes = vm.ctx.new_bytes(buf_slice.to_vec());
 
             // Determine direction string
@@ -820,34 +820,22 @@ mod _ssl {
             // Calculate msg_type based on content_type (debughelpers.c behavior)
             let msg_type = match content_type {
                 SSL3_RT_CHANGE_CIPHER_SPEC => SSL3_MT_CHANGE_CIPHER_SPEC,
-                SSL3_RT_ALERT => {
+                SSL3_RT_ALERT if len >= 2 => {
                     // byte 1 is alert type
-                    if len >= 2 { buf_slice[1] as i32 } else { -1 }
+                    buf_slice[1] as i32
                 }
-                SSL3_RT_HANDSHAKE => {
+                SSL3_RT_HANDSHAKE if !buf_slice.is_empty() => {
                     // byte 0 is handshake type
-                    if !buf_slice.is_empty() {
-                        buf_slice[0] as i32
-                    } else {
-                        -1
-                    }
+                    buf_slice[0] as i32
                 }
-                SSL3_RT_HEADER => {
+                SSL3_RT_HEADER if len >= 3 => {
                     // Frame header: version in bytes 1..2, type in byte 0
-                    if len >= 3 {
-                        version = ((buf_slice[1] as i32) << 8) | (buf_slice[2] as i32);
-                        buf_slice[0] as i32
-                    } else {
-                        -1
-                    }
+                    version = ((buf_slice[1] as i32) << 8) | (buf_slice[2] as i32);
+                    buf_slice[0] as i32
                 }
-                SSL3_RT_INNER_CONTENT_TYPE => {
+                SSL3_RT_INNER_CONTENT_TYPE if !buf_slice.is_empty() => {
                     // Inner content type in byte 0
-                    if !buf_slice.is_empty() {
-                        buf_slice[0] as i32
-                    } else {
-                        -1
-                    }
+                    buf_slice[0] as i32
                 }
                 _ => -1,
             };
@@ -1112,7 +1100,7 @@ mod _ssl {
                     }
                     s.to_cstring(vm)?
                 }
-                Either::B(b) => std::ffi::CString::new(b.borrow_buf().to_vec())
+                Either::B(b) => core::ffi::CString::new(b.borrow_buf().to_vec())
                     .map_err(|_| exceptions::cstring_error(vm))?,
             };
 
@@ -1690,9 +1678,9 @@ mod _ssl {
             let dh = unsafe {
                 PEM_read_DHparams(
                     fp,
-                    std::ptr::null_mut(),
-                    std::ptr::null_mut(),
-                    std::ptr::null_mut(),
+                    core::ptr::null_mut(),
+                    core::ptr::null_mut(),
+                    core::ptr::null_mut(),
                 )
             };
             unsafe {
@@ -1836,8 +1824,8 @@ mod _ssl {
 
         #[pymethod]
         fn load_cert_chain(&self, args: LoadCertChainArgs, vm: &VirtualMachine) -> PyResult<()> {
+            use core::cell::RefCell;
             use openssl::pkey::PKey;
-            use std::cell::RefCell;
 
             let LoadCertChainArgs {
                 certfile,
@@ -2047,7 +2035,7 @@ mod _ssl {
                 if hostname_str.contains('\0') {
                     return Err(vm.new_type_error("embedded null character"));
                 }
-                let ip = hostname_str.parse::<std::net::IpAddr>();
+                let ip = hostname_str.parse::<core::net::IpAddr>();
                 if ip.is_err() {
                     ssl.set_hostname(hostname_str)
                         .map_err(|e| convert_openssl_error(vm, e))?;
@@ -2738,7 +2726,7 @@ mod _ssl {
                     if out.is_null() {
                         None
                     } else {
-                        let slice = std::slice::from_raw_parts(out, outlen as usize);
+                        let slice = core::slice::from_raw_parts(out, outlen as usize);
                         Some(String::from_utf8_lossy(slice).into_owned())
                     }
                 }
@@ -3118,7 +3106,7 @@ mod _ssl {
                 .ok_or_else(|| vm.new_type_error("Value is not a SSLSession."))?;
 
             // Check if session refers to the same SSLContext
-            if !std::ptr::eq(
+            if !core::ptr::eq(
                 self.ctx.read().ctx.read().as_ptr(),
                 session.ctx.ctx.read().as_ptr(),
             ) {
@@ -3323,8 +3311,8 @@ mod _ssl {
                 if self_len != other_len {
                     false
                 } else {
-                    let self_slice = std::slice::from_raw_parts(self_id, self_len as usize);
-                    let other_slice = std::slice::from_raw_parts(other_id, other_len as usize);
+                    let self_slice = core::slice::from_raw_parts(self_id, self_len as usize);
+                    let other_slice = core::slice::from_raw_parts(other_id, other_len as usize);
                     self_slice == other_slice
                 }
             };
@@ -3447,7 +3435,14 @@ mod _ssl {
     // SSL session statistics functions (implemented as macros in OpenSSL)
     #[allow(non_snake_case)]
     unsafe fn SSL_CTX_sess_number(ctx: *const sys::SSL_CTX) -> libc::c_long {
-        unsafe { sys::SSL_CTX_ctrl(ctx as *mut _, SSL_CTRL_SESS_NUMBER, 0, std::ptr::null_mut()) }
+        unsafe {
+            sys::SSL_CTX_ctrl(
+                ctx as *mut _,
+                SSL_CTRL_SESS_NUMBER,
+                0,
+                core::ptr::null_mut(),
+            )
+        }
     }
 
     #[allow(non_snake_case)]
@@ -3457,7 +3452,7 @@ mod _ssl {
                 ctx as *mut _,
                 SSL_CTRL_SESS_CONNECT,
                 0,
-                std::ptr::null_mut(),
+                core::ptr::null_mut(),
             )
         }
     }
@@ -3469,7 +3464,7 @@ mod _ssl {
                 ctx as *mut _,
                 SSL_CTRL_SESS_CONNECT_GOOD,
                 0,
-                std::ptr::null_mut(),
+                core::ptr::null_mut(),
             )
         }
     }
@@ -3481,14 +3476,21 @@ mod _ssl {
                 ctx as *mut _,
                 SSL_CTRL_SESS_CONNECT_RENEGOTIATE,
                 0,
-                std::ptr::null_mut(),
+                core::ptr::null_mut(),
             )
         }
     }
 
     #[allow(non_snake_case)]
     unsafe fn SSL_CTX_sess_accept(ctx: *const sys::SSL_CTX) -> libc::c_long {
-        unsafe { sys::SSL_CTX_ctrl(ctx as *mut _, SSL_CTRL_SESS_ACCEPT, 0, std::ptr::null_mut()) }
+        unsafe {
+            sys::SSL_CTX_ctrl(
+                ctx as *mut _,
+                SSL_CTRL_SESS_ACCEPT,
+                0,
+                core::ptr::null_mut(),
+            )
+        }
     }
 
     #[allow(non_snake_case)]
@@ -3498,7 +3500,7 @@ mod _ssl {
                 ctx as *mut _,
                 SSL_CTRL_SESS_ACCEPT_GOOD,
                 0,
-                std::ptr::null_mut(),
+                core::ptr::null_mut(),
             )
         }
     }
@@ -3510,19 +3512,26 @@ mod _ssl {
                 ctx as *mut _,
                 SSL_CTRL_SESS_ACCEPT_RENEGOTIATE,
                 0,
-                std::ptr::null_mut(),
+                core::ptr::null_mut(),
             )
         }
     }
 
     #[allow(non_snake_case)]
     unsafe fn SSL_CTX_sess_hits(ctx: *const sys::SSL_CTX) -> libc::c_long {
-        unsafe { sys::SSL_CTX_ctrl(ctx as *mut _, SSL_CTRL_SESS_HIT, 0, std::ptr::null_mut()) }
+        unsafe { sys::SSL_CTX_ctrl(ctx as *mut _, SSL_CTRL_SESS_HIT, 0, core::ptr::null_mut()) }
     }
 
     #[allow(non_snake_case)]
     unsafe fn SSL_CTX_sess_misses(ctx: *const sys::SSL_CTX) -> libc::c_long {
-        unsafe { sys::SSL_CTX_ctrl(ctx as *mut _, SSL_CTRL_SESS_MISSES, 0, std::ptr::null_mut()) }
+        unsafe {
+            sys::SSL_CTX_ctrl(
+                ctx as *mut _,
+                SSL_CTRL_SESS_MISSES,
+                0,
+                core::ptr::null_mut(),
+            )
+        }
     }
 
     #[allow(non_snake_case)]
@@ -3532,7 +3541,7 @@ mod _ssl {
                 ctx as *mut _,
                 SSL_CTRL_SESS_TIMEOUTS,
                 0,
-                std::ptr::null_mut(),
+                core::ptr::null_mut(),
             )
         }
     }
@@ -3544,7 +3553,7 @@ mod _ssl {
                 ctx as *mut _,
                 SSL_CTRL_SESS_CACHE_FULL,
                 0,
-                std::ptr::null_mut(),
+                core::ptr::null_mut(),
             )
         }
     }
@@ -3566,7 +3575,7 @@ mod _ssl {
 
     #[allow(non_snake_case)]
     unsafe fn BIO_ctrl_pending(bio: *mut sys::BIO) -> usize {
-        unsafe { sys::BIO_ctrl(bio, BIO_CTRL_PENDING, 0, std::ptr::null_mut()) as usize }
+        unsafe { sys::BIO_ctrl(bio, BIO_CTRL_PENDING, 0, core::ptr::null_mut()) as usize }
     }
 
     #[allow(non_snake_case)]
@@ -3576,7 +3585,7 @@ mod _ssl {
                 bio,
                 BIO_CTRL_SET_EOF,
                 eof as libc::c_long,
-                std::ptr::null_mut(),
+                core::ptr::null_mut(),
             ) as libc::c_int
         }
     }
@@ -3709,7 +3718,7 @@ mod _ssl {
             unsafe {
                 let mut len: libc::c_uint = 0;
                 let id_ptr = sys::SSL_SESSION_get_id(self.session, &mut len);
-                let id_slice = std::slice::from_raw_parts(id_ptr, len as usize);
+                let id_slice = core::slice::from_raw_parts(id_ptr, len as usize);
                 vm.ctx.new_bytes(id_slice.to_vec())
             }
         }
@@ -3853,7 +3862,7 @@ mod _ssl {
             if verify_str.is_null() {
                 vm.ctx.none()
             } else {
-                let c_str = std::ffi::CStr::from_ptr(verify_str);
+                let c_str = core::ffi::CStr::from_ptr(verify_str);
                 vm.ctx.new_str(c_str.to_string_lossy()).into()
             }
         };
@@ -3923,12 +3932,12 @@ mod _ssl {
             loop {
                 // Check for EOF before attempting to parse (like CPython's _add_ca_certs)
                 // BIO_ctrl with BIO_CTRL_EOF returns 1 if EOF, 0 otherwise
-                if sys::BIO_ctrl(bio.as_ptr(), sys::BIO_CTRL_EOF, 0, std::ptr::null_mut()) != 0 {
+                if sys::BIO_ctrl(bio.as_ptr(), sys::BIO_CTRL_EOF, 0, core::ptr::null_mut()) != 0 {
                     was_bio_eof = true;
                     break;
                 }
 
-                let cert = sys::d2i_X509_bio(bio.as_ptr(), std::ptr::null_mut());
+                let cert = sys::d2i_X509_bio(bio.as_ptr(), core::ptr::null_mut());
                 if cert.is_null() {
                     // Parse error (not just EOF)
                     break;
