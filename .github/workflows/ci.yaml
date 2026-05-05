@@ -434,6 +434,8 @@ jobs:
       matrix:
         include:
         - os: macos-latest
+          dependencies:
+            openssl: true
         - os: ubuntu-latest
           dependencies:
             tk-dev: true
@@ -465,6 +467,11 @@ jobs:
         uses: ./.github/actions/install-linux-deps
         with:
           tk-dev: ${{ matrix.dependencies.tk-dev || false }}
+
+      - name: Install dependencies
+        uses: ./.github/actions/install-macos-deps
+        with:
+          openssl: ${{ matrix.dependencies.openssl || false }}
 
       - name: Clippy
         run: cargo clippy --keep-going --all-features --workspace --all-targets ${{ env.WORKSPACE_EXCLUDES }} -- -Dwarnings
