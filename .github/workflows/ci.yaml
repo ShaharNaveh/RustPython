@@ -437,6 +437,7 @@ jobs:
           dependencies:
             openssl: true
             tcl-tk: true
+            go: true
         - os: ubuntu-latest
           dependencies:
             tk-dev: true
@@ -473,6 +474,8 @@ jobs:
         uses: ./.github/actions/install-macos-deps
         with:
           openssl: ${{ matrix.dependencies.openssl || false }}
+          tcl-tk: ${{ matrix.dependencies.tcl-tk || false }}
+          go: ${{ matrix.dependencies.go || false }}
 
       - name: Clippy
         run: cargo clippy --keep-going --all-features --workspace --all-targets ${{ env.WORKSPACE_EXCLUDES }} -- -Dwarnings
