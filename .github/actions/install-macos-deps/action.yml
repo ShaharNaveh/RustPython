@@ -34,7 +34,7 @@ inputs:
     required: false
     default: "false"
   tcl-tk:
-    description: Install tcl-tk (tcl-tk@8)
+    description: Install tcl-tk (tcl-tk@9)
     required: false
     default: "false"
 runs:
@@ -49,4 +49,4 @@ runs:
         ${{ fromJSON(inputs.automake) && 'automake' || '' }}
         ${{ fromJSON(inputs.libtool) && 'libtool' || '' }}
         ${{ fromJSON(inputs.openssl) && 'openssl@3' || '' }}
-        ${{ fromJSON(inputs.tcl-tk) && 'tcl-tk@8' || '' }}
+        ${{ fromJSON(inputs.tcl-tk) && 'tcl-tk@9' || '' }}
