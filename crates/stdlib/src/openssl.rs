@@ -441,7 +441,7 @@ mod _ssl {
             #[cfg(unix)]
             {
                 use std::os::unix::ffi::OsStrExt;
-                core::ffi::OsStr::from_bytes(c.to_bytes()).into()
+                std::ffi::OsStr::from_bytes(c.to_bytes()).into()
             }
             #[cfg(windows)]
             {
@@ -1100,7 +1100,7 @@ mod _ssl {
                     }
                     s.to_cstring(vm)?
                 }
-                Either::B(b) => core::ffi::CString::new(b.borrow_buf().to_vec())
+                Either::B(b) => std::ffi::CString::new(b.borrow_buf().to_vec())
                     .map_err(|_| exceptions::cstring_error(vm))?,
             };
 
