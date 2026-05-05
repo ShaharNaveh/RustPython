@@ -431,7 +431,7 @@ pub fn cleanup_current_thread_frames(vm: &VirtualMachine) {
 
     // A dying thread should not remain logically ATTACHED while its
     // thread-state slot is being removed.
-    #[cfg(all(unix, feature = "threading"))]
+    #[cfg(unix)]
     if let Some(slot) = &current_slot {
         let _ = slot.state.compare_exchange(
             THREAD_ATTACHED,
@@ -443,6 +443,7 @@ pub fn cleanup_current_thread_frames(vm: &VirtualMachine) {
 
     // Guard against OS thread-id reuse races: only remove the registry entry
     // if it still points at this thread's own slot.
+    #[cfg_attr(not(unix), expect(unused_variables))]
     let removed = if let Some(slot) = &current_slot {
         let mut registry = vm.state.thread_frames.lock();
         match registry.get(&thread_id) {
@@ -452,7 +453,8 @@ pub fn cleanup_current_thread_frames(vm: &VirtualMachine) {
     } else {
         None
     };
-    #[cfg(all(unix, feature = "threading"))]
+
+    #[cfg(unix)]
     if let Some(slot) = &removed
         && vm.state.stop_the_world.requested.load(Ordering::Acquire)
         && thread_id != vm.state.stop_the_world.requester_ident()
