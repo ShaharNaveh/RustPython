@@ -436,6 +436,7 @@ jobs:
         - os: macos-latest
           dependencies:
             openssl: true
+            tcl-tk: true
         - os: ubuntu-latest
           dependencies:
             tk-dev: true
