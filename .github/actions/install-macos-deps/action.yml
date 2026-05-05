@@ -33,6 +33,14 @@ inputs:
     description: Install openssl (openssl@3)
     required: false
     default: "false"
+  tcl-tk:
+    description: Install tcl-tk (tcl-tk@9)
+    required: false
+    default: "false"
+  go:
+    description: Install go (golang)
+    required: false
+    default: "false"
 runs:
   using: composite
   steps:
@@ -45,3 +53,5 @@ runs:
         ${{ fromJSON(inputs.automake) && 'automake' || '' }}
         ${{ fromJSON(inputs.libtool) && 'libtool' || '' }}
         ${{ fromJSON(inputs.openssl) && 'openssl@3' || '' }}
+        ${{ fromJSON(inputs.tcl-tk) && 'tcl-tk@9' || '' }}
+        ${{ fromJSON(inputs.go) && 'go' || '' }}

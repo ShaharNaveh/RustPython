@@ -38,6 +38,7 @@ mod lock {
         IMP_LOCK.lock();
     }
 
+    #[cfg(unix)]
     pub(super) fn release_lock_after_fork_parent() {
         if IMP_LOCK.is_locked() && IMP_LOCK.is_owned_by_current_thread() {
             unsafe { IMP_LOCK.unlock() };
@@ -75,12 +76,12 @@ mod lock {
 }
 
 /// Re-export for fork safety code in posix.rs
-#[cfg(feature = "threading")]
+#[cfg(all(unix, feature = "threading"))]
 pub(crate) fn acquire_imp_lock_for_fork() {
     lock::acquire_lock_for_fork();
 }
 
-#[cfg(feature = "threading")]
+#[cfg(all(unix, feature = "threading"))]
 pub(crate) fn release_imp_lock_after_fork_parent() {
     lock::release_lock_after_fork_parent();
 }
