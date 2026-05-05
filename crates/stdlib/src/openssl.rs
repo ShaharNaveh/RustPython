@@ -33,7 +33,7 @@ use rustpython_common::lock::LazyLock;
 // define our own copy of ProbeResult so we can handle the vendor case
 // easily, without having to have a bunch of cfgs
 static PROBE: LazyLock<ProbeResult> = cfg_select! {
-    openssl_vendored => LazyLock::new(openssl_probe::probe)
+    openssl_vendored => LazyLock::new(openssl_probe::probe),
     _ => LazyLock::new(|| ProbeResult { cert_file: None, cert_dir: vec![] })
 };
 
