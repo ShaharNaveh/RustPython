@@ -57,13 +57,13 @@ jobs:
           openssl: true
 
       - name: Build dev cache # dev profile used by check & doc
-        run: cargo build --profile dev ${{ env.CARGO_ARGS }}
+        run: cargo build --workspace --profile dev ${{ env.CARGO_ARGS }}
 
       - name: Build test cache
-        run: cargo build --profile test ${{ env.CARGO_ARGS }}
+        run: cargo build --workspace --profile test ${{ env.CARGO_ARGS }}
 
       - name: Build release cache
-        run: cargo build --profile release ${{ env.CARGO_ARGS }}
+        run: cargo build --workspace --profile release ${{ env.CARGO_ARGS }}
 
       - name: Save cache
         uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
