@@ -5,20 +5,22 @@
 //!
 //! Inspirational file: https://github.com/python/cpython/blob/main/Python/symtable.c
 
+use ruff_python_ast as ast;
+
 use rustpython_compiler_core::{PositionEncoding, SourceFile, SourceLocation};
 
 bitflags::bitflags! {
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     pub struct FutureFlags: u32 {
-        const CO_FUTURE_DIVISION: u32         = 0x20000;
+        const CO_FUTURE_DIVISION         = 0x20000;
         /// Do absolute imports by default.
-        const CO_FUTURE_ABSOLUTE_IMPORT: u32  = 0x40000;
-        const CO_FUTURE_WITH_STATEMENT: u32   = 0x80000;
-        const CO_FUTURE_PRINT_FUNCTION: u32   = 0x100000;
-        const CO_FUTURE_UNICODE_LITERALS: u32 = 0x200000;
-        const CO_FUTURE_BARRY_AS_BDFL: u32    = 0x400000;
-        const CO_FUTURE_GENERATOR_STOP: u32   = 0x800000;
-        const CO_FUTURE_ANNOTATIONS: u32      = 0x1000000;
+        const CO_FUTURE_ABSOLUTE_IMPORT  = 0x40000;
+        const CO_FUTURE_WITH_STATEMENT   = 0x80000;
+        const CO_FUTURE_PRINT_FUNCTION   = 0x100000;
+        const CO_FUTURE_UNICODE_LITERALS = 0x200000;
+        const CO_FUTURE_BARRY_AS_BDFL    = 0x400000;
+        const CO_FUTURE_GENERATOR_STOP   = 0x800000;
+        const CO_FUTURE_ANNOTATIONS      = 0x1000000;
     }
 }
 
@@ -28,6 +30,85 @@ struct FutureFeatures {
     features: FutureFlags,
     /// Location of last future statement.
     location: SourceLocation,
+}
+
+#[derive(Debug)]
+struct FutureErrror {
+    msg: String,
+}
+
+impl From<String> for FutureErrror {
+    fn from(msg: String) -> Self {
+        Self::new(msg)
+    }
+}
+
+impl From<&str> for FutureErrror {
+    fn from(msg: &str) -> Self {
+        String::from(msg).into()
+    }
+}
+
+impl FutureErrror {
+    #[must_use]
+    const fn new(msg: String) -> Self {
+        Self { msg }
+    }
+}
+
+impl FutureFeatures {
+    fn new(
+        mod_module: &ast::ModModule,
+        source_location: SourceLocation,
+    ) -> Result<Self, FutureError> {
+        let mut features = FutureFeatures::empty();
+
+        for stmt in &mod_module.body {
+            let Some(node) = stmt.import_from_stmt() else {
+                break;
+            };
+
+            let ast::ImportFrom {
+                level,
+                module,
+                names,
+                ..
+            } = node;
+
+            if level != 0 {
+                break;
+            }
+
+            if module.id() != "__future__" {
+                break;
+            }
+
+            for name in &names {
+                features |= match name {
+                    "nested_scopes" => continue,
+                    "generators" => continue,
+                    "division" => continue,
+                    "absolute_import" => continue,
+                    "with_statement" => continue,
+                    "unicode_literals" => continue,
+                    "barry_as_FLUFL" => FutureFlags::CO_FUTURE_BARRY_AS_BDFL,
+                    "generator_stop" => continue,
+                    "annotations" => FutureFlags::CO_FUTURE_ANNOTATIONS,
+                    "braces" => return Err("not a chance".into()),
+                    _ => {
+                        return Err(format!("future feature {name} is not defined").into());
+                    }
+                };
+            }
+
+            // TODO: Get line number from module.range somehow
+        }
+
+        Ok(Self {
+            features,
+            source_location,
+        })
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -77,7 +158,7 @@ struct SymbolTableEntry {
     /// set to `Some("a TypeVar default")`.
     scope_info: Option<String>,
     /// True if block is nested.
-    nested: bool,
+    is_nested: bool,
 }
 
 impl SymbolTableEntry {
@@ -102,4 +183,9 @@ struct SymbolTable {
     private: Option<String>,
     /// Module's future features that affect the symbol table.
     future: FutureFeatures,
+}
+
+#[derive(Debug)]
+struct SymbolTableBuilder {
+    table: SymbolTable,
 }
