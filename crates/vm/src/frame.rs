@@ -1,8 +1,7 @@
 // spell-checker: ignore compactlong compactlongs
 
 use crate::anystr::AnyStr;
-#[cfg(feature = "flame")]
-use crate::bytecode::InstructionMetadata;
+
 use crate::{
     AsObject, Py, PyExact, PyObject, PyObjectRef, PyPayload, PyRef, PyResult, PyStackRef,
     TryFromObject, VirtualMachine,
@@ -978,7 +977,7 @@ impl Frame {
                 // Non-merged cell: find the name by skipping merged cellvars
                 let mut found_name = None;
                 let mut skip = nonmerged_cell_idx;
-                for cv in code.cellvars.iter() {
+                for cv in &code.cellvars {
                     let is_merged = code.varnames.contains(cv);
                     if !is_merged {
                         if skip == 0 {
@@ -2096,8 +2095,7 @@ impl ExecutingFrame<'_> {
         vm: &VirtualMachine,
     ) -> FrameResult {
         flame_guard!(format!(
-            "Frame::execute_instruction({})",
-            instruction.display(arg, &self.code.code).to_string()
+            "Frame::execute_instruction({instruction:?} {arg:?})"
         ));
 
         #[cfg(feature = "vm-tracing-logging")]
@@ -2109,10 +2107,7 @@ impl ExecutingFrame<'_> {
             }
             */
             trace!("  {:#?}", self);
-            trace!(
-                "  Executing op code: {}",
-                instruction.display(arg, &self.code.code)
-            );
+            trace!("  Executing opcode: {instruction:?} {arg:?}",);
             trace!("=======");
         }
 

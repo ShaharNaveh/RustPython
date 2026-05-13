@@ -2,6 +2,7 @@
  * I/O core tools.
  */
 pub(crate) use _io::module_def;
+
 #[cfg(all(unix, feature = "threading", feature = "host_env"))]
 pub(crate) use _io::reinit_std_streams_after_fork;
 
@@ -4532,7 +4533,7 @@ mod _io {
                 let dict_ref: PyRef<PyDict> = dict.clone().try_into_value(vm)?;
                 if let Some(obj_dict) = zelf.as_object().dict() {
                     obj_dict.clear();
-                    for (key, value) in dict_ref.into_iter() {
+                    for (key, value) in dict_ref {
                         obj_dict.set_item(&*key, value, vm)?;
                     }
                 }
@@ -4774,7 +4775,7 @@ mod _io {
                 let dict_ref: PyRef<PyDict> = dict.clone().try_into_value(vm)?;
                 if let Some(obj_dict) = zelf.as_object().dict() {
                     obj_dict.clear();
-                    for (key, value) in dict_ref.into_iter() {
+                    for (key, value) in dict_ref {
                         obj_dict.set_item(&*key, value, vm)?;
                     }
                 }
