@@ -26,11 +26,6 @@ PRIORITY_OPMAP = {
 }
 
 
-def to_snake_case(s: str) -> str:
-    res = re.sub(r"(?<=[a-z0-9])([A-Z])", r"_\1", s)
-    return re.sub(r"(\D)(\d+)$", r"\1_\2", res).upper()
-
-
 class Opcode(typing.NamedTuple):
     rust_name: str
     id: int
@@ -62,25 +57,6 @@ class Opcode(typing.NamedTuple):
             opcode.cpython_name not in PRIORITY_OPMAP for opcode in (self, other)
         )
         return (sprio, self.id) < (oprio, other.id)
-
-
-def extract_enum_body(text: str, name: str) -> str:
-    # Find the start of the enum block
-    start_match = re.search(rf"enum\s+{name}\s*\{{", text)
-    if not start_match:
-        return None
-
-    # Manually track brace depth from that point
-    depth = 0
-    start = start_match.end() - 1  # position of opening '{'
-    for i, ch in enumerate(text[start:], start):
-        if ch == "{":
-            depth += 1
-        elif ch == "}":
-            depth -= 1
-            if depth == 0:
-                # Return only the inner content (excluding outer braces)
-                return text[start + 1 : i]
 
 
 def build_deopts(text: str) -> dict[str, list[str]]:

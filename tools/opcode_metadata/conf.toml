@@ -1,0 +1,11 @@
+[Opcode.opcodes.WithExceptStart]
+stack_effect = { pushed = "7", popped = "6" }
+
+[PseudoOpcode.opcodes.SetupCleanup]
+stack_effect = { pushed = "0" }
+
+[PseudoOpcode.opcodes.SetupFinally]
+stack_effect = { pushed = "0" }
+
+[PseudoOpcode.opcodes.SetupWith]
+stack_effect = { pushed = "0" }
