@@ -14,7 +14,9 @@ use crate::{
     error::{CodegenError, CodegenErrorType, InternalError, PatternUnreachableReason},
     ir::{self, BlockIdx},
     preprocess,
-    symboltable::{self, CompilerScope, Symbol, SymbolFlags, SymbolScope, SymbolTable},
+    symboltable::{
+        self, CompilerScope, FutureFeatures, Symbol, SymbolFlags, SymbolScope, SymbolTable,
+    },
     unparse::UnparseExpr,
 };
 use alloc::borrow::Cow;
@@ -148,6 +150,7 @@ enum NameUsage {
     Store,
     Delete,
 }
+
 /// Main structure holding the state of compilation.
 struct Compiler {
     code_stack: Vec<ir::CodeInfo>,
@@ -155,8 +158,8 @@ struct Compiler {
     source_file: SourceFile,
     // current_source_location: SourceLocation,
     current_source_range: TextRange,
-    done_with_future_stmts: DoneWithFuture,
-    future_annotations: bool,
+    /// Module's __future__
+    future: FutureFeatures,
     ctx: CompileContext,
     opts: CompileOpts,
     in_annotation: bool,
@@ -178,13 +181,6 @@ struct Compiler {
     fallthrough_has_local_statement_successor: bool,
     fallthrough_successor_stack: Vec<(bool, bool)>,
     try_else_orelse_conditional_base_stack: Vec<u32>,
-}
-
-#[derive(Clone, Copy)]
-enum DoneWithFuture {
-    No,
-    DoneWithDoc,
-    Yes,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -588,7 +584,6 @@ impl Compiler {
             source_file,
             // current_source_location: SourceLocation::default(),
             current_source_range: TextRange::default(),
-            done_with_future_stmts: DoneWithFuture::No,
             future_annotations: false,
             ctx: CompileContext {
                 loop_data: None,
@@ -2870,25 +2865,6 @@ impl Compiler {
         trace!("Compiling {statement:?}");
         let prev_source_range = self.current_source_range;
         self.set_source_range(statement.range());
-
-        match &statement {
-            // we do this here because `from __future__` still executes that `from` statement at runtime,
-            // we still need to compile the ImportFrom down below
-            ast::Stmt::ImportFrom(ast::StmtImportFrom { module, names, .. })
-                if module.as_ref().map(|id| id.as_str()) == Some("__future__") =>
-            {
-                self.compile_future_features(names)?
-            }
-            // ignore module-level doc comments
-            ast::Stmt::Expr(ast::StmtExpr { value, .. })
-                if matches!(&**value, ast::Expr::StringLiteral(..))
-                    && matches!(self.done_with_future_stmts, DoneWithFuture::No) =>
-            {
-                self.done_with_future_stmts = DoneWithFuture::DoneWithDoc
-            }
-            // if we find any other statement, stop accepting future statements
-            _ => self.done_with_future_stmts = DoneWithFuture::Yes,
-        }
 
         match &statement {
             ast::Stmt::Import(ast::StmtImport { names, .. }) => {
@@ -10408,27 +10384,6 @@ impl Compiler {
         self.current_code_info().in_inlined_comp = was_in_inlined_comp;
 
         result
-    }
-
-    fn compile_future_features(&mut self, features: &[ast::Alias]) -> Result<(), CodegenError> {
-        if let DoneWithFuture::Yes = self.done_with_future_stmts {
-            return Err(self.error(CodegenErrorType::InvalidFuturePlacement));
-        }
-        self.done_with_future_stmts = DoneWithFuture::DoneWithDoc;
-        for feature in features {
-            match feature.name.as_str() {
-                // Python 3 features; we've already implemented them by default
-                "nested_scopes" | "generators" | "division" | "absolute_import"
-                | "with_statement" | "print_function" | "unicode_literals" | "generator_stop" => {}
-                "annotations" => self.future_annotations = true,
-                other => {
-                    return Err(
-                        self.error(CodegenErrorType::InvalidFutureFeature(other.to_owned()))
-                    );
-                }
-            }
-        }
-        Ok(())
     }
 
     // Low level helper functions:

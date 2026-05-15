@@ -17,6 +17,104 @@ use ruff_python_ast as ast;
 use ruff_text_size::{Ranged, TextRange};
 use rustpython_compiler_core::{PositionEncoding, SourceFile, SourceLocation};
 
+bitflags::bitflags! {
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    pub struct FutureFlags: u32 {
+        const CO_FUTURE_DIVISION         = 0x20000;
+        /// Do absolute imports by default.
+        const CO_FUTURE_ABSOLUTE_IMPORT  = 0x40000;
+        const CO_FUTURE_WITH_STATEMENT   = 0x80000;
+        const CO_FUTURE_PRINT_FUNCTION   = 0x100000;
+        const CO_FUTURE_UNICODE_LITERALS = 0x200000;
+        const CO_FUTURE_BARRY_AS_BDFL    = 0x400000;
+        const CO_FUTURE_GENERATOR_STOP   = 0x800000;
+        const CO_FUTURE_ANNOTATIONS      = 0x1000000;
+    }
+}
+
+impl Default for FutureFlags {
+    fn default() -> Self {
+        Self::empty()
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+struct FutureFeatures {
+    /// Flags set by future statements.
+    features: FutureFlags,
+    // /// Location of last future statement.
+    // location: SourceLocation,
+}
+
+impl FutureFeatures {
+    #[must_use]
+    fn has_future_annotations(&self) -> bool {
+        self.features.contains(FutureFlags::CO_FUTURE_ANNOTATIONS)
+    }
+}
+
+impl TryFrom<&ast::ModModule> for FutureFeatures {
+    type Error = SymbolTableError;
+
+    fn try_from(mod_module: &ast::ModModule) -> Result<Self, Self::Error> {
+        let mut features = FutureFlags::empty();
+
+        for stmt in &mod_module.body {
+            let Some(node) = &stmt.import_from_stmt() else {
+                break;
+            };
+
+            let ast::StmtImportFrom {
+                level,
+                module,
+                names,
+                ..
+            } = node;
+
+            if *level != 0 {
+                break;
+            }
+
+            let Some(module) = module else {
+                break;
+            };
+
+            if module.as_str() != "__future__" {
+                break;
+            }
+
+            for name in names {
+                let name = name.name.id().as_str();
+                features |= match name {
+                    "nested_scopes" => continue,
+                    "generators" => continue,
+                    "division" => continue,
+                    "absolute_import" => continue,
+                    "with_statement" => continue,
+                    "unicode_literals" => continue,
+                    "barry_as_FLUFL" => FutureFlags::CO_FUTURE_BARRY_AS_BDFL,
+                    "generator_stop" => continue,
+                    "annotations" => FutureFlags::CO_FUTURE_ANNOTATIONS,
+                    "braces" => {
+                        return Err(SymbolTableError {
+                            error: "not a chance".into(),
+                            location: None,
+                        });
+                    }
+                    _ => {
+                        return Err(SymbolTableError {
+                            error: format!("future feature {name} is not defined"),
+                            location: None,
+                        });
+                    }
+                };
+            }
+        }
+
+        Ok(Self { features })
+    }
+}
+
 /// Captures all symbols in the current scope, and has a list of sub-scopes in this scope.
 #[derive(Clone)]
 pub struct SymbolTable {
@@ -74,8 +172,8 @@ pub struct SymbolTable {
     /// (annotations inside if/for/while/etc. blocks or at module level)
     pub has_conditional_annotations: bool,
 
-    /// Whether `from __future__ import annotations` is active
-    pub future_annotations: bool,
+    /// Module's future features that affect the symbol table.
+    pub future: FutureFeatures,
 
     /// Names of type parameters that should still be mangled in type param scopes.
     /// When Some, only names in this set are mangled; other names are left unmangled.
@@ -102,9 +200,14 @@ impl SymbolTable {
             annotation_block: None,
             skip_enclosing_function_scope: false,
             has_conditional_annotations: false,
-            future_annotations: false,
+            future: FutureFeatures::default(),
             mangled_names: None,
         }
+    }
+
+    #[must_use]
+    pub fn has_future_annotations(&self) -> bool {
+        self.future.has_future_annotations()
     }
 
     pub fn scan_program(
@@ -112,6 +215,7 @@ impl SymbolTable {
         source_file: SourceFile,
     ) -> SymbolTableResult<Self> {
         let mut builder = SymbolTableBuilder::new(source_file);
+        builder.scan_futures(program)?;
         builder.scan_statements(program.body.as_ref())?;
         builder.finish()
     }
@@ -309,7 +413,7 @@ fn drop_class_free(symbol_table: &mut SymbolTable, newfree: &mut IndexSet<String
 
     // Classes with function definitions need __classdict__ for PEP 649
     // (but not when `from __future__ import annotations` is active)
-    if !symbol_table.needs_classdict && !symbol_table.future_annotations {
+    if !symbol_table.needs_classdict && !symbol_table.has_future_annotations() {
         let has_functions = symbol_table.sub_tables.iter().any(|t| {
             matches!(
                 t.typ,
@@ -1038,7 +1142,7 @@ struct SymbolTableBuilder {
     class_name: Option<String>,
     // Scope stack.
     tables: Vec<SymbolTable>,
-    future_annotations: bool,
+    future: FutureFeatures,
     source_file: SourceFile,
     // Current scope's varnames being collected (temporary storage)
     current_varnames: Vec<String>,
@@ -1065,7 +1169,7 @@ struct SymbolTableBuilder {
 /// was used.
 /// In cpython this is stored in the AST, but I think this
 /// is not logical, since it is not context free.
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 enum ExpressionContext {
     Load,
     Store,
@@ -1079,7 +1183,7 @@ impl SymbolTableBuilder {
         let mut this = Self {
             class_name: None,
             tables: vec![],
-            future_annotations: false,
+            future: FutureFeatures::default(),
             source_file,
             current_varnames: Vec::new(),
             varnames_stack: Vec::new(),
@@ -1095,7 +1199,13 @@ impl SymbolTableBuilder {
         this
     }
 
-    fn is_function_like_scope(typ: CompilerScope) -> bool {
+    #[must_use]
+    fn has_future_annotations(&self) -> bool {
+        self.future.has_future_annotations()
+    }
+
+    #[must_use]
+    const fn is_function_like_scope(typ: CompilerScope) -> bool {
         matches!(
             typ,
             CompilerScope::Function
@@ -1111,8 +1221,8 @@ impl SymbolTableBuilder {
         let mut symbol_table = self.tables.pop().unwrap();
         // Save varnames for the top-level module scope
         symbol_table.varnames = self.current_varnames;
-        // Propagate future_annotations to the symbol table
-        symbol_table.future_annotations = self.future_annotations;
+        // Propagate `future` to the symbol table
+        symbol_table.future = self.future;
         analyze_symbol_table(&mut symbol_table)?;
         Ok(symbol_table)
     }
@@ -1132,7 +1242,7 @@ impl SymbolTableBuilder {
             .and_then(|t| t.mangled_names.clone())
             .filter(|_| typ != CompilerScope::Class);
         let mut table = SymbolTable::new(name.to_owned(), typ, line_number, is_nested);
-        table.future_annotations = self.future_annotations;
+        table.future = self.future;
         table.mangled_names = inherited_mangled_names;
         self.tables.push(table);
         // Save parent's varnames and start fresh for the new scope
@@ -1220,7 +1330,7 @@ impl SymbolTableBuilder {
             .push(core::mem::take(&mut self.current_varnames));
         self.current_varnames = self.tables.last().unwrap().varnames.clone();
 
-        if can_see_class_scope && !self.future_annotations {
+        if can_see_class_scope && !self.has_future_annotations() {
             self.add_classdict_freevar();
             // Also add __conditional_annotations__ as free var if parent has conditional annotations
             if has_conditional {
@@ -1355,6 +1465,11 @@ impl SymbolTableBuilder {
         self.scan_annotation_inner(annotation, true)
     }
 
+    fn scan_futures(&mut self, body: &ast::ModModule) -> SymbolTableResult {
+        self.future = FutureFeatures::try_from(body)?;
+        Ok(())
+    }
+
     fn scan_annotation_inner(
         &mut self,
         annotation: &ast::Expr,
@@ -1398,7 +1513,7 @@ impl SymbolTableBuilder {
         let line_number = self.line_index_start(annotation.range());
         self.enter_annotation_scope(line_number);
 
-        if self.future_annotations {
+        if self.has_future_annotations() {
             // PEP 563: annotations are stringified at compile time
             // Don't scan expression - symbols would fail to resolve
             // Just create the annotation_block structure
@@ -1423,12 +1538,6 @@ impl SymbolTableBuilder {
 
     fn scan_statement(&mut self, statement: &ast::Stmt) -> SymbolTableResult {
         use ast::*;
-        if let Stmt::ImportFrom(StmtImportFrom { module, names, .. }) = &statement
-            && module.as_ref().map(|id| id.as_str()) == Some("__future__")
-        {
-            self.future_annotations =
-                self.future_annotations || names.iter().any(|future| &future.name == "annotations");
-        }
 
         match &statement {
             Stmt::Global(StmtGlobal { names, .. }) => {
@@ -1660,6 +1769,9 @@ impl SymbolTableBuilder {
                         self.register_name(imported_name, SymbolUsage::Imported, name.name.range)?;
                     }
                 }
+
+                // TODO: Check here for validity of
+                // "from __future__ imports must occur at the beginning of the file");
             }
             Stmt::Return(StmtReturn { value, .. }) => {
                 if let Some(expression) = value {
