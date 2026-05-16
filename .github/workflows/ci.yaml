@@ -57,7 +57,7 @@ jobs:
         env:
           BASE_REF: ${{ github.event.pull_request.base.ref || 'main' }}
 
-      - name: Check if there was any code related change
+      - name: Check if there was any rust code related change
         id: check_rust_code
         run: |
           if git diff --quiet "${MERGE_BASE}...HEAD" -- \
