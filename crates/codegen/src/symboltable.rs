@@ -39,16 +39,16 @@ impl Default for FutureFlags {
 }
 
 #[derive(Clone, Copy, Debug, Default)]
-struct FutureFeatures {
+pub struct FutureFeatures {
     /// Flags set by future statements.
     features: FutureFlags,
-    // /// Location of last future statement.
-    // location: SourceLocation,
+    /// Location of last future statement.
+    location: Option<TextRange>,
 }
 
 impl FutureFeatures {
     #[must_use]
-    fn has_future_annotations(&self) -> bool {
+    pub fn has_future_annotations(&self) -> bool {
         self.features.contains(FutureFlags::CO_FUTURE_ANNOTATIONS)
     }
 }
@@ -58,9 +58,10 @@ impl TryFrom<&ast::ModModule> for FutureFeatures {
 
     fn try_from(mod_module: &ast::ModModule) -> Result<Self, Self::Error> {
         let mut features = FutureFlags::empty();
+        let mut location = None;
 
         for stmt in &mod_module.body {
-            let Some(node) = &stmt.import_from_stmt() else {
+            let Some(node) = stmt.clone().import_from_stmt() else {
                 break;
             };
 
@@ -68,10 +69,11 @@ impl TryFrom<&ast::ModModule> for FutureFeatures {
                 level,
                 module,
                 names,
+                range,
                 ..
             } = node;
 
-            if *level != 0 {
+            if level != 0 {
                 break;
             }
 
@@ -82,6 +84,8 @@ impl TryFrom<&ast::ModModule> for FutureFeatures {
             if module.as_str() != "__future__" {
                 break;
             }
+
+            location = Some(range);
 
             for name in names {
                 let name = name.name.id().as_str();
@@ -111,7 +115,10 @@ impl TryFrom<&ast::ModModule> for FutureFeatures {
             }
         }
 
-        Ok(Self { features })
+        Ok(Self {
+            features,
+            location: location,
+        })
     }
 }
 
@@ -1536,6 +1543,40 @@ impl SymbolTableBuilder {
         result
     }
 
+    fn scan_imports(&mut self, names: &[ast::Alias]) -> SymbolTableResult {
+        for name in names {
+            if let Some(alias) = &name.asname {
+                // `import my_module as my_alias`
+                self.check_name(alias.as_str(), ExpressionContext::Store, alias.range)?;
+                self.register_ident(alias, SymbolUsage::Imported)?;
+            } else if name.name.as_str() == "*" {
+                // Star imports are only allowed at module level
+                if self.tables.last().unwrap().typ != CompilerScope::Module {
+                    return Err(SymbolTableError {
+                        error: "'import *' only allowed at module level".to_string(),
+                        location: Some(
+                            self.source_file
+                                .to_source_code()
+                                .source_location(name.name.range.start(), PositionEncoding::Utf8),
+                        ),
+                    });
+                }
+                // Don't register star imports as symbols
+            } else {
+                // `import module` or `from x import name`
+                let imported_name = name.name.split('.').next().unwrap();
+                self.check_name(imported_name, ExpressionContext::Store, name.name.range)?;
+                self.register_name(imported_name, SymbolUsage::Imported, name.name.range)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn check_import_from(&self, stmt: &ast::StmtImportFrom) -> SymbolTableResult {
+        todo!()
+    }
+
     fn scan_statement(&mut self, statement: &ast::Stmt) -> SymbolTableResult {
         use ast::*;
 
@@ -1743,35 +1784,11 @@ impl SymbolTableBuilder {
             Stmt::Break(_) | Stmt::Continue(_) | Stmt::Pass(_) => {
                 // No symbols here.
             }
-            Stmt::Import(StmtImport { names, .. })
-            | Stmt::ImportFrom(StmtImportFrom { names, .. }) => {
-                for name in names {
-                    if let Some(alias) = &name.asname {
-                        // `import my_module as my_alias`
-                        self.check_name(alias.as_str(), ExpressionContext::Store, alias.range)?;
-                        self.register_ident(alias, SymbolUsage::Imported)?;
-                    } else if name.name.as_str() == "*" {
-                        // Star imports are only allowed at module level
-                        if self.tables.last().unwrap().typ != CompilerScope::Module {
-                            return Err(SymbolTableError {
-                                error: "'import *' only allowed at module level".to_string(),
-                                location: Some(self.source_file.to_source_code().source_location(
-                                    name.name.range.start(),
-                                    PositionEncoding::Utf8,
-                                )),
-                            });
-                        }
-                        // Don't register star imports as symbols
-                    } else {
-                        // `import module` or `from x import name`
-                        let imported_name = name.name.split('.').next().unwrap();
-                        self.check_name(imported_name, ExpressionContext::Store, name.name.range)?;
-                        self.register_name(imported_name, SymbolUsage::Imported, name.name.range)?;
-                    }
-                }
-
-                // TODO: Check here for validity of
-                // "from __future__ imports must occur at the beginning of the file");
+            Stmt::Import(StmtImport { names, .. }) => self.scan_imports(names)?,
+            Stmt::ImportFrom(stmt_node) => {
+                let StmtImportFrom { names, .. } = stmt_node;
+                self.scan_imports(names)?;
+                self.check_import_from(stmt_node)?;
             }
             Stmt::Return(StmtReturn { value, .. }) => {
                 if let Some(expression) = value {

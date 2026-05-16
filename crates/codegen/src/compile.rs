@@ -584,7 +584,7 @@ impl Compiler {
             source_file,
             // current_source_location: SourceLocation::default(),
             current_source_range: TextRange::default(),
-            future_annotations: false,
+            future: FutureFeatures::default(),
             ctx: CompileContext {
                 loop_data: None,
                 in_class: false,
@@ -2347,8 +2347,8 @@ impl Compiler {
         symbol_table: SymbolTable,
     ) -> CompileResult<()> {
         let size_before = self.code_stack.len();
-        // Set future_annotations from symbol table (detected during symbol table scan)
-        self.future_annotations = symbol_table.future_annotations;
+        // Set future from symbol table (detected during symbol table scan)
+        self.future = symbol_table.future;
 
         // Module-level __conditional_annotations__ cell
         let has_module_cond_ann = Self::scope_needs_conditional_annotations_cell(&symbol_table);
@@ -2379,7 +2379,7 @@ impl Compiler {
                 self.store_name("__conditional_annotations__")?;
             }
 
-            if self.future_annotations {
+            if self.has_future_annotations() {
                 emit!(self, Instruction::SetupAnnotations);
             }
         }
@@ -2395,7 +2395,7 @@ impl Compiler {
         // Compile all statements
         self.compile_statements(statements)?;
 
-        if Self::find_ann(statements) && !self.future_annotations {
+        if Self::find_ann(statements) && !self.has_future_annotations() {
             self.compile_module_annotation_setup_sequence(statements)?;
         }
 
@@ -2415,7 +2415,7 @@ impl Compiler {
     ) -> CompileResult<()> {
         self.interactive = true;
         // Set future_annotations from symbol table (detected during symbol table scan)
-        self.future_annotations = symbol_table.future_annotations;
+        self.future = symbol_table.future;
         self.symbol_table_stack.push(symbol_table);
 
         self.emit_resume_for_scope(CompilerScope::Module, 1);
@@ -2423,7 +2423,7 @@ impl Compiler {
 
         // Handle annotations based on future_annotations flag
         if Self::find_ann(body) {
-            if self.future_annotations {
+            if self.has_future_annotations() {
                 // PEP 563: Initialize __annotations__ dict
                 emit!(self, Instruction::SetupAnnotations);
             } else {
@@ -2474,7 +2474,7 @@ impl Compiler {
             self.emit_load_const(ConstantData::None);
         };
 
-        if Self::find_ann(body) && !self.future_annotations {
+        if Self::find_ann(body) && !self.has_future_annotations() {
             self.compile_module_annotation_setup_sequence(body)?;
         }
 
@@ -5102,7 +5102,7 @@ impl Compiler {
             };
 
             if simple_name.is_none() {
-                if !self.future_annotations {
+                if !self.has_future_annotations() {
                     self.do_not_emit_bytecode += 1;
                     let result = self.compile_annotation(annotation);
                     self.do_not_emit_bytecode -= 1;
@@ -5664,7 +5664,7 @@ impl Compiler {
                 self.store_name("__conditional_annotations__")?;
             }
 
-            if self.future_annotations {
+            if self.has_future_annotations() {
                 emit!(self, Instruction::SetupAnnotations);
             }
         }
@@ -5679,7 +5679,7 @@ impl Compiler {
         // 3. Compile the class body
         self.compile_statements(body)?;
 
-        if Self::find_ann(body) && !self.future_annotations {
+        if Self::find_ann(body) && !self.has_future_annotations() {
             self.compile_module_annotate(body)?;
         }
 
@@ -7765,7 +7765,7 @@ impl Compiler {
     }
 
     fn compile_annotation(&mut self, annotation: &ast::Expr) -> CompileResult<()> {
-        if self.future_annotations {
+        if self.has_future_annotations() {
             self.emit_load_const(ConstantData::Str {
                 value: UnparseExpr::new(annotation, &self.source_file)
                     .to_string()
@@ -7842,7 +7842,7 @@ impl Compiler {
             && !self.ctx.in_func()
             && let ast::Expr::Name(ast::ExprName { id, .. }) = target
         {
-            if self.future_annotations {
+            if self.has_future_annotations() {
                 // PEP 563: Store stringified annotation directly to __annotations__
                 // Compile annotation as string
                 self.compile_annotation(annotation)?;
@@ -11950,6 +11950,11 @@ impl Compiler {
 
         Ok(())
     }
+
+    #[must_use]
+    pub(crate) fn has_future_annotations(&self) -> bool {
+        self.future.has_future_annotations()
+    }
 }
 
 trait EmitArg<Arg: OpArgType> {
@@ -12413,7 +12418,7 @@ mod tests {
         let range = function.range();
 
         let mut compiler = Compiler::new(opts, source_file, "<module>");
-        compiler.future_annotations = symbol_table.future_annotations;
+        compiler.future = symbol_table.future;
         compiler.symbol_table_stack.push(symbol_table);
         compiler.set_source_range(range);
         compiler.enter_function(name.as_str(), parameters).unwrap();
