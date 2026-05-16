@@ -115,10 +115,7 @@ impl TryFrom<&ast::ModModule> for FutureFeatures {
             }
         }
 
-        Ok(Self {
-            features,
-            location: location,
-        })
+        Ok(Self { features, location })
     }
 }
 
