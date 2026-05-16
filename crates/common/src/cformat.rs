@@ -572,10 +572,10 @@ where
     I: Iterator<Item = T::Char>,
 {
     if let Some((index, _)) = iter.next_if(|(_, c)| c.eq_char('(')) {
-        return match parse_text_inside_parentheses(iter) {
-            Some(key) => Ok(Some(key)),
-            None => Err((CFormatErrorType::UnmatchedKeyParentheses, index)),
-        };
+        return parse_text_inside_parentheses(iter).map_or_else(
+            || Err((CFormatErrorType::UnmatchedKeyParentheses, index)),
+            |key| Ok(Some(key)),
+        );
     }
     Ok(None)
 }

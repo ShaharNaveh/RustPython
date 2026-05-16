@@ -261,12 +261,12 @@ fn parse_number(text: &Wtf8) -> Result<(Option<usize>, &Wtf8), FormatSpecError> 
     if num_digits == 0 {
         return Ok((None, text));
     }
-    if let Some(num) = parse_usize(&text[..num_digits]) {
-        Ok((Some(num), &text[num_digits..]))
-    } else {
+
+    parse_usize(&text[..num_digits]).map_or(
         // NOTE: this condition is different from CPython
-        Err(FormatSpecError::DecimalDigitsTooMany)
-    }
+        Err(FormatSpecError::DecimalDigitsTooMany),
+        |num| Ok((Some(num), &text[num_digits..])),
+    )
 }
 
 fn parse_alternate_form(text: &Wtf8) -> (bool, &Wtf8) {

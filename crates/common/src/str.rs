@@ -206,29 +206,27 @@ impl From<AsciiChar> for StrData {
 
 impl From<char> for StrData {
     fn from(ch: char) -> Self {
-        if let Ok(ch) = ascii::AsciiChar::from_ascii(ch) {
-            ch.into()
-        } else {
-            Self {
+        ascii::AsciiChar::from_ascii(ch).map_or_else(
+            |_| Self {
                 data: ch.to_string().into(),
                 kind: StrKind::Utf8,
                 len: 1.into(),
-            }
-        }
+            },
+            |ch| ch.into(),
+        )
     }
 }
 
 impl From<CodePoint> for StrData {
     fn from(ch: CodePoint) -> Self {
-        if let Some(ch) = ch.to_char() {
-            ch.into()
-        } else {
-            Self {
+        ch.to_char().map_or_else(
+            || Self {
                 data: Wtf8Buf::from(ch).into(),
                 kind: StrKind::Wtf8,
                 len: 1.into(),
-            }
-        }
+            },
+            |ch| ch.into(),
+        )
     }
 }
 

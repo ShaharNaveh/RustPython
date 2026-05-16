@@ -320,12 +320,13 @@ elided_lifetimes_in_paths = "warn"
 unreachable_pub = "warn"
 
 [workspace.lints.clippy]
+complexity = { level = "warn", priority = -2 }
 correctness = { level = "warn", priority = -2 }
-suspicious = { level = "warn", priority = -2 }
+# nursery = { level = "warn", priority = -2 } # TODO: Enable this
+# pedantic = { level = "warn", priority = -2 } # TODO: Enable this
 perf = { level = "warn", priority = -2 }
 style = { level = "warn", priority = -2 }
-complexity = { level = "warn", priority = -2 }
-# pedantic = { level = "warn", priority = -2 } # TODO: Enable this
+suspicious = { level = "warn", priority = -2 }
 
 missing_errors_doc = "allow" # Too many errors. No auto-fix available
 missing_panics_doc = "allow" # Too many errors. No auto-fix available
@@ -343,6 +344,7 @@ std_instead_of_core = "warn"
 debug_assert_with_mut_call = "warn"
 derive_partial_eq_without_eq = "warn"
 imprecise_flops = "warn"
+option_if_let_else = "warn"
 or_fun_call = "warn"
 redundant_clone = "warn"
 search_is_some = "warn"

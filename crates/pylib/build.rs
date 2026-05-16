@@ -16,13 +16,12 @@ fn main() {
         // 1. A text file containing the relative path (git without symlink support)
         // 2. A proper symlink (git with symlink support)
         // We handle both cases to resolve to the actual Lib directory.
-        let lib_path = if let Ok(real_path) = std::fs::read_to_string("Lib") {
-            // Case 1: Text file containing relative path
-            std::path::PathBuf::from(real_path.trim())
-        } else {
-            // Case 2: Symlink or directory - canonicalize directly
-            std::path::PathBuf::from("Lib")
-        };
+        let lib_path = std::fs::read_to_string("Lib").map_or_else(
+            // Case 1: Symlink or directory - canonicalize directly
+            |_| std::path::PathBuf::from("Lib"),
+            // Case 2: Text file containing relative path
+            |real_path| std::path::PathBuf::from(real_path.trim()),
+        );
 
         if let Ok(canonicalized_path) = std::fs::canonicalize(&lib_path) {
             // Strip the extended path prefix (\\?\) that canonicalize adds on Windows
