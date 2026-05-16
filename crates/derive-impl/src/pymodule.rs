@@ -252,11 +252,8 @@ pub(crate) fn impl_pymodule(args: PyModuleArgs, module_item: Item) -> Result<Tok
     let function_items = context.function_items.validate()?;
     let attribute_items = context.attribute_items.validate()?;
     let doc = doc.or_else(|| DB.get(module_name).copied().map(str::to_owned));
-    let doc = if let Some(doc) = doc {
-        quote!(Some(#doc))
-    } else {
-        quote!(None)
-    };
+    let doc = doc.map_or_else(|| quote!(None), |doc| quote!(Some(#doc)));
+
     let is_submodule = module_meta.sub()?;
     if !is_submodule {
         items.extend([

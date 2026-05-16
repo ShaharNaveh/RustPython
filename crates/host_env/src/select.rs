@@ -160,10 +160,13 @@ pub fn select(
     errfds: &mut FdSet,
     timeout: Option<&mut timeval>,
 ) -> io::Result<i32> {
+    /*
     let timeout = match timeout {
         Some(tv) => tv as *mut timeval,
         None => core::ptr::null_mut(),
     };
+    */
+    let timeout = timeout.map_or_else(core::ptr::null_mut, |tv| tv as *mut timeval);
     let ret = unsafe {
         platform::select(
             nfds,

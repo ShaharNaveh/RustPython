@@ -191,10 +191,8 @@ where
                     }
                     HandleResult::Error { err_len, reason } => {
                         let err_start = ctx.position() + e.valid_prefix.len();
-                        let err_end = match err_len {
-                            Some(len) => err_start + len,
-                            None => ctx.full_data().len(),
-                        };
+                        let err_end =
+                            err_len.map_or_else(|| ctx.full_data().len(), |len| err_start + len);
                         let err_range = err_start..err_end;
                         let replace = ctx.handle_error(errors, err_range, Some(reason))?;
                         out.push_wtf8(replace.as_ref());

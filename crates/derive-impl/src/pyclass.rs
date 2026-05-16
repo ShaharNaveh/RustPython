@@ -1766,27 +1766,30 @@ impl MemberItemMeta {
         let inner = self.inner();
         let sig_name = inner.item_name();
         let extract_prefix_name = |prefix, item_typ| {
-            if let Some(name) = sig_name.strip_prefix(prefix) {
-                if name.is_empty() {
+            sig_name.strip_prefix(prefix).map_or_else(
+                || {
                     Err(err_span!(
                         inner.meta_ident,
-                        r#"A #[{}({typ})] fn with a {prefix}* name must \
-                         have something after "{prefix}""#,
-                        inner.meta_name(),
-                        typ = item_typ,
-                        prefix = prefix
+                        r#"A #[{}(setter)] fn must either have a `name` \
+parameter or a fn name along the lines of "set_*""#,
+                        inner.meta_name()
                     ))
-                } else {
-                    Ok(name.to_owned())
-                }
-            } else {
-                Err(err_span!(
-                    inner.meta_ident,
-                    r#"A #[{}(setter)] fn must either have a `name` \
-                     parameter or a fn name along the lines of "set_*""#,
-                    inner.meta_name()
-                ))
-            }
+                },
+                |name| {
+                    if name.is_empty() {
+                        Err(err_span!(
+                            inner.meta_ident,
+                            r#"A #[{}({typ})] fn with a {prefix}* name must \
+have something after "{prefix}""#,
+                            inner.meta_name(),
+                            typ = item_typ,
+                            prefix = prefix
+                        ))
+                    } else {
+                        Ok(name.to_owned())
+                    }
+                },
+            )
         };
         let kind = if inner._bool("setter")? {
             MemberItemKind::Set

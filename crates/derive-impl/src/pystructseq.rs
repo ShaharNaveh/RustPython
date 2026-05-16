@@ -544,16 +544,13 @@ pub(crate) fn impl_pystruct_sequence(
     let module_name = meta.module()?;
 
     // Module name handling
-    let module_name_tokens = match &module_name {
-        Some(m) => quote!(Some(#m)),
-        None => quote!(None),
-    };
+    let module_name_tokens = module_name
+        .as_ref()
+        .map_or_else(|| quote!(None), |m| quote!(Some(#m)));
 
-    let module_class_name = if let Some(ref m) = module_name {
-        format!("{m}.{class_name}")
-    } else {
-        class_name.clone()
-    };
+    let module_class_name = module_name
+        .as_ref()
+        .map_or_else(|| class_name.clone(), |m| format!("{m}.{class_name}"));
 
     let output = quote! {
         // The Python type struct - newtype wrapping PyTuple

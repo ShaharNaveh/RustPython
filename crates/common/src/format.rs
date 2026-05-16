@@ -97,11 +97,12 @@ impl FormatAlign {
 impl FormatParse for FormatAlign {
     fn parse(text: &Wtf8) -> (Option<Self>, &Wtf8) {
         let mut chars = text.code_points();
-        if let Some(maybe_align) = chars.next().and_then(Self::from_char) {
-            (Some(maybe_align), chars.as_wtf8())
-        } else {
-            (None, text)
-        }
+        chars
+            .next()
+            .and_then(Self::from_char)
+            .map_or((None, text), |maybe_align| {
+                (Some(maybe_align), chars.as_wtf8())
+            })
     }
 }
 
@@ -778,18 +779,21 @@ impl FormatSpec {
             None => match magnitude {
                 magnitude if magnitude.is_nan() => Ok("nan".to_owned()),
                 magnitude if magnitude.is_infinite() => Ok("inf".to_owned()),
-                _ => match self.precision {
-                    Some(precision) => Ok(float::format_general(
-                        precision,
-                        magnitude,
-                        Case::Lower,
-                        self.alternate_form,
-                        true,
-                    )),
-                    None => Ok(float::to_string(magnitude)),
-                },
+                _ => self.precision.map_or_else(
+                    || Ok(float::to_string(magnitude)),
+                    |precision| {
+                        Ok(float::format_general(
+                            precision,
+                            magnitude,
+                            Case::Lower,
+                            self.alternate_form,
+                            true,
+                        ))
+                    },
+                ),
             },
         };
+
         let format_sign = self.sign.unwrap_or(FormatSign::Minus);
         let sign_str = if num.is_sign_negative() && !num.is_nan() {
             "-"
@@ -897,10 +901,10 @@ impl FormatSpec {
             Some(FormatType::String) | None => {
                 // CPython parity: precision truncates BEFORE width pads.
                 // `'{:3.2s}'.format('abc')` -> 'ab ' (truncate to 'ab', pad to 3).
-                let truncated: String = match self.precision {
-                    Some(p) => s.deref().chars().take(p).collect(),
-                    None => s.deref().to_owned(),
-                };
+                let truncated = self.precision.map_or_else(
+                    || s.deref().to_owned(),
+                    |p| s.deref().chars().take(p).collect(),
+                );
                 Ok(self.format_sign_and_align(&truncated, "", FormatAlign::Left))
             }
             _ => {
@@ -979,62 +983,51 @@ impl FormatSpec {
                 | FormatType::Unknown(_),
             ) => {
                 let ch = char::from(self.format_type.as_ref().unwrap());
-                Err(FormatSpecError::UnknownFormatCode(ch, "complex"))
+                return Err(FormatSpecError::UnknownFormatCode(ch, "complex"));
             }
-            Some(FormatType::FixedPoint(case)) => Ok(float::format_fixed(
-                precision,
-                magnitude,
-                *case,
-                self.alternate_form,
-            )),
+            Some(FormatType::FixedPoint(case)) => {
+                float::format_fixed(precision, magnitude, *case, self.alternate_form)
+            }
             Some(FormatType::GeneralFormat(case) | FormatType::Number(case)) => {
                 let precision = if precision == 0 { 1 } else { precision };
-                Ok(float::format_general(
-                    precision,
-                    magnitude,
-                    *case,
-                    self.alternate_form,
-                    false,
-                ))
+                float::format_general(precision, magnitude, *case, self.alternate_form, false)
             }
-            Some(FormatType::Exponent(case)) => Ok(float::format_exponent(
-                precision,
-                magnitude,
-                *case,
-                self.alternate_form,
-            )),
+            Some(FormatType::Exponent(case)) => {
+                float::format_exponent(precision, magnitude, *case, self.alternate_form)
+            }
             None => match magnitude {
-                magnitude if magnitude.is_nan() => Ok("nan".to_owned()),
-                magnitude if magnitude.is_infinite() => Ok("inf".to_owned()),
-                _ => match self.precision {
-                    Some(precision) => Ok(float::format_general(
-                        precision,
-                        magnitude,
-                        Case::Lower,
-                        self.alternate_form,
-                        true,
-                    )),
-                    None => {
+                magnitude if magnitude.is_nan() => "nan".to_owned(),
+                magnitude if magnitude.is_infinite() => "inf".to_owned(),
+                _ => self.precision.map_or_else(
+                    || {
                         if magnitude.fract() == 0.0 {
-                            Ok(magnitude.trunc().to_string())
+                            magnitude.trunc().to_string()
                         } else {
-                            Ok(magnitude.to_string())
+                            magnitude.to_string()
                         }
-                    }
-                },
+                    },
+                    |precision| {
+                        float::format_general(
+                            precision,
+                            magnitude,
+                            Case::Lower,
+                            self.alternate_form,
+                            true,
+                        )
+                    },
+                ),
             },
-        }?;
-        match &self.grouping_option {
+        };
+
+        Ok(match &self.grouping_option {
             Some(fg) => {
                 let sep = char::from(fg);
                 let inter = self.get_separator_interval().try_into().unwrap();
                 let len = magnitude_str.len() as i32;
-                let separated_magnitude =
-                    Self::add_magnitude_separators_for_char(magnitude_str, inter, sep, len);
-                Ok(separated_magnitude)
+                Self::add_magnitude_separators_for_char(magnitude_str, inter, sep, len)
             }
-            None => Ok(magnitude_str),
-        }
+            None => magnitude_str,
+        })
     }
 
     fn format_sign_and_align<T>(

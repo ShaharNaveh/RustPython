@@ -137,13 +137,18 @@ pub fn hash_float(value: f64) -> Option<PyHash> {
 
 #[must_use]
 pub fn hash_bigint(value: &BigInt) -> PyHash {
-    let ret = match value.to_i64() {
-        Some(i) => mod_int(i),
-        None => (value % MODULUS).to_i64().unwrap_or_else(|| unsafe {
-            // SAFETY: MODULUS < i64::MAX, so value % MODULUS is guaranteed to be in the range of i64
-            core::hint::unreachable_unchecked()
-        }),
-    };
+    let ret = value.to_i64().map_or_else(
+        || {
+            (value % MODULUS).to_i64().unwrap_or_else(|| {
+                // SAFETY:
+                // MODULUS < i64::MAX,
+                // so value % MODULUS is guaranteed to be in the range of i64
+                unsafe { core::hint::unreachable_unchecked() }
+            })
+        },
+        mod_int,
+    );
+
     fix_sentinel(ret)
 }
 

@@ -310,12 +310,10 @@ impl StrData {
 
     #[cold]
     fn _compute_char_len(&self) -> usize {
-        let len = if let Some(s) = self.as_str() {
-            // utf8 chars().count() is optimized
-            s.chars().count()
-        } else {
-            self.data.code_points().count()
-        };
+        let len = self.as_str().map_or_else(
+            || self.data.code_points().count(),
+            |s| s.chars().count(), // utf8 chars().count() is optimized
+        );
         // len cannot be usize::MAX, since vec.capacity() < sys.maxsize
         self.len.0.store(len, Relaxed);
         len

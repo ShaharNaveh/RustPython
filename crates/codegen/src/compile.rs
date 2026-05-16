@@ -4497,11 +4497,10 @@ impl Compiler {
                 FBlockType::HandlerCleanup,
                 next_handler_block,
                 end_block,
-                if let Some(alias) = name {
-                    FBlockDatum::ExceptionName(alias.as_str().to_owned())
-                } else {
-                    FBlockDatum::None
-                },
+                name.as_ref().map_or_else(
+                    || FBlockDatum::None,
+                    |alias| FBlockDatum::ExceptionName(alias.as_str().to_owned()),
+                ),
             )?;
 
             // Execute handler body
@@ -5377,19 +5376,23 @@ impl Compiler {
         {
             return Ok(SymbolScope::Cell);
         }
-        match table.lookup(name) {
-            Some(symbol) => match symbol.scope {
+
+        table.lookup(name).map_or_else(
+            || {
+                Err(CodegenErrorType::SyntaxError(format!(
+                    "get_ref_type: cannot find symbol '{name}'"
+                )))
+            },
+            |symbol| match symbol.scope {
                 SymbolScope::Cell => Ok(SymbolScope::Cell),
                 SymbolScope::Free => Ok(SymbolScope::Free),
                 _ if symbol.flags.contains(SymbolFlags::FREE_CLASS) => Ok(SymbolScope::Free),
+
                 _ => Err(CodegenErrorType::SyntaxError(format!(
                     "get_ref_type: invalid scope for '{name}'"
                 ))),
             },
-            None => Err(CodegenErrorType::SyntaxError(format!(
-                "get_ref_type: cannot find symbol '{name}'"
-            ))),
-        }
+        )
     }
 
     /// Loads closure variables if needed and creates a function object
@@ -9689,6 +9692,8 @@ impl Compiler {
                 .symbol_table_stack
                 .last()
                 .expect("no current symbol table");
+
+            #[expect(clippy::option_if_let_else, reason = "Changing this will not compile")]
             if let Some(table) = current_table.sub_tables.get(current_table.next_sub_table) {
                 Ok(table.clone())
             } else {
@@ -9699,6 +9704,7 @@ impl Compiler {
                 ))))
             }
         })();
+
         self.symbol_table_stack
             .last_mut()
             .expect("no current symbol table")
@@ -12110,11 +12116,8 @@ fn split_doc<'a>(body: &'a [ast::Stmt], opts: &CompileOpts) -> (Option<String>, 
 }
 
 pub fn ruff_int_to_bigint(int: &ast::Int) -> Result<BigInt, CodegenErrorType> {
-    if let Some(small) = int.as_u64() {
-        Ok(BigInt::from(small))
-    } else {
-        parse_big_integer(int)
-    }
+    int.as_u64()
+        .map_or_else(|| parse_big_integer(int), |small| Ok(BigInt::from(small)))
 }
 
 /// Converts a `ruff` ast integer into a `BigInt`.

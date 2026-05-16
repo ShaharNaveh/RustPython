@@ -34,10 +34,7 @@ pub fn is_open() -> bool {
 }
 
 pub fn openlog(ident: Option<Box<CStr>>, logoption: i32, facility: i32) {
-    let ident = match ident {
-        Some(ident) => GlobalIdent::Explicit(ident),
-        None => GlobalIdent::Implicit,
-    };
+    let ident = ident.map_or(GlobalIdent::Implicit, GlobalIdent::Explicit);
     let mut locked_ident = global_ident().write().expect("syslog lock poisoned");
     unsafe { libc::openlog(ident.as_ptr(), logoption, facility) };
     *locked_ident = Some(ident);

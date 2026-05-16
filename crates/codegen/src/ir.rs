@@ -2537,11 +2537,9 @@ impl CodeInfo {
                         return;
                     }
                     let conflict = instructions[(j + 1)..k].iter().any(|info| {
-                        if let Some(store_idx) = stores_to(info) {
+                        stores_to(info).is_some_and(|store_idx| {
                             Some(store_idx) == store_j || Some(store_idx) == store_k
-                        } else {
-                            false
-                        }
+                        })
                     });
                     if conflict {
                         return;
