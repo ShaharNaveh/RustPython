@@ -43,6 +43,16 @@ jobs:
     outputs:
       # Flag that is raised when any rust code is changed.
       rust_code: ${{ steps.check_rust_code.outputs.changed }}
+      # Flag that is raised when any upstream lib code is changed.
+      upstream_lib: ${{ steps.check_upstream_lib.outputs.changed }}
+      # Flag that is raised when any upstream test is changed.
+      upstream_test: ${{ steps.check_upstream_test.outputs.changed }}
+      # Flag that is raised when any extra test is changed.
+      extra_test: ${{ steps.check_extra_test.outputs.changed }}
+      # Flag that is raised when `scripts/whats_left.py` is changed.
+      whats_left: ${{ steps.check_whats_left.outputs.changed }}
+      # Flag that is raised when any wasm related code is changed.
+      wasm: ${{ steps.check_wasm.outputs.changed }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -76,16 +86,99 @@ jobs:
         env:
           MERGE_BASE: ${{ steps.merge_base.outputs.sha }}
 
+      - name: Check if there was any upstream lib related change
+        id: check_upstream_lib
+        run: |
+          if git diff --quiet "${MERGE_BASE}...HEAD" -- \
+            ':Lib/**' \
+            ':(exclude)Lib/test/**' \
+            ':.github/workflows/ci.yaml' \
+          ; then
+              echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          MERGE_BASE: ${{ steps.merge_base.outputs.sha }}
+
+      - name: Check if there was any upstream test related change
+        id: check_upstream_test
+        run: |
+          if git diff --quiet "${MERGE_BASE}...HEAD" -- \
+            ':Lib/test/**' \
+            ':.github/workflows/ci.yaml' \
+          ; then
+              echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          MERGE_BASE: ${{ steps.merge_base.outputs.sha }}
+
+      - name: Check if there was any extra test related change
+        id: check_extra_test
+        run: |
+          if git diff --quiet "${MERGE_BASE}...HEAD" -- \
+            ':extra_tests/**' \
+            ':.github/workflows/ci.yaml' \
+          ; then
+              echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          MERGE_BASE: ${{ steps.merge_base.outputs.sha }}
+
+      - name: Check if 'whats_left.py` was changed
+        id: check_whats_left
+        run: |
+          if git diff --quiet "${MERGE_BASE}...HEAD" -- \
+            ':scripts/whats_left.py' \
+            ':.github/workflows/ci.yaml' \
+          ; then
+              echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          MERGE_BASE: ${{ steps.merge_base.outputs.sha }}
+
+      - name: Check if there was any wasm related change
+        id: check_wasm
+        run: |
+          if git diff --quiet "${MERGE_BASE}...HEAD" -- \
+            ':wasm/**' \
+            ':example_projects/wasm32_without_js/**' \
+            ':.github/workflows/ci.yaml' \
+          ; then
+              echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          MERGE_BASE: ${{ steps.merge_base.outputs.sha }}
+
   rust_tests:
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
+    needs:
+      - determine_changes
+    if: |
+      (
+        !contains(github.event.pull_request.labels.*.name, 'skip:ci') && (
+          needs.determine_changes.outputs.rust_code == 'true' ||
+          needs.determine_changes.outputs.upstream_lib == 'true'
+        )
+      ) || github.ref == 'refs/heads/main'
     env:
       RUST_BACKTRACE: full
-    name: Run rust tests
+    name: rust tests
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-2025]
+        os:
+          - macos-latest
+          - ubuntu-latest
+          - windows-latest
       fail-fast: false
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -123,22 +216,6 @@ jobs:
         run: cargo test
         if: runner.os != 'Windows'  # Requires pyo3 0.29+ on Windows
 
-      - run: cargo doc --locked
-        if: runner.os == 'Linux'
-
-      - name: check compilation without host_env (sandbox mode)
-        run: |
-          cargo check -p rustpython-vm --no-default-features --features compiler
-          cargo check -p rustpython-stdlib --no-default-features --features compiler
-          cargo build --no-default-features --features stdlib,importlib,stdio,encodings,freeze-stdlib
-        if: runner.os == 'Linux'
-
-      - name: sandbox smoke test
-        run: |
-          target/debug/rustpython extra_tests/snippets/sandbox_smoke.py
-          target/debug/rustpython extra_tests/snippets/stdlib_re.py
-        if: runner.os == 'Linux'
-
       - name: Test openssl build
         run: cargo build --no-default-features --features ssl-openssl
         if: runner.os == 'Linux'
@@ -157,11 +234,85 @@ jobs:
           cargo run --manifest-path example_projects/frozen_stdlib/Cargo.toml
         if: runner.os == 'Linux'
 
-      - name: run update_lib tests
-        run: cargo run -- -m unittest discover -s scripts/update_lib/tests -v
-        env:
-          PYTHONPATH: scripts
-        if: runner.os == 'Linux'
+  cargo_doc:
+    runs-on: ubuntu-latest
+    needs:
+      - determine_changes
+    if: |
+      (
+        !contains(github.event.pull_request.labels.*.name, 'skip:ci') &&
+        needs.determine_changes.outputs.rust_code == 'true'
+      ) || github.ref == 'refs/heads/main'
+    name: cargo doc
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Restore cache
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-
+          restore-keys: |
+            ${{ runner.os }}-stable--${{ hashFiles('**/Cargo.toml') }}-
+            ${{ runner.os }}-stable--
+
+      - run: cargo doc --locked
+
+  test_sandbox:
+    runs-on: ubuntu-latest
+    needs:
+      - determine_changes
+    if: |
+      (
+        !contains(github.event.pull_request.labels.*.name, 'skip:ci') && (
+          needs.determine_changes.outputs.rust_code == 'true' ||
+          needs.determine_changes.outputs.upstream_lib == 'true' ||
+          needs.determine_changes.outputs.extra_tests == 'true'
+        )
+      ) || github.ref == 'refs/heads/main'
+    name: test sandbox
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Restore cache
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-
+          restore-keys: |
+            ${{ runner.os }}-stable--${{ hashFiles('**/Cargo.toml') }}-
+            ${{ runner.os }}-stable--
+
+      - name: check compilation without host_env (sandbox mode)
+        run: |
+          cargo check -p rustpython-vm --no-default-features --features compiler
+          cargo check -p rustpython-stdlib --no-default-features --features compiler
+
+      - name: cargo build
+        run: cargo build --no-default-features --features stdlib,importlib,stdio,encodings,freeze-stdlib
+
+      - name: sandbox smoke test
+        run: |
+          target/debug/rustpython extra_tests/snippets/sandbox_smoke.py
+          target/debug/rustpython extra_tests/snippets/stdlib_re.py
 
   cargo_check:
     name: cargo check
@@ -274,7 +425,17 @@ jobs:
         run: cargo check --target "${{ matrix.target }}" ${{ env.CARGO_ARGS }}
 
   snippets_cpython:
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
+    needs:
+      - determine_changes
+    if: |
+      (
+        !contains(github.event.pull_request.labels.*.name, 'skip:ci') && (
+          needs.determine_changes.outputs.rust_code == 'true' ||
+          needs.determine_changes.outputs.upstream_lib == 'true' ||
+          needs.determine_changes.outputs.upstream_test == 'true' ||
+          needs.determine_changes.outputs.extra_tests == 'true'
+        )
+      ) || github.ref == 'refs/heads/main'
     env:
       RUST_BACKTRACE: full
       # Tests that can be flaky when running with multiple processes `-j 2`. We will use `-j 1` for these.
@@ -417,6 +578,13 @@ jobs:
           TARGETS: ${{ join(matrix.env_polluting_tests, ' ') }}
         timeout-minutes: 15
 
+
+      - name: run update_lib tests
+        run: target/release/rustpython -m unittest discover -s scripts/update_lib/tests -v
+        env:
+          PYTHONPATH: scripts
+        if: runner.os == 'Linux'
+
       - if: runner.os != 'Windows'
         name: check that --install-pip succeeds
         run: |
@@ -434,10 +602,6 @@ jobs:
         run: |
           target/release/rustpython -m venv testvenv
           testvenv/bin/rustpython -m pip install wheel
-
-      - name: Check whats_left is not broken
-        shell: bash
-        run: python -I scripts/whats_left.py ${{ env.CARGO_ARGS }} --features jit
 
   clippy:
     name: clippy
@@ -481,7 +645,7 @@ jobs:
         # Windows runners randomly crashes, https://github.com/actions/cache/issues/1754
         continue-on-error: true
 
-      - name: Clippy
+      - name: clippy
         run: cargo clippy --keep-going ${{ env.CARGO_ARGS }} --workspace --all-targets ${{ env.WORKSPACE_EXCLUDES }} -- -Dwarnings
 
   cargo_shear:
@@ -519,6 +683,8 @@ jobs:
       security-events: write # for zizmor
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
 
@@ -570,8 +736,16 @@ jobs:
           fail_level: error
 
   miri:
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
-    name: Run tests under miri
+    needs:
+      - determine_changes
+    if: |
+      (
+        !contains(github.event.pull_request.labels.*.name, 'skip:ci') && (
+          needs.determine_changes.outputs.rust_code == 'true' ||
+          needs.determine_changes.outputs.upstream_lib == 'true'
+        )
+      ) || github.ref == 'refs/heads/main'
+    name: rust tests (miri)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -599,7 +773,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-
 
-      - name: Run tests under miri
+      - name: cargo miri test
         run: cargo +${{ env.NIGHTLY_CHANNEL }} miri test -p rustpython-vm -- miri_test
         env:
           # miri-ignore-leaks because the type-object circular reference means that there will always be
@@ -607,7 +781,16 @@ jobs:
           MIRIFLAGS: "-Zmiri-ignore-leaks"
 
   wasm:
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
+    needs:
+      - determine_changes
+    if: |
+      (
+        !contains(github.event.pull_request.labels.*.name, 'skip:ci') && (
+          needs.determine_changes.outputs.rust_code == 'true' ||
+          needs.determine_changes.outputs.upstream_lib == 'true' ||
+          needs.determine_changes.outputs.wasm == 'true'
+        )
+      ) || github.ref == 'refs/heads/main'
     name: Check the WASM package and demo
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -640,6 +823,7 @@ jobs:
 
       - name: install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
       - name: install geckodriver
         run: |
           wget https://github.com/mozilla/geckodriver/releases/download/v0.36.0/geckodriver-v0.36.0-linux64.tar.gz
@@ -722,7 +906,17 @@ jobs:
           key: node-${{ runner.os }}-wasm-demo-${{ hashFiles('wasm/demo/package-lock.json') }}
 
   wasm-wasi:
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
+    needs:
+      - determine_changes
+    if: |
+      (
+        !contains(github.event.pull_request.labels.*.name, 'skip:ci') && (
+          needs.determine_changes.outputs.rust_code == 'true' ||
+          needs.determine_changes.outputs.upstream_lib == 'true' ||
+          needs.determine_changes.outputs.upstream_test == 'true' ||
+          needs.determine_changes.outputs.wasm == 'true'
+        )
+      ) || github.ref == 'refs/heads/main'
     name: Run snippets and cpython tests on wasm-wasi
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -765,3 +959,53 @@ jobs:
         run: wasmer run --dir "$(pwd)" target/wasm32-wasip1/release/rustpython.wasm -- "$(pwd)/extra_tests/snippets/stdlib_random.py"
       - name: run cpython unittest
         run: wasmer run --dir "$(pwd)" target/wasm32-wasip1/release/rustpython.wasm -- "$(pwd)/Lib/test/test_int.py"
+
+  whats_left:
+    needs:
+      - determine_changes
+    if: |
+      (
+        !contains(github.event.pull_request.labels.*.name, 'skip:ci') && (
+          needs.determine_changes.outputs.rust_code == 'true' ||
+          needs.determine_changes.outputs.upstream_lib == 'true' ||
+          needs.determine_changes.outputs.whats_left == 'true'
+        )
+      ) || github.ref == 'refs/heads/main'
+    env:
+      RUST_BACKTRACE: full
+    name: whats_left.py
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+          - windows-latest
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Restore cache
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-
+          restore-keys: |
+            ${{ runner.os }}-stable--${{ hashFiles('**/Cargo.toml') }}-
+            ${{ runner.os }}-stable--
+        # Windows runners randomly crashes, https://github.com/actions/cache/issues/1754
+        continue-on-error: true
+
+      - name: Check whats_left is not broken
+        shell: bash
+        run: python -I scripts/whats_left.py ${{ env.CARGO_ARGS }} --features jit
