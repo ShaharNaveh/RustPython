@@ -871,7 +871,7 @@ mod _ssl {
     #[pyclass(with(Constructor, Representable), flags(BASETYPE))]
     impl PySSLContext {
         // Helper method to convert DER certificate bytes to Python dict
-        fn cert_der_to_dict(&self, vm: &VirtualMachine, cert_der: &[u8]) -> PyResult<PyObjectRef> {
+        fn cert_der_to_dict(vm: &VirtualMachine, cert_der: &[u8]) -> PyResult<PyObjectRef> {
             cert::cert_der_to_dict_helper(vm, cert_der)
         }
 
@@ -1266,7 +1266,7 @@ mod _ssl {
 
             let cadata_parsed = if let OptionalArg::Present(Some(ref cadata_obj)) = args.cadata {
                 let is_string = matches!(cadata_obj, Either::A(_));
-                let data_vec = self.parse_cadata_arg(cadata_obj, vm)?;
+                let data_vec = Self::parse_cadata_arg(cadata_obj, vm)?;
                 Some((data_vec, is_string))
             } else {
                 None
@@ -1274,7 +1274,7 @@ mod _ssl {
 
             // Check for CRL before acquiring main locks
             let (crl_opt, cafile_is_crl) = if let Some(ref path) = cafile_path {
-                let crl = self.load_crl_from_file(path, vm)?;
+                let crl = Self::load_crl_from_file(path, vm)?;
                 let is_crl = crl.is_some();
                 (crl, is_crl)
             } else {
@@ -1295,8 +1295,12 @@ mod _ssl {
                 && !cafile_is_crl
             {
                 // Not a CRL, load as certificate
-                let stats =
-                    self.load_certs_from_file_helper(&mut root_store, &mut ca_certs_der, path, vm)?;
+                let stats = Self::load_certs_from_file_helper(
+                    &mut root_store,
+                    &mut ca_certs_der,
+                    path,
+                    vm,
+                )?;
                 self.update_cert_stats(stats);
             }
 
@@ -1308,7 +1312,7 @@ mod _ssl {
 
             // Load from bytes or str
             if let Some((ref data_vec, is_string)) = cadata_parsed {
-                let stats = self.load_certs_from_bytes_helper(
+                let stats = Self::load_certs_from_bytes_helper(
                     &mut root_store,
                     &mut ca_certs_der,
                     data_vec,
@@ -1519,7 +1523,7 @@ mod _ssl {
         }
 
         #[pymethod]
-        fn get_ciphers(&self, vm: &VirtualMachine) -> PyListRef {
+        fn get_ciphers(vm: &VirtualMachine) -> PyListRef {
             // Dynamically generate cipher list from rustls ALL_CIPHER_SUITES
             // This automatically includes all cipher suites supported by the current rustls version
 
@@ -1664,6 +1668,10 @@ mod _ssl {
             self.set_sni_callback(callback, vm)
         }
 
+        #[expect(
+            clippy::unused_self,
+            reason = "Needs to comply with a function signature"
+        )]
         #[pygetset]
         fn security_level(&self) -> i32 {
             // rustls uses a fixed security level
@@ -1720,7 +1728,7 @@ mod _ssl {
                             certs.push(vm.ctx.new_bytes(cert_der.clone()).into());
                         } else {
                             // Return certificate as dict (use helper from _test_decode_cert)
-                            let dict = self.cert_der_to_dict(vm, cert_der)?;
+                            let dict = Self::cert_der_to_dict(vm, cert_der)?;
                             certs.push(dict);
                         }
                     }
@@ -1735,7 +1743,7 @@ mod _ssl {
         }
 
         #[pymethod]
-        fn load_dh_params(&self, filepath: PyObjectRef, vm: &VirtualMachine) -> PyResult<()> {
+        fn load_dh_params(filepath: PyObjectRef, vm: &VirtualMachine) -> PyResult<()> {
             // Validate filepath is not None
             if vm.is_none(&filepath) {
                 return Err(vm.new_type_error("DH params filepath cannot be None"));
@@ -2055,7 +2063,6 @@ mod _ssl {
 
         /// Helper: Load certificates from file into existing store
         fn load_certs_from_file_helper(
-            &self,
             root_store: &mut RootCertStore,
             ca_certs_der: &mut Vec<Vec<u8>>,
             path: &str,
@@ -2102,7 +2109,6 @@ mod _ssl {
 
         /// Helper: Load certificates from bytes into existing store
         fn load_certs_from_bytes_helper(
-            &self,
             root_store: &mut RootCertStore,
             ca_certs_der: &mut Vec<Vec<u8>>,
             data: &[u8],
@@ -2144,10 +2150,7 @@ mod _ssl {
         }
 
         /// Helper: Try to parse data as CRL (PEM or DER format)
-        fn try_parse_crl(
-            &self,
-            data: &[u8],
-        ) -> Result<CertificateRevocationListDer<'static>, String> {
+        fn try_parse_crl(data: &[u8]) -> Result<CertificateRevocationListDer<'static>, String> {
             // Try PEM format first
             let mut cursor = std::io::Cursor::new(data);
             let mut crl_iter = rustls_pemfile::crls(&mut cursor);
@@ -2166,7 +2169,6 @@ mod _ssl {
 
         /// Helper: Load CRL from file
         fn load_crl_from_file(
-            &self,
             path: &str,
             vm: &VirtualMachine,
         ) -> PyResult<Option<CertificateRevocationListDer<'static>>> {
@@ -2177,7 +2179,7 @@ mod _ssl {
                 _ => vm.new_os_error(e.to_string()),
             })?;
 
-            match self.try_parse_crl(&data) {
+            match Self::try_parse_crl(&data) {
                 Ok(crl) => Ok(Some(crl)),
                 Err(_) => Ok(None), // Not a CRL file, might be a cert file
             }
@@ -2185,14 +2187,13 @@ mod _ssl {
 
         /// Helper: Parse cadata argument (str or bytes)
         fn parse_cadata_arg(
-            &self,
             arg: &Either<PyStrRef, ArgBytesLike>,
             vm: &VirtualMachine,
         ) -> PyResult<Vec<u8>> {
-            match arg {
-                Either::A(s) => Ok(s.clone().try_into_utf8(vm)?.as_str().as_bytes().to_vec()),
-                Either::B(b) => Ok(b.borrow_buf().to_vec()),
-            }
+            Ok(match arg {
+                Either::A(s) => s.clone().try_into_utf8(vm)?.as_str().as_bytes().to_vec(),
+                Either::B(b) => b.borrow_buf().to_vec(),
+            })
         }
 
         /// Helper: Update certificate statistics
@@ -3919,7 +3920,7 @@ mod _ssl {
         }
 
         #[pymethod]
-        fn selected_npn_protocol(&self) -> Option<String> {
+        fn selected_npn_protocol() -> Option<String> {
             // NPN (Next Protocol Negotiation) is the predecessor to ALPN
             // It was deprecated in favor of ALPN (RFC 7301)
             // Rustls doesn't support NPN, only ALPN
@@ -4032,7 +4033,7 @@ mod _ssl {
         }
 
         #[pymethod]
-        fn compression(&self) -> Option<&'static str> {
+        fn compression() -> Option<&'static str> {
             // rustls doesn't support compression
             None
         }
@@ -4155,7 +4156,7 @@ mod _ssl {
 
             // First check if we already have peer's close_notify
             // This can happen if it was received during a previous read() call
-            let mut peer_closed = self.check_peer_closed(conn, vm)?;
+            let mut peer_closed = Self::check_peer_closed(conn, vm)?;
 
             // If peer hasn't closed yet, try to read from socket
             if !peer_closed {
@@ -4235,7 +4236,7 @@ mod _ssl {
                                 };
 
                                 // Check if peer already sent close_notify
-                                if self.check_peer_closed(conn, vm)? {
+                                if Self::check_peer_closed(conn, vm)? {
                                     break;
                                 }
 
@@ -4287,7 +4288,7 @@ mod _ssl {
                                             break;
                                         }
                                         // Check again after processing
-                                        if self.check_peer_closed(conn, vm)? {
+                                        if Self::check_peer_closed(conn, vm)? {
                                             break;
                                         }
                                     }
@@ -4308,7 +4309,7 @@ mod _ssl {
 
                 // Step 3: Check again if peer has sent close_notify (non-blocking/BIO mode only)
                 if !peer_closed {
-                    peer_closed = self.check_peer_closed(conn, vm)?;
+                    peer_closed = Self::check_peer_closed(conn, vm)?;
                 }
             }
 
@@ -4435,7 +4436,7 @@ mod _ssl {
         }
 
         // Helper: Check if peer has sent close_notify
-        fn check_peer_closed(&self, conn: &mut Connection, vm: &VirtualMachine) -> PyResult<bool> {
+        fn check_peer_closed(conn: &mut Connection, vm: &VirtualMachine) -> PyResult<bool> {
             // Process any remaining packets and check peer_has_closed
             let io_state = conn
                 .process_new_packets()
@@ -4544,7 +4545,6 @@ mod _ssl {
 
         #[pymethod]
         fn get_channel_binding(
-            &self,
             cb_type: OptionalArg<PyUtf8StrRef>,
             vm: &VirtualMachine,
         ) -> PyResult<Option<PyBytesRef>> {

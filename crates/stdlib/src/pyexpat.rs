@@ -290,7 +290,7 @@ mod _pyexpat {
             );
         }
 
-        fn create_config(&self) -> xml::ParserConfig {
+        fn create_config() -> xml::ParserConfig {
             xml::ParserConfig::new()
                 .cdata_to_characters(true)
                 .coalesce_characters(false)
@@ -363,7 +363,7 @@ mod _pyexpat {
                 return 1;
             }
             let reader = Cursor::<Vec<u8>>::new(bytes);
-            let parser = self.create_config().create_reader(reader);
+            let parser = Self::create_config().create_reader(reader);
             // Note: xml-rs is stricter than libexpat; some errors are silently ignored
             // to maintain compatibility with existing Python code
             let _ = self.do_parse(vm, parser);
@@ -379,7 +379,7 @@ mod _pyexpat {
                 return Ok(1);
             }
             let reader = Cursor::new(buf);
-            let parser = self.create_config().create_reader(reader);
+            let parser = Self::create_config().create_reader(reader);
             // Note: xml-rs is stricter than libexpat; some errors are silently ignored
             let _ = self.do_parse(vm, parser);
             Ok(1)

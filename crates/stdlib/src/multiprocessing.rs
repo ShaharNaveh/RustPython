@@ -715,7 +715,7 @@ mod _multiprocessing {
         /// SemLock objects cannot be pickled directly.
         /// Use multiprocessing.synchronize.SemLock wrapper which handles pickling.
         #[pymethod]
-        fn __reduce__(&self, vm: &VirtualMachine) -> PyResult {
+        fn __reduce__(vm: &VirtualMachine) -> PyResult {
             Err(vm.new_type_error("cannot pickle 'SemLock' object"))
         }
 

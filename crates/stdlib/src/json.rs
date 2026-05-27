@@ -259,7 +259,7 @@ mod _json {
                     // Continue to parse first key
                 }
                 _ => {
-                    return Err(self.make_decode_error(
+                    return Err(Self::make_decode_error(
                         "Expecting property name enclosed in double quotes",
                         pystr,
                         char_idx,
@@ -307,7 +307,7 @@ mod _json {
                         byte_idx += 1;
                     }
                     _ => {
-                        return Err(self.make_decode_error(
+                        return Err(Self::make_decode_error(
                             "Expecting ':' delimiter",
                             pystr,
                             char_idx,
@@ -358,7 +358,7 @@ mod _json {
                             }
                             Some(b'}') => {
                                 // Trailing comma before end of object
-                                return Err(self.make_decode_error(
+                                return Err(Self::make_decode_error(
                                     "Illegal trailing comma before end of object",
                                     pystr,
                                     comma_char_idx,
@@ -366,7 +366,7 @@ mod _json {
                                 ));
                             }
                             _ => {
-                                return Err(self.make_decode_error(
+                                return Err(Self::make_decode_error(
                                     "Expecting property name enclosed in double quotes",
                                     pystr,
                                     char_idx,
@@ -376,7 +376,7 @@ mod _json {
                         }
                     }
                     _ => {
-                        return Err(self.make_decode_error(
+                        return Err(Self::make_decode_error(
                             "Expecting ',' delimiter",
                             pystr,
                             char_idx,
@@ -450,7 +450,7 @@ mod _json {
 
                         // Check for trailing comma
                         if bytes.get(byte_idx) == Some(&b']') {
-                            return Err(self.make_decode_error(
+                            return Err(Self::make_decode_error(
                                 "Illegal trailing comma before end of array",
                                 pystr,
                                 comma_char_idx,
@@ -459,7 +459,7 @@ mod _json {
                         }
                     }
                     _ => {
-                        return Err(self.make_decode_error(
+                        return Err(Self::make_decode_error(
                             "Expecting ',' delimiter",
                             pystr,
                             char_idx,
@@ -529,7 +529,12 @@ mod _json {
                 let first_byte = match bytes.get(byte_idx) {
                     Some(&b) => b,
                     None => {
-                        return Err(self.make_decode_error("Expecting value", pystr, char_idx, vm));
+                        return Err(Self::make_decode_error(
+                            "Expecting value",
+                            pystr,
+                            char_idx,
+                            vm,
+                        ));
                     }
                 };
 
@@ -588,14 +593,24 @@ mod _json {
                         if let Some((result, len)) = self.parse_number(&bytes[byte_idx..], vm) {
                             return Ok((result?, char_idx + len, byte_idx + len));
                         }
-                        Err(self.make_decode_error("Expecting value", pystr, char_idx, vm))
+                        Err(Self::make_decode_error(
+                            "Expecting value",
+                            pystr,
+                            char_idx,
+                            vm,
+                        ))
                     }
                     b'0'..=b'9' => {
                         // Positive number - numbers are ASCII so len == bytes
                         if let Some((result, len)) = self.parse_number(&bytes[byte_idx..], vm) {
                             return Ok((result?, char_idx + len, byte_idx + len));
                         }
-                        Err(self.make_decode_error("Expecting value", pystr, char_idx, vm))
+                        Err(Self::make_decode_error(
+                            "Expecting value",
+                            pystr,
+                            char_idx,
+                            vm,
+                        ))
                     }
                     _ => {
                         // Fall back to scan_once for unrecognized input
@@ -620,7 +635,12 @@ mod _json {
                                 Ok((value, end_char_idx as usize, end_byte_idx))
                             }
                             Err(err) if err.fast_isinstance(vm.ctx.exceptions.stop_iteration) => {
-                                Err(self.make_decode_error("Expecting value", pystr, char_idx, vm))
+                                Err(Self::make_decode_error(
+                                    "Expecting value",
+                                    pystr,
+                                    char_idx,
+                                    vm,
+                                ))
                             }
                             Err(err) => Err(err),
                         }
@@ -631,7 +651,6 @@ mod _json {
 
         /// Create a decode error.
         fn make_decode_error(
-            &self,
             msg: &str,
             s: PyStrRef,
             pos: usize,

@@ -477,7 +477,7 @@ impl PyAsyncGenAThrow {
                 let (ty, val, tb) = self.value.clone();
                 let ret = self.ag.inner.throw(self.ag.as_object(), ty, val, tb, vm);
                 let ret = if self.aclose {
-                    if self.ignored_close(&ret) {
+                    if Self::ignored_close(&ret) {
                         Err(self.yield_close(vm))
                     } else {
                         ret.and_then(|o| o.into_async_pyresult(vm))
@@ -548,7 +548,7 @@ impl PyAsyncGenAThrow {
             vm,
         );
         let res = if self.aclose {
-            if self.ignored_close(&ret) {
+            if Self::ignored_close(&ret) {
                 Err(self.yield_close(vm))
             } else {
                 ret.and_then(|o| o.into_async_pyresult(vm))
@@ -583,18 +583,20 @@ impl PyAsyncGenAThrow {
         }
     }
 
-    fn ignored_close(&self, res: &PyResult<PyIterReturn>) -> bool {
+    fn ignored_close(res: &PyResult<PyIterReturn>) -> bool {
         res.as_ref().is_ok_and(|v| match v {
             PyIterReturn::Return(obj) => obj.downcastable::<PyAsyncGenWrappedValue>(),
             PyIterReturn::StopIteration(_) => false,
         })
     }
+
     fn yield_close(&self, vm: &VirtualMachine) -> PyBaseExceptionRef {
         self.ag.running_async.store(false);
         self.ag.inner.closed.store(true);
         self.state.store(AwaitableState::Closed);
         vm.new_runtime_error("async generator ignored GeneratorExit")
     }
+
     fn check_error(&self, exc: PyBaseExceptionRef, vm: &VirtualMachine) -> PyBaseExceptionRef {
         self.ag.running_async.store(false);
         self.ag.inner.closed.store(true);

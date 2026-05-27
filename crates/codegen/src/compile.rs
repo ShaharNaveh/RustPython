@@ -2268,8 +2268,8 @@ impl Compiler {
 
     /// Check if this is an inlined comprehension context (PEP 709).
     /// Generator expressions are never inlined.
+    #[must_use]
     fn is_inlined_comprehension_context(
-        &self,
         comprehension_type: ComprehensionType,
         comp_table: &SymbolTable,
     ) -> bool {
@@ -11211,7 +11211,6 @@ impl Compiler {
     }
 
     fn detect_builtin_generator_call(
-        &self,
         func: &ast::Expr,
         args: &ast::Arguments,
     ) -> Option<BuiltinGeneratorCallKind> {
@@ -11353,7 +11352,7 @@ impl Compiler {
         // Save the call expression's source range so CALL instructions use the
         // call start line, not the last argument's line.
         let call_range = self.current_source_range;
-        let uses_ex_call = self.call_uses_ex_call(args);
+        let uses_ex_call = Self::call_uses_ex_call(args);
 
         // Method call: obj → LOAD_ATTR_METHOD → [method, self_or_null] → args → CALL
         // Regular call: func → PUSH_NULL → args → CALL
@@ -11447,7 +11446,7 @@ impl Compiler {
                 }
             }
         } else if let Some(kind) = (!uses_ex_call)
-            .then(|| self.detect_builtin_generator_call(func, args))
+            .then(|| Self::detect_builtin_generator_call(func, args))
             .flatten()
         {
             let end = self.new_block();
@@ -11467,7 +11466,8 @@ impl Compiler {
         Ok(())
     }
 
-    fn call_uses_ex_call(&self, arguments: &ast::Arguments) -> bool {
+    #[must_use]
+    fn call_uses_ex_call(arguments: &ast::Arguments) -> bool {
         let has_starred = arguments
             .args
             .iter()
@@ -12056,7 +12056,7 @@ impl Compiler {
         let comp_table =
             self.peek_next_sub_table_after_skipped_nested_scopes_in_expr(&outermost.iter)?;
 
-        let is_inlined = self.is_inlined_comprehension_context(comprehension_type, &comp_table);
+        let is_inlined = Self::is_inlined_comprehension_context(comprehension_type, &comp_table);
 
         if is_inlined {
             // CPython inlines every non-generator comprehension that the

@@ -192,7 +192,7 @@ mod unicodedata {
         }
 
         #[pymethod]
-        fn normalize(&self, form: super::NormalizeForm, unistr: PyStrRef) -> Wtf8Buf {
+        fn normalize(form: super::NormalizeForm, unistr: PyStrRef) -> Wtf8Buf {
             let text = unistr.as_wtf8();
             match form {
                 Nfc => {
@@ -219,7 +219,7 @@ mod unicodedata {
         }
 
         #[pymethod]
-        fn is_normalized(&self, form: super::NormalizeForm, unistr: PyStrRef) -> bool {
+        fn is_normalized(form: super::NormalizeForm, unistr: PyStrRef) -> bool {
             let text = unistr.as_wtf8();
             let normalized: Wtf8Buf = match form {
                 Nfc => {

@@ -490,6 +490,10 @@ pub(crate) mod _hashlib {
             self.name.clone()
         }
 
+        #[expect(
+            clippy::unused_self,
+            reason = "Needs to comply with a function signature"
+        )]
         #[pygetset]
         const fn digest_size(&self) -> usize {
             0

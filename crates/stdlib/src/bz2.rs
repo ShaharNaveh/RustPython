@@ -103,7 +103,7 @@ mod _bz2 {
         }
 
         #[pymethod(name = "__reduce__")]
-        fn reduce(&self, vm: &VirtualMachine) -> PyResult<()> {
+        fn reduce(vm: &VirtualMachine) -> PyResult<()> {
             Err(vm.new_type_error("cannot pickle '_bz2.BZ2Decompressor' object"))
         }
 
@@ -190,7 +190,7 @@ mod _bz2 {
         }
 
         #[pymethod(name = "__reduce__")]
-        fn reduce(&self, vm: &VirtualMachine) -> PyResult<()> {
+        fn reduce(vm: &VirtualMachine) -> PyResult<()> {
             Err(vm.new_type_error("cannot pickle '_bz2.BZ2Compressor' object"))
         }
     }

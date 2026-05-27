@@ -1294,7 +1294,7 @@ pub(crate) mod _asyncio {
         }
 
         #[pymethod]
-        fn set_exception(&self, _exception: PyObjectRef, vm: &VirtualMachine) -> PyResult<()> {
+        fn set_exception(_exception: PyObjectRef, vm: &VirtualMachine) -> PyResult<()> {
             Err(vm.new_runtime_error("Task does not support set_exception operation"))
         }
 
