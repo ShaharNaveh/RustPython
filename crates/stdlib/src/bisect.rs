@@ -62,7 +62,7 @@ mod _bisect {
 
         while lo < hi {
             // Handles issue 13496.
-            let mid = (lo + hi) / 2;
+            let mid = usize::midpoint(lo, hi);
             let a_mid = a.get_item(&mid, vm)?;
             let comp = if let Some(ref key) = key {
                 key.call((a_mid,), vm)?
@@ -88,7 +88,7 @@ mod _bisect {
 
         while lo < hi {
             // Handles issue 13496.
-            let mid = (lo + hi) / 2;
+            let mid = usize::midpoint(lo, hi);
             let a_mid = a.get_item(&mid, vm)?;
             let comp = if let Some(ref key) = key {
                 key.call((a_mid,), vm)?

@@ -360,6 +360,7 @@ impl PyDict {
     }
 
     #[pymethod]
+    #[must_use]
     pub fn copy(&self) -> Self {
         Self {
             entries: self.entries.clone(),

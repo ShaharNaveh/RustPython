@@ -160,11 +160,16 @@ pub trait FormatBuf:
     Extend<Self::Char> + Default + FromIterator<Self::Char> + From<String>
 {
     type Char: FormatChar;
+
     fn chars(&self) -> impl Iterator<Item = Self::Char>;
+
     fn len(&self) -> usize;
+
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
+
+    #[must_use]
     fn concat(self, other: Self) -> Self;
 }
 

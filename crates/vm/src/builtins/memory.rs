@@ -118,6 +118,7 @@ impl PyMemoryView {
     }
 
     /// this should be the only way to create a memoryview from another memoryview
+    #[must_use]
     pub fn new_view(&self) -> Self {
         let zelf = Self {
             buffer: self.buffer.clone(),

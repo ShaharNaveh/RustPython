@@ -311,10 +311,10 @@ writeable = "0.6"
 # Lints
 
 [workspace.lints.rust]
-unsafe_code = "allow"
-unsafe_op_in_unsafe_fn = "deny"
 elided_lifetimes_in_paths = "warn"
 unreachable_pub = "warn"
+unsafe_code = "allow"
+unsafe_op_in_unsafe_fn = "deny"
 
 [workspace.lints.clippy]
 correctness = { level = "warn", priority = -2 }
@@ -365,10 +365,18 @@ format_collect = "warn"
 from_iter_instead_of_collect = "warn"
 inconsistent_struct_constructor = "warn"
 inefficient_to_string = "warn"
+large_types_passed_by_value = "warn"
+manual_assert = "warn"
+manual_ilog2 = "warn"
+manual_is_power_of_two = "warn"
 manual_is_variant_and = "warn"
+manual_midpoint = "warn"
 map_unwrap_or = "warn"
+mismatching_type_param_order = "warn"
 must_use_candidate = "warn"
 redundant_else = "warn"
+ref_option_ref = "warn"
+return_self_not_must_use = "warn"
 uninlined_format_args = "warn"
 unnecessary_wraps = "warn"
 unnested_or_patterns = "warn"
