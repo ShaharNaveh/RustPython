@@ -885,11 +885,8 @@ pub mod sys {
             (&env_var[..(env_var.len() - last.len() - 1)], last)
         };
 
-        let module = match vm.import(&vm.ctx.new_str(module_path), 0) {
-            Ok(module) => module,
-            Err(_) => {
-                return print_unimportable_module_warn();
-            }
+        let Ok(module) = vm.import(&vm.ctx.new_str(module_path), 0) else {
+            return print_unimportable_module_warn();
         };
 
         match vm.get_attribute_opt(module, &vm.ctx.new_str(attr_name)) {

@@ -15199,10 +15199,10 @@ def f(a, b, c):
         let right_idx = varname_index(code, right_name);
         non_cache_instructions(code)
             .filter_map(|unit| {
-                let var_nums = match unit.op {
-                    Instruction::LoadFastLoadFast { var_nums }
-                    | Instruction::LoadFastBorrowLoadFastBorrow { var_nums } => var_nums,
-                    _ => return None,
+                let (Instruction::LoadFastLoadFast { var_nums }
+                | Instruction::LoadFastBorrowLoadFastBorrow { var_nums }) = unit.op
+                else {
+                    return None;
                 };
                 let (left, right) = var_nums
                     .get(OpArg::new(u32::from(u8::from(unit.arg))))

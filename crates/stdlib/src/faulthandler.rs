@@ -767,9 +767,8 @@ mod decl {
     extern "C" fn faulthandler_user_signal(signum: libc::c_int) {
         let save_errno = get_errno();
 
-        let user = match host_faulthandler::get_user_signal(signum as usize) {
-            Some(u) => u,
-            _ => return,
+        let Some(user) = host_faulthandler::get_user_signal(signum as usize) else {
+            return;
         };
 
         faulthandler_dump_traceback(user.fd, user.all_threads);

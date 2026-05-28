@@ -571,9 +571,8 @@ pub(super) fn build_verified_chain(
         let last_cert_der = der;
 
         // Parse the last certificate in the chain
-        let (_, last_cert) = match X509Certificate::from_der(last_cert_der) {
-            Ok(parsed) => parsed,
-            Err(_) => break,
+        let Ok((_, last_cert)) = X509Certificate::from_der(last_cert_der) else {
+            break;
         };
 
         // Check if it's self-signed (root certificate)
@@ -587,9 +586,8 @@ pub(super) fn build_verified_chain(
         let mut found_issuer = false;
 
         for ca_der in ca_certs_der {
-            let (_, ca_cert) = match X509Certificate::from_der(ca_der) {
-                Ok(parsed) => parsed,
-                Err(_) => continue,
+            let Ok((_, ca_cert)) = X509Certificate::from_der(ca_der) else {
+                continue;
             };
 
             // Check if this CA's subject matches the certificate's issuer

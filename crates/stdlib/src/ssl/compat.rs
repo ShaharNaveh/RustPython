@@ -1274,9 +1274,8 @@ pub(super) fn ssl_do_handshake(
                 // Write all pending TLS data to outgoing BIO
                 loop {
                     let mut buf = vec![0u8; SSL3_RT_MAX_PACKET_SIZE];
-                    let n = match conn.write_tls(&mut buf.as_mut_slice()) {
-                        Ok(n) => n,
-                        Err(_) => break,
+                    let Ok(n) = conn.write_tls(&mut buf.as_mut_slice()) else {
+                        break;
                     };
                     if n == 0 {
                         break;

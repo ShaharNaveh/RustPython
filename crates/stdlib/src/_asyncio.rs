@@ -381,9 +381,8 @@ pub(crate) mod _asyncio {
 
             // Check if fut_callbacks exists
             let callbacks = self.fut_callbacks.read().clone();
-            let callbacks = match callbacks {
-                Some(c) => c,
-                None => return Ok(cleared_callback0),
+            let Some(callbacks) = callbacks else {
+                return Ok(cleared_callback0);
             };
 
             let list: PyListRef = callbacks.downcast().unwrap();
@@ -418,10 +417,7 @@ pub(crate) mod _asyncio {
             loop {
                 // Re-check fut_callbacks on each iteration (evil code may have cleared it)
                 let callbacks = self.fut_callbacks.read().clone();
-                let callbacks = match callbacks {
-                    Some(c) => c,
-                    None => break,
-                };
+                let Some(callbacks) = callbacks else { break };
                 let list: PyListRef = callbacks.downcast().unwrap();
                 let current_len = list.borrow_vec().len();
                 if i >= current_len {
@@ -430,10 +426,7 @@ pub(crate) mod _asyncio {
 
                 // Get item and release lock before comparison
                 let item = list.borrow_vec().get(i).cloned();
-                let item = match item {
-                    Some(item) => item,
-                    None => break,
-                };
+                let Some(item) = item else { break };
 
                 let tuple: &PyTuple = item.downcast_ref().unwrap();
                 let cb = tuple.first().unwrap().clone();
@@ -793,15 +786,11 @@ pub(crate) mod _asyncio {
             }
 
             let exc = zelf.fut_exception.read().clone();
-            let exc = match exc {
-                Some(e) => e,
-                None => return Ok(()),
-            };
+            let Some(exc) = exc else { return Ok(()) };
 
             let loop_obj = zelf.fut_loop.read().clone();
-            let loop_obj = match loop_obj {
-                Some(l) => l,
-                None => return Ok(()),
+            let Some(loop_obj) = loop_obj else {
+                return Ok(());
             };
 
             // Create context dict for call_exception_handler
@@ -865,14 +854,13 @@ pub(crate) mod _asyncio {
                 }
             };
 
-        let func = match vm.get_attribute_opt(module, vm.ctx.intern_str("_future_repr_info")) {
-            Ok(Some(f)) => f,
-            _ => return Ok(get_future_repr_info_fallback(future, vm)),
+        let Ok(Some(func)) = vm.get_attribute_opt(module, vm.ctx.intern_str("_future_repr_info"))
+        else {
+            return Ok(get_future_repr_info_fallback(future, vm));
         };
 
-        let info = match func.call((future.to_owned(),), vm) {
-            Ok(i) => i,
-            Err(_) => return Ok(get_future_repr_info_fallback(future, vm)),
+        let Ok(info) = func.call((future.to_owned(),), vm) else {
+            return Ok(get_future_repr_info_fallback(future, vm));
         };
 
         let list: PyListRef = match info.downcast() {
@@ -948,9 +936,8 @@ pub(crate) mod _asyncio {
         #[pymethod]
         fn send(&self, _value: PyObjectRef, vm: &VirtualMachine) -> PyResult {
             let future = self.future.read().clone();
-            let future = match future {
-                Some(f) => f,
-                None => return Err(vm.new_stop_iteration(None)),
+            let Some(future) = future else {
+                return Err(vm.new_stop_iteration(None));
             };
 
             // Try to get blocking flag (check Task first since it inherits from Future)
@@ -1368,9 +1355,8 @@ pub(crate) mod _asyncio {
 
             // Check if fut_callbacks exists
             let callbacks = self.base.fut_callbacks.read().clone();
-            let callbacks = match callbacks {
-                Some(c) => c,
-                None => return Ok(cleared_callback0),
+            let Some(callbacks) = callbacks else {
+                return Ok(cleared_callback0);
             };
 
             let list: PyListRef = callbacks.downcast().unwrap();
@@ -1405,10 +1391,7 @@ pub(crate) mod _asyncio {
             loop {
                 // Re-check fut_callbacks on each iteration (evil code may have cleared it)
                 let callbacks = self.base.fut_callbacks.read().clone();
-                let callbacks = match callbacks {
-                    Some(c) => c,
-                    None => break,
-                };
+                let Some(callbacks) = callbacks else { break };
                 let list: PyListRef = callbacks.downcast().unwrap();
                 let current_len = list.borrow_vec().len();
                 if i >= current_len {
@@ -1417,10 +1400,7 @@ pub(crate) mod _asyncio {
 
                 // Get item and release lock before comparison
                 let item = list.borrow_vec().get(i).cloned();
-                let item = match item {
-                    Some(item) => item,
-                    None => break,
-                };
+                let Some(item) = item else { break };
 
                 let tuple: &PyTuple = item.downcast_ref().unwrap();
                 let cb = tuple.first().unwrap().clone();
@@ -1874,14 +1854,10 @@ pub(crate) mod _asyncio {
             }
 
             let exc = zelf.base.fut_exception.read().clone();
-            let exc = match exc {
-                Some(e) => e,
-                None => return Ok(()),
-            };
 
-            let loop_obj = match loop_obj {
-                Some(l) => l,
-                None => return Ok(()),
+            let Some(exc) = exc else { return Ok(()) };
+            let Some(loop_obj) = loop_obj else {
+                return Ok(());
             };
 
             // Create context dict for call_exception_handler
@@ -1947,9 +1923,8 @@ pub(crate) mod _asyncio {
     /// Eager start: run first step synchronously
     fn task_eager_start(zelf: &PyRef<PyTask>, vm: &VirtualMachine) -> PyResult<()> {
         let loop_obj = zelf.base.fut_loop.read().clone();
-        let loop_obj = match loop_obj {
-            Some(l) => l,
-            None => return Err(vm.new_runtime_error("Task has no loop")),
+        let Some(loop_obj) = loop_obj else {
+            return Err(vm.new_runtime_error("Task has no loop"));
         };
 
         // Register task before running step
@@ -1969,13 +1944,10 @@ pub(crate) mod _asyncio {
         // Run the first step with context (using context.run(callable, *args))
         let step_result = if let Some(ctx) = context {
             // Call context.run(coro.send, None)
-            let coro_ref = match coro {
-                Some(c) => c,
-                None => {
-                    let _ = _swap_current_task(loop_obj, prev_task, vm);
-                    _unregister_eager_task(task_obj, vm)?;
-                    return Ok(());
-                }
+            let Some(coro_ref) = coro else {
+                let _ = _swap_current_task(loop_obj, prev_task, vm);
+                _unregister_eager_task(task_obj, vm)?;
+                return Ok(());
             };
             let send_method = coro_ref.get_attr(vm.ctx.intern_str("send"), vm)?;
             vm.call_method(&ctx, "run", (send_method, vm.ctx.none()))
@@ -2043,16 +2015,14 @@ pub(crate) mod _asyncio {
         *task_ref.task_fut_waiter.write() = None;
 
         let coro = task_ref.task_coro.read().clone();
-        let coro = match coro {
-            Some(c) => c,
-            None => return Ok(vm.ctx.none()),
+        let Some(coro) = coro else {
+            return Ok(vm.ctx.none());
         };
 
         // Get event loop for enter/leave task
         let loop_obj = task_ref.base.fut_loop.read().clone();
-        let loop_obj = match loop_obj {
-            Some(l) => l,
-            None => return Ok(vm.ctx.none()),
+        let Some(loop_obj) = loop_obj else {
+            return Ok(vm.ctx.none());
         };
 
         // Get task context

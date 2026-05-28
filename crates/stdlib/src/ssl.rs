@@ -3658,9 +3658,8 @@ mod _ssl {
                     // If plaintext is still buffered, return it before EOF.
                     let pending = {
                         let mut conn_guard = self.connection.lock();
-                        let conn = match conn_guard.as_mut() {
-                            Some(conn) => conn,
-                            None => return Err(create_ssl_eof_error(vm).upcast()),
+                        let Some(conn) = conn_guard.as_mut() else {
+                            return Err(create_ssl_eof_error(vm).upcast());
                         };
 
                         let mut reader = conn.reader();
@@ -3687,9 +3686,8 @@ mod _ssl {
                     // If plaintext is still buffered, return it before clean EOF.
                     let pending = {
                         let mut conn_guard = self.connection.lock();
-                        let conn = match conn_guard.as_mut() {
-                            Some(conn) => conn,
-                            None => return Err(create_ssl_zero_return_error(vm).upcast()),
+                        let Some(conn) = conn_guard.as_mut() else {
+                            return Err(create_ssl_zero_return_error(vm).upcast());
                         };
 
                         let mut reader = conn.reader();
@@ -3750,9 +3748,9 @@ mod _ssl {
             // Returns the number of already decrypted bytes available for read
             // This is critical for asyncore's readable() method which checks socket.pending() > 0
             let mut conn_guard = self.connection.lock();
-            let conn = match conn_guard.as_mut() {
-                Some(c) => c,
-                None => return 0, // No connection established yet
+            let Some(conn) = conn_guard.as_mut() else {
+                // No connection established yet
+                return 0;
             };
 
             // Use rustls Reader's fill_buf() to check buffered plaintext
@@ -4237,11 +4235,11 @@ mod _ssl {
                             loop {
                                 // Re-acquire connection lock for each iteration
                                 let mut conn_guard = self.connection.lock();
-                                let conn = match conn_guard.as_mut() {
-                                    Some(c) => c,
-                                    None => break, // Connection already closed
-                                };
 
+                                let Some(conn) = conn_guard.as_mut() else {
+                                    // Connection already closed
+                                    break;
+                                };
                                 // Check if peer already sent close_notify
                                 if self.check_peer_closed(conn, vm)? {
                                     break;
@@ -4283,9 +4281,8 @@ mod _ssl {
 
                                 // Try to read data from socket
                                 let mut conn_guard = self.connection.lock();
-                                let conn = match conn_guard.as_mut() {
-                                    Some(c) => c,
-                                    None => break,
+                                let Some(conn) = conn_guard.as_mut() else {
+                                    break;
                                 };
 
                                 // Read and process any incoming TLS data

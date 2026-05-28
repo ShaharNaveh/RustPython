@@ -98,11 +98,8 @@ impl PyMethod {
         } else {
             obj_cls.get_attr(name)
         };
-        let func = match attr {
-            Some(f) => f,
-            None => {
-                return Ok(None);
-            }
+        let Some(func) = attr else {
+            return Ok(None);
         };
         let meth = if func
             .class()

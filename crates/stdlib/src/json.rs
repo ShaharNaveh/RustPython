@@ -101,13 +101,10 @@ mod _json {
             let bytes = pystr.as_bytes();
             let wtf8 = pystr.as_wtf8();
 
-            let first_byte = match bytes.get(byte_idx) {
-                Some(&b) => b,
-                None => {
-                    return Ok(PyIterReturn::StopIteration(Some(
-                        vm.ctx.new_int(char_idx).into(),
-                    )));
-                }
+            let Some(first_byte) = bytes.get(byte_idx) else {
+                return Ok(PyIterReturn::StopIteration(Some(
+                    vm.ctx.new_int(char_idx).into(),
+                )));
             };
 
             match first_byte {
@@ -547,11 +544,8 @@ mod _json {
                 let bytes = pystr.as_bytes();
                 let wtf8 = pystr.as_wtf8();
 
-                let first_byte = match bytes.get(byte_idx) {
-                    Some(&b) => b,
-                    None => {
-                        return Err(self.make_decode_error("Expecting value", pystr, char_idx, vm));
-                    }
+                let Some(first_byte) = bytes.get(byte_idx) else {
+                    return Err(self.make_decode_error("Expecting value", pystr, char_idx, vm));
                 };
 
                 match first_byte {
