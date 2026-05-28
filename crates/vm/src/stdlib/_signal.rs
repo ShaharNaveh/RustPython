@@ -219,11 +219,8 @@ pub(crate) mod _signal {
         signal::check_signals(vm)?;
 
         let old = unsafe { host_signal::install_handler(signalnum, sig_handler) };
-        let _old = match old {
-            Ok(old) => old,
-            Err(_) => {
-                return Err(vm.new_os_error("Failed to set signal".to_owned()));
-            }
+        let Ok(_old) = old else {
+            return Err(vm.new_os_error("Failed to set signal".to_owned()));
         };
 
         let signal_handlers = vm.signal_handlers.get_or_init(signal::new_signal_handlers);

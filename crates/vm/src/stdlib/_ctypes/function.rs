@@ -1385,17 +1385,14 @@ fn convert_raw_result(
     let (result_bytes, result_size) = rustpython_host_env::ctypes::call_result_bytes(raw_result)?;
 
     // 1. No restype → return as int
-    let restype = match &call_info.restype_obj {
-        None => {
-            // Default: return as int
-            let val = match raw_result {
-                RawResult::Pointer(p) => *p as isize,
-                RawResult::Value(v) => *v as isize,
-                RawResult::Void => return None,
-            };
-            return Some(vm.ctx.new_int(val).into());
-        }
-        Some(r) => r,
+    let Some(restype) = &call_info.restype_obj else {
+        // Default: return as int
+        let val = match raw_result {
+            RawResult::Pointer(p) => *p as isize,
+            RawResult::Value(v) => *v as isize,
+            RawResult::Void => return None,
+        };
+        return Some(vm.ctx.new_int(val).into());
     };
 
     // 2. restype is None → return None
@@ -1404,17 +1401,14 @@ fn convert_raw_result(
     }
 
     // 3. Get restype as PyType
-    let restype_type = match restype.clone().downcast::<PyType>() {
-        Ok(t) => t,
-        Err(_) => {
-            // Not a type, call it with int result
-            let val = match raw_result {
-                RawResult::Pointer(p) => *p as isize,
-                RawResult::Value(v) => *v as isize,
-                RawResult::Void => return None,
-            };
-            return restype.call((val,), vm).ok();
-        }
+    let Ok(restype_type) = restype.clone().downcast::<PyType>() else {
+        // Not a type, call it with int result
+        let val = match raw_result {
+            RawResult::Pointer(p) => *p as isize,
+            RawResult::Value(v) => *v as isize,
+            RawResult::Void => return None,
+        };
+        return restype.call((val,), vm).ok();
     };
 
     // 4. Get StgInfo

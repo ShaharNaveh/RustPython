@@ -524,11 +524,8 @@ impl Initializer for PyCSimpleType {
         type_ref.check_not_initialized(vm)?;
 
         // Get _type_ attribute
-        let type_attr = match type_ref.as_object().get_attr("_type_", vm) {
-            Ok(attr) => attr,
-            Err(_) => {
-                return Err(vm.new_attribute_error("class must define a '_type_' attribute"));
-            }
+        let Ok(type_attr) = type_ref.as_object().get_attr("_type_", vm) else {
+            return Err(vm.new_attribute_error("class must define a '_type_' attribute"));
         };
 
         // Validate _type_ is a string
