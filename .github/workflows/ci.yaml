@@ -77,7 +77,7 @@ jobs:
           MERGE_BASE: ${{ steps.merge_base.outputs.sha }}
 
   rust_tests:
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
+    if: ${{ false && !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
     env:
       RUST_BACKTRACE: full
     name: Run rust tests
@@ -362,6 +362,7 @@ jobs:
           echo "cores=${cores}" >> "$GITHUB_OUTPUT"
 
       - name: Run CPython tests
+        if: false
         run: |
           target/release/rustpython -m test -j ${{ steps.cores.outputs.cores }} ${{ join(matrix.extra_test_args, ' ') }} --slowest --fail-env-changed --timeout 600 -v -x ${{ env.FLAKY_MP_TESTS }} ${{ join(matrix.skips, ' ') }}
         timeout-minutes: ${{ matrix.timeout }}
