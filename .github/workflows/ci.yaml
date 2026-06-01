@@ -348,7 +348,7 @@ jobs:
           openssl: true
 
       - name: build rustpython
-        run: cargo build --release --verbose --features=threading,jit ${{ env.CARGO_ARGS }}
+        run: cargo build --release --features=threading,jit ${{ env.CARGO_ARGS }}
 
       - name: run snippets
         if: false
