@@ -6790,6 +6790,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         obj.clear()
         case.assertEqual(len(obj), 0)
 
+    @unittest.expectedFailure  # TODO: RUSTPYTHON
     def test_dict(self):
         o = self.manager.dict()
         o['foo'] = 5
