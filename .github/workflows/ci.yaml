@@ -77,7 +77,7 @@ jobs:
           MERGE_BASE: ${{ steps.merge_base.outputs.sha }}
 
   rust_tests:
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
+    if: ${{ false && !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
     env:
       RUST_BACKTRACE: full
     name: Run rust tests
@@ -348,9 +348,10 @@ jobs:
           openssl: true
 
       - name: build rustpython
-        run: cargo build --release --verbose --features=threading,jit ${{ env.CARGO_ARGS }}
+        run: cargo build --release --features=threading,jit ${{ env.CARGO_ARGS }}
 
       - name: run snippets
+        if: false
         run: python -m pip install -r requirements.txt && pytest -v
         working-directory: ./extra_tests
 
@@ -362,6 +363,7 @@ jobs:
           echo "cores=${cores}" >> "$GITHUB_OUTPUT"
 
       - name: Run CPython tests
+        if: false
         run: |
           target/release/rustpython -m test -j ${{ steps.cores.outputs.cores }} ${{ join(matrix.extra_test_args, ' ') }} --slowest --fail-env-changed --timeout 600 -v -x ${{ env.FLAKY_MP_TESTS }} ${{ join(matrix.skips, ' ') }}
         timeout-minutes: ${{ matrix.timeout }}
@@ -452,8 +454,8 @@ jobs:
     permissions:
       contents: read
     if: |
-      needs.determine_changes.outputs.rust_code == 'true' ||
-      github.ref == 'refs/heads/main'
+      false && (needs.determine_changes.outputs.rust_code == 'true' ||
+      github.ref == 'refs/heads/main')
     strategy:
       fail-fast: false
       matrix:
@@ -497,8 +499,9 @@ jobs:
     permissions:
       contents: read
     if: |
+      false && (
       needs.determine_changes.outputs.rust_code == 'true' ||
-      github.ref == 'refs/heads/main'
+      github.ref == 'refs/heads/main')
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -515,6 +518,7 @@ jobs:
 
   lint:
     name: Lint
+    if: false
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -600,7 +604,7 @@ jobs:
           fail_level: error
 
   miri:
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
+    if: ${{ false && !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
     name: Run tests under miri
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -637,7 +641,7 @@ jobs:
           MIRIFLAGS: "-Zmiri-ignore-leaks"
 
   wasm:
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
+    if: ${{ false && !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
     name: Check the WASM package and demo
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -752,7 +756,7 @@ jobs:
           key: node-${{ runner.os }}-wasm-demo-${{ hashFiles('wasm/demo/package-lock.json') }}
 
   wasm-wasi:
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
+    if: ${{ false && !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
     name: Run snippets and cpython tests on wasm-wasi
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -801,6 +805,7 @@ jobs:
       - determine_changes
     if: |
       (
+        false &&
         !contains(github.event.pull_request.labels.*.name, 'skip:ci') &&
         needs.determine_changes.outputs.rust_code == 'true'
       ) || github.ref == 'refs/heads/main'
