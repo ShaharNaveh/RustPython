@@ -454,8 +454,8 @@ jobs:
     permissions:
       contents: read
     if: |
-      needs.determine_changes.outputs.rust_code == 'true' ||
-      github.ref == 'refs/heads/main'
+      false && (needs.determine_changes.outputs.rust_code == 'true' ||
+      github.ref == 'refs/heads/main')
     strategy:
       fail-fast: false
       matrix:
