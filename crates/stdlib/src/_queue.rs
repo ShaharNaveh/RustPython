@@ -46,13 +46,63 @@ mod _queue {
         vm.new_exception_empty(PyEmptyError::class(&vm.ctx).to_owned())
     }
 
+    #[cfg(feature = "threading")]
+    #[derive(Debug)]
+    struct Semaphore {
+        mutex: Mutex<usize>,
+        cond: Condvar,
+    }
+
+    #[cfg(feature = "threading")]
+    impl Semaphore {
+        #[must_use]
+        fn new() -> Self {
+            Self {
+                mutex: Mutex::new(0),
+                cond: Condvar::new(),
+            }
+        }
+
+        fn release(&self) {
+            let mut count = self.mutex.lock();
+            *count += 1;
+            self.cond.notify_one();
+        }
+
+        /// Returns `true` if the semaphore was acquired, `false` on timeout.
+        #[must_use]
+        fn acquire(&self, block: bool, deadline: Option<Instant>) -> bool {
+            let mut count = self.mutex.lock();
+            loop {
+                if *count > 0 {
+                    *count -= 1;
+                    return true;
+                }
+                if !block {
+                    return false;
+                }
+                match deadline {
+                    Some(dl) => {
+                        let result = self.cond.wait_until(&mut count, dl);
+                        if result.timed_out() && *count == 0 {
+                            return false;
+                        }
+                    }
+                    None => {
+                        self.cond.wait(&mut count);
+                    }
+                }
+            }
+        }
+    }
+
     #[pyattr]
     #[pyclass(module = "_queue", name = "SimpleQueue", unhashable = true)]
     #[derive(Debug, PyPayload)]
     struct PySimpleQueue {
         buf: Buf,
         #[cfg(feature = "threading")]
-        not_empty: Condvar,
+        sem: Semaphore,
     }
 
     impl Default for PySimpleQueue {
@@ -60,20 +110,17 @@ mod _queue {
             Self {
                 buf: Buf::new(VecDeque::with_capacity(INITIAL_RING_BUF_CAPACITY)),
                 #[cfg(feature = "threading")]
-                not_empty: Condvar::new(),
+                sem: Semaphore::new(),
             }
         }
     }
 
     impl PySimpleQueue {
         fn push(&self, item: PyObjectRef) {
-            {
-                let mut guard = self.buf.lock();
-                guard.push_back(item);
-            }
+            self.buf.lock().push_back(item);
 
             #[cfg(feature = "threading")]
-            self.not_empty.notify_one();
+            self.sem.release();
         }
 
         cfg_select! {
@@ -189,36 +236,21 @@ mod _queue {
                 None => None,
             };
 
-            cfg_select! {
-                feature = "threading" => {
-                    loop {
-                        let mut guard = self.buf.lock();
-
-                        if let Some(item) = Self::get_inner(&mut guard) {
-                            return Ok(item);
-                        }
-
-                        if let Some(deadline) = deadline {
-                            // Sleep until notified or deadline reached
-                            let result = self.not_empty.wait_until(&mut guard, deadline);
-                            if result.timed_out() {
-                                // Check one last time before declaring empty
-                                return Self::get_inner(&mut guard).ok_or_else(|| empty_error(vm));
-                            }
-                        } else {
-                            // Sleep until notified
-                            self.not_empty.wait(&mut guard);
-                        }
-                    }
-                }
-                _ => {
-                    Self::get_inner(&mut self.buf.lock()).ok_or_else(|| empty_error(vm))
-                }
+            #[cfg(feature = "threading")]
+            if !self.sem.acquire(block, deadline) {
+                return Err(empty_error(vm));
             }
+
+            Self::get_inner(&mut self.buf.lock()).ok_or_else(|| empty_error(vm))
         }
 
         #[pymethod]
         fn get_nowait(&self, vm: &VirtualMachine) -> PyResult<PyObjectRef> {
+            #[cfg(feature = "threading")]
+            if !self.sem.acquire(false, None) {
+                return Err(empty_error(vm));
+            }
+
             Self::get_inner(&mut self.buf.lock()).ok_or_else(|| empty_error(vm))
         }
 
