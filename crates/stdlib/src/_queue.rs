@@ -71,7 +71,7 @@ mod _queue {
 
         /// Returns `true` if the semaphore was acquired, `false` on timeout.
         #[must_use]
-        fn acquire(&self, block: bool, deadline: Option<Instant>) -> bool {
+        fn acquire(&self, block: bool, deadline: Option<Instant>, vm: &VirtualMachine) -> bool {
             let mut count = self.mutex.lock();
             loop {
                 if *count > 0 {
@@ -83,13 +83,13 @@ mod _queue {
                 }
                 match deadline {
                     Some(dl) => {
-                        let result = self.cond.wait_until(&mut count, dl);
+                        let result = vm.allow_threads(|| self.cond.wait_until(&mut count, dl));
                         if result.timed_out() && *count == 0 {
                             return false;
                         }
                     }
                     None => {
-                        self.cond.wait(&mut count);
+                        vm.allow_threads(|| self.cond.wait(&mut count));
                     }
                 }
             }
@@ -237,8 +237,10 @@ mod _queue {
             };
 
             #[cfg(feature = "threading")]
-            if !self.sem.acquire(block, deadline) {
-                return Err(empty_error(vm));
+            {
+                if !self.sem.acquire(block, deadline, vm) {
+                    return Err(empty_error(vm));
+                }
             }
 
             Self::get_inner(&mut self.buf.lock()).ok_or_else(|| empty_error(vm))
@@ -247,8 +249,10 @@ mod _queue {
         #[pymethod]
         fn get_nowait(&self, vm: &VirtualMachine) -> PyResult<PyObjectRef> {
             #[cfg(feature = "threading")]
-            if !self.sem.acquire(false, None) {
-                return Err(empty_error(vm));
+            {
+                if !self.sem.acquire(false, None, vm) {
+                    return Err(empty_error(vm));
+                }
             }
 
             Self::get_inner(&mut self.buf.lock()).ok_or_else(|| empty_error(vm))
