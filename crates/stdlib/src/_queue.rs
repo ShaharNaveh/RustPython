@@ -123,40 +123,23 @@ mod _queue {
             self.sem.release();
         }
 
-        cfg_select! {
-            feature = "threading" => {
-                /// Returns a strong reference from the head of the buffer.
-                ///
-                /// ## See Also
-                ///
-                /// [`RingBuf_Get`](https://github.com/python/cpython/blob/v3.14.5/Modules/_queuemodule.c#L133-L154).
-                fn get_inner(buf: &mut MutexGuard<'_, BufInner>) -> Option<PyObjectRef> {
-                    let cap = buf.capacity();
-                    if buf.len() < (cap / 4) {
-                        // Items is less than 25% occupied, shrink it by 50%. This allows for
-                        // growth without immediately needing to resize the underlying items array
-                        buf.shrink_to(cap / 2)
-                    }
+        /// Returns a strong reference from the head of the buffer.
+        ///
+        /// ## See Also
+        ///
+        /// [`RingBuf_Get`](https://github.com/python/cpython/blob/v3.14.5/Modules/_queuemodule.c#L133-L154).
+        fn get_inner(
+            #[cfg(feature = "threading")] buf: &mut MutexGuard<'_, BufInner>,
+            #[cfg(not(feature = "threading"))] buf: &mut BufInner,
+        ) -> Option<PyObjectRef> {
+            let cap = buf.capacity();
+            if buf.len() < (cap / 4) {
+                // Items is less than 25% occupied, shrink it by 50%. This allows for
+                // growth without immediately needing to resize the underlying items array
+                buf.shrink_to(cap / 2)
+            }
 
-                    buf.pop_front()
-                }
-            }
-            _ => {
-                /// Returns a strong reference from the head of the buffer.
-                ///
-                /// ## See Also
-                ///
-                /// [`RingBuf_Get`](https://github.com/python/cpython/blob/v3.14.5/Modules/_queuemodule.c#L133-L154).
-                fn get_inner(buf: &mut BufInner) -> Option<PyObjectRef> {
-                    let cap = buf.capacity();
-                    if buf.len() < (cap / 4) {
-                        // Items is less than 25% occupied, shrink it by 50%. This allows for
-                        // growth without immediately needing to resize the underlying items array
-                        buf.shrink_to(cap / 2)
-                    }
-                    buf.pop_front()
-                }
-            }
+            buf.pop_front()
         }
     }
 
