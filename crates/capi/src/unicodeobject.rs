@@ -118,7 +118,7 @@ pub unsafe extern "C" fn PyUnicode_EqualToUTF8AndSize(
 
         let unicode = unsafe { &*unicode }.try_downcast_ref::<PyStr>(vm)?;
         let result = unsafe {
-            let slice = slice::from_raw_parts(string as _, size);
+            let slice = slice::from_raw_parts(string.cast(), size);
             str::from_utf8(slice)
         }
         .ok()

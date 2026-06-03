@@ -353,7 +353,8 @@ pub(crate) mod _hashlib {
         fn repr_str(zelf: &Py<Self>, _vm: &VirtualMachine) -> PyResult<String> {
             Ok(format!(
                 "<{} HMAC object @ {:#x}>",
-                zelf.algo_name, zelf as *const _ as usize
+                zelf.algo_name,
+                core::ptr::from_ref(zelf) as usize
             ))
         }
     }
@@ -452,7 +453,8 @@ pub(crate) mod _hashlib {
         fn repr_str(zelf: &Py<Self>, _vm: &VirtualMachine) -> PyResult<String> {
             Ok(format!(
                 "<{} _hashlib.HASH object @ {:#x}>",
-                zelf.name, zelf as *const _ as usize
+                zelf.name,
+                core::ptr::from_ref(zelf) as usize
             ))
         }
     }
@@ -551,7 +553,8 @@ pub(crate) mod _hashlib {
         fn repr_str(zelf: &Py<Self>, _vm: &VirtualMachine) -> PyResult<String> {
             Ok(format!(
                 "<{} _hashlib.HASHXOF object @ {:#x}>",
-                zelf.name, zelf as *const _ as usize
+                zelf.name,
+                core::ptr::from_ref(zelf) as usize
             ))
         }
     }

@@ -23,7 +23,7 @@ pub unsafe extern "C" fn PyBytes_FromStringAndSize(
             unsafe { data.set_len(len) };
             data
         } else {
-            unsafe { core::slice::from_raw_parts(bytes as *const u8, len) }.to_vec()
+            unsafe { core::slice::from_raw_parts(bytes.cast_const(), len) }.to_vec()
         };
 
         Ok(vm.ctx.new_bytes(data))

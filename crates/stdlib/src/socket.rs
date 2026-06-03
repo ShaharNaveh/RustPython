@@ -2370,7 +2370,7 @@ mod _socket {
             .map(|s| s.to_cstring(vm))
             .transpose()?;
         let cstr_proto = cstr_opt_as_ptr(&cstr_proto);
-        let serv = unsafe { c::getservbyname(cstr_name.as_ptr() as _, cstr_proto as _) };
+        let serv = unsafe { c::getservbyname(cstr_name.as_ptr().cast(), cstr_proto.cast()) };
         if serv.is_null() {
             return Err(vm.new_os_error("service/proto not found".to_owned()));
         }
@@ -2392,16 +2392,16 @@ mod _socket {
             .map(|s| s.to_cstring(vm))
             .transpose()?;
         let cstr_proto = cstr_opt_as_ptr(&cstr_proto);
-        let serv = unsafe { c::getservbyport(port.to_be() as _, cstr_proto as _) };
+        let serv = unsafe { c::getservbyport(port.to_be() as _, cstr_proto.cast()) };
         if serv.is_null() {
             return Err(vm.new_os_error("port/proto not found".to_owned()));
         }
-        let s = unsafe { ffi::CStr::from_ptr((*serv).s_name as _) };
+        let s = unsafe { ffi::CStr::from_ptr((*serv).s_name.cast_const()) };
         Ok(s.to_string_lossy().into_owned())
     }
 
     unsafe fn slice_as_uninit<T>(v: &mut [T]) -> &mut [MaybeUninit<T>] {
-        unsafe { &mut *(v as *mut [T] as *mut [MaybeUninit<T>]) }
+        unsafe { &mut *(core::ptr::from_mut::<[T]>(v) as *mut [MaybeUninit<T>]) }
     }
 
     enum IoOrPyException {
@@ -2757,7 +2757,7 @@ mod _socket {
     #[pyfunction]
     fn getprotobyname(name: PyStrRef, vm: &VirtualMachine) -> PyResult {
         let cstr = name.to_cstring(vm)?;
-        let proto = unsafe { c::getprotobyname(cstr.as_ptr() as _) };
+        let proto = unsafe { c::getprotobyname(cstr.as_ptr().cast()) };
         if proto.is_null() {
             return Err(vm.new_os_error("protocol not found".to_owned()));
         }
@@ -2848,7 +2848,7 @@ mod _socket {
             let name = name.to_cstring(vm)?;
             // in case 'if_nametoindex' does not set errno
             rustpython_host_env::os::set_errno(libc::ENODEV);
-            let ret = unsafe { c::if_nametoindex(name.as_ptr() as _) };
+            let ret = unsafe { c::if_nametoindex(name.as_ptr().cast()) };
             if ret == 0 {
                 Err(vm.new_last_errno_error())
             } else {
@@ -2873,7 +2873,7 @@ mod _socket {
             if ret.is_null() {
                 Err(vm.new_last_errno_error())
             } else {
-                let buf = unsafe { ffi::CStr::from_ptr(buf.as_ptr() as _) };
+                let buf = unsafe { ffi::CStr::from_ptr(buf.as_ptr().cast()) };
                 Ok(buf.to_string_lossy().into_owned())
             }
         }

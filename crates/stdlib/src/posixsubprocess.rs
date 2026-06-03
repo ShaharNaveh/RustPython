@@ -105,9 +105,11 @@ impl<'a, T: AsRef<CStr>> FromIterator<&'a T> for CharPtrVec<'a> {
 
 impl<'a> Deref for CharPtrVec<'a> {
     type Target = CharPtrSlice<'a>;
+
     fn deref(&self) -> &Self::Target {
         unsafe {
-            &*(self.vec.as_slice() as *const [*const libc::c_char] as *const CharPtrSlice<'a>)
+            &*(core::ptr::from_ref::<[*const libc::c_char]>(self.vec.as_slice())
+                as *const CharPtrSlice<'a>)
         }
     }
 }

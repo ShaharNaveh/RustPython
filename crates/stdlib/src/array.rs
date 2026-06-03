@@ -240,9 +240,12 @@ pub mod array {
                 fn get_bytes_mut(&mut self) -> &mut [u8] {
                     match self {
                         $(ArrayContentType::$n(v) => {
-                            // safe because we're just reading memory as bytes
+                            #[allow(clippy::ptr_cast_constness, reason="Needs to be u8 for all cases")]
                             let ptr = v.as_ptr() as *mut u8;
+
                             let ptr_len = v.len() * core::mem::size_of::<$t>();
+                            // SAFETY:
+                            // safe because we're just reading memory as bytes.
                             unsafe { core::slice::from_raw_parts_mut(ptr, ptr_len) }
                         })*
                     }
@@ -262,7 +265,7 @@ pub mod array {
                                     return Ok(pos + start);
                                 }
                             }
-                            Err(vm.new_value_error("array.index(x): x not in array".to_owned()))
+                            Err(vm.new_value_error("array.index(x): x not in array"))
                         })*
                     }
                 }
@@ -782,7 +785,7 @@ pub mod array {
                 // safe because every configuration of bytes for the types we support are valid
                 let utf16 = unsafe {
                     core::slice::from_raw_parts(
-                        bytes.as_ptr() as *const u16,
+                        bytes.as_ptr().cast::<u16>(),
                         bytes.len() / core::mem::size_of::<u16>(),
                     )
                 };
@@ -791,7 +794,7 @@ pub mod array {
                 // safe because every configuration of bytes for the types we support are valid
                 let chars = unsafe {
                     core::slice::from_raw_parts(
-                        bytes.as_ptr() as *const u32,
+                        bytes.as_ptr().cast::<u32>(),
                         bytes.len() / core::mem::size_of::<u32>(),
                     )
                 };
