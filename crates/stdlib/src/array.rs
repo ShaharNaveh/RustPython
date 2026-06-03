@@ -122,7 +122,7 @@ pub mod array {
                     match self {
                         $(ArrayContentType::$n(v) => {
                         let i = v.wrap_index(i).ok_or_else(|| {
-                            vm.new_index_error("pop index out of range".to_owned())
+                            vm.new_index_error("pop index out of range")
                         })?;
                             v.remove(i).to_pyresult(vm)
                         })*
@@ -172,7 +172,7 @@ pub mod array {
                                     return Ok(());
                                 }
                             }
-                            Err(vm.new_value_error("array.remove(x): x not in array".to_owned()))
+                            Err(vm.new_value_error("array.remove(x): x not in array"))
                         })*
                     }
                 }
@@ -181,12 +181,17 @@ pub mod array {
                     match self {
                         $(ArrayContentType::$n(v) => {
                             if v.is_empty() {
-                                // safe because every configuration of bytes for the types we
-                                // support are valid
                                 let b = core::mem::ManuallyDrop::new(b);
+                                #[allow(
+                                    clippy::ptr_cast_constness,
+                                    reason="Suggestion does not work here",
+                                )]
                                 let ptr = b.as_ptr() as *mut $t;
                                 let len = b.len() / core::mem::size_of::<$t>();
                                 let capacity = b.capacity() / core::mem::size_of::<$t>();
+                                // SAFETY:
+                                // safe because every configuration of bytes for the types
+                                // we support are valid
                                 *v = unsafe { Vec::from_raw_parts(ptr, len, capacity) };
                             } else {
                                 self.frombytes(&b);
@@ -198,11 +203,12 @@ pub mod array {
                 fn frombytes(&mut self, b: &[u8]) {
                     match self {
                         $(ArrayContentType::$n(v) => {
-                            // safe because every configuration of bytes for the types we
-                            // support are valid
                             if b.len() > 0 {
-                                let ptr = b.as_ptr() as *const $t;
+                                let ptr = b.as_ptr().cast::<$t>();
                                 let ptr_len = b.len() / core::mem::size_of::<$t>();
+                                // SAFETY:
+                                // safe because every configuration of bytes for the types
+                                // we support are valid
                                 let slice = unsafe { core::slice::from_raw_parts(ptr, ptr_len) };
                                 v.extend_from_slice(slice);
                             }
@@ -229,9 +235,15 @@ pub mod array {
                 fn get_bytes(&self) -> &[u8] {
                     match self {
                         $(ArrayContentType::$n(v) => {
-                            // safe because we're just reading memory as bytes
+                            #[allow(
+                                clippy::ptr_as_ptr,
+                                reason="Needs to be u8 for all cases",
+                            )]
                             let ptr = v.as_ptr() as *const u8;
                             let ptr_len = v.len() * core::mem::size_of::<$t>();
+
+                            // SAFETY:
+                            // safe because we're just reading memory as bytes.
                             unsafe { core::slice::from_raw_parts(ptr, ptr_len) }
                         })*
                     }
@@ -240,10 +252,13 @@ pub mod array {
                 fn get_bytes_mut(&mut self) -> &mut [u8] {
                     match self {
                         $(ArrayContentType::$n(v) => {
-                            #[allow(clippy::ptr_cast_constness, reason="Needs to be u8 for all cases")]
+                            #[allow(
+                                clippy::ptr_cast_constness,
+                                reason="Needs to be u8 for all cases",
+                            )]
                             let ptr = v.as_ptr() as *mut u8;
-
                             let ptr_len = v.len() * core::mem::size_of::<$t>();
+
                             // SAFETY:
                             // safe because we're just reading memory as bytes.
                             unsafe { core::slice::from_raw_parts_mut(ptr, ptr_len) }
