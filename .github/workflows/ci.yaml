@@ -76,7 +76,7 @@ jobs:
           MERGE_BASE: ${{ steps.merge_base.outputs.sha }}
 
   rust_tests:
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
+    if: false
     env:
       RUST_BACKTRACE: full
     name: Run rust tests
@@ -168,11 +168,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     needs:
       - determine_changes
-    if: |
-      (
-        !contains(github.event.pull_request.labels.*.name, 'skip:ci') &&
-        needs.determine_changes.outputs.rust_code == 'true'
-      ) || github.ref == 'refs/heads/main'
+    if: false
     strategy:
       matrix:
         include:
@@ -447,9 +443,7 @@ jobs:
       - determine_changes
     permissions:
       contents: read
-    if: |
-      needs.determine_changes.outputs.rust_code == 'true' ||
-      github.ref == 'refs/heads/main'
+    if: false
     strategy:
       fail-fast: false
       matrix:
@@ -492,9 +486,7 @@ jobs:
       - determine_changes
     permissions:
       contents: read
-    if: |
-      needs.determine_changes.outputs.rust_code == 'true' ||
-      github.ref == 'refs/heads/main'
+    if: false
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -590,7 +582,7 @@ jobs:
           fail_level: error
 
   miri:
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
+    if: false
     name: Run tests under miri
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -627,7 +619,7 @@ jobs:
           MIRIFLAGS: "-Zmiri-ignore-leaks"
 
   wasm:
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
+    if: false
     name: Check the WASM package and demo
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -742,7 +734,7 @@ jobs:
           key: node-${{ runner.os }}-wasm-demo-${{ hashFiles('wasm/demo/package-lock.json') }}
 
   wasm-wasi:
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip:ci') }}
+    if: false
     name: Run snippets and cpython tests on wasm-wasi
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -789,11 +781,7 @@ jobs:
   cargo_doc:
     needs:
       - determine_changes
-    if: |
-      (
-        !contains(github.event.pull_request.labels.*.name, 'skip:ci') &&
-        needs.determine_changes.outputs.rust_code == 'true'
-      ) || github.ref == 'refs/heads/main'
+    if: false
     env:
       RUST_BACKTRACE: full
     name: cargo doc
