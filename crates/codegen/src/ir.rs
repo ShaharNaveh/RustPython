@@ -1,4 +1,4 @@
-use core::ops;
+use core::ops::{Deref, DerefMut, Index, IndexMut};
 
 use crate::{IndexMap, IndexSet, error::InternalError};
 use malachite_bigint::BigInt;
@@ -141,7 +141,7 @@ impl ConstantPool {
     }
 }
 
-impl ops::Index<usize> for ConstantPool {
+impl Index<usize> for ConstantPool {
     type Output = ConstantData;
 
     fn index(&self, idx: usize) -> &Self::Output {
@@ -190,44 +190,28 @@ impl BlockIdx {
         Self(value)
     }
 
+    /// Returns the inner [`u32`] value.
+    #[must_use]
+    pub const fn as_u32(self) -> u32 {
+        self.0
+    }
+
     /// Returns the inner value as a [`usize`].
     #[must_use]
-    pub const fn idx(self) -> usize {
+    pub const fn as_usize(self) -> usize {
         self.0 as usize
     }
 }
 
 impl From<BlockIdx> for u32 {
     fn from(block_idx: BlockIdx) -> Self {
-        block_idx.0
+        block_idx.as_u32()
     }
 }
 
-impl ops::Index<BlockIdx> for [Block] {
-    type Output = Block;
-
-    fn index(&self, idx: BlockIdx) -> &Block {
-        &self[idx.idx()]
-    }
-}
-
-impl ops::IndexMut<BlockIdx> for [Block] {
-    fn index_mut(&mut self, idx: BlockIdx) -> &mut Block {
-        &mut self[idx.idx()]
-    }
-}
-
-impl ops::Index<BlockIdx> for Vec<Block> {
-    type Output = Block;
-
-    fn index(&self, idx: BlockIdx) -> &Block {
-        &self[idx.idx()]
-    }
-}
-
-impl ops::IndexMut<BlockIdx> for Vec<Block> {
-    fn index_mut(&mut self, idx: BlockIdx) -> &mut Block {
-        &mut self[idx.idx()]
+impl From<BlockIdx> for usize {
+    fn from(block_idx: BlockIdx) -> Self {
+        block_idx.as_usize()
     }
 }
 
@@ -1311,6 +1295,73 @@ impl Block {
     #[must_use]
     pub(crate) const fn is_empty(&self) -> bool {
         self.instruction_used == 0
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+struct Blocks(Vec<Block>);
+
+impl From<Vec<Block>> for Blocks {
+    fn from(value: Vec<Block>) -> Self {
+        Self(value)
+    }
+}
+
+impl From<Box<[Block]>> for Blocks {
+    fn from(value: Box<[Block]>) -> Self {
+        Self(value.into())
+    }
+}
+
+impl From<&[Block]> for Blocks {
+    fn from(value: &[Block]) -> Self {
+        Self(value.to_vec())
+    }
+}
+
+impl From<&mut [Block]> for Blocks {
+    fn from(value: &mut [Block]) -> Self {
+        Self(value.to_vec())
+    }
+}
+
+impl<const N: usize> From<[Block; N]> for Blocks {
+    fn from(value: [Block; N]) -> Self {
+        Self(value.into())
+    }
+}
+
+impl<const N: usize> From<&[Block; N]> for Blocks {
+    fn from(value: &[Block; N]) -> Self {
+        Self(value.to_vec())
+    }
+}
+
+impl Deref for Blocks {
+    type Target = [Block];
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Blocks {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl Index<BlockIdx> for Blocks {
+    type Output = Block;
+
+    fn index(&self, block_idx: BlockIdx) -> &Self::Output {
+        &self[block_idx.as_usize()]
+    }
+}
+
+impl IndexMut<BlockIdx> for Blocks {
+    fn index_mut(&mut self, block_idx: BlockIdx) -> &mut Self::Output {
+        &mut self[block_idx.as_usize()]
     }
 }
 
