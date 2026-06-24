@@ -355,6 +355,13 @@ mod decl {
     #[pyattr]
     const EPOLLET: u32 = libc::EPOLLET as u32;
 
+    #[pyattr]
+    use libc::{PIPE_BUF, POLLRDBAND, POLLRDHUP, POLLRDNORM, POLLWRBAND, POLLWRNORM};
+
+    #[cfg(target_os = "aix")]
+    #[pyattr]
+    use libc::POLLMSG;
+
     #[cfg(any(target_os = "linux", target_os = "android", target_os = "redox"))]
     pub(super) mod epoll {
         use super::*;
