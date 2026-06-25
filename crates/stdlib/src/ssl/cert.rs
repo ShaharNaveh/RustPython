@@ -55,7 +55,6 @@ const ALL_SIGNATURE_SCHEMES: &[SignatureScheme] = &[
 /// across the codebase.
 mod cert_error {
     use alloc::sync::Arc;
-    use core::fmt::{Debug, Display};
     use std::io;
 
     /// Create InvalidData error with formatted message
@@ -65,7 +64,10 @@ mod cert_error {
 
     /// PEM parsing error variants
     pub(super) mod pem {
-        use super::*;
+        use core::fmt::{Debug, Display};
+        use std::io;
+
+        use super::invalid_data;
 
         pub(crate) fn no_start_line(context: &str) -> io::Error {
             invalid_data(format!("no start line: {context}"))
@@ -86,7 +88,10 @@ mod cert_error {
 
     /// DER parsing error variants
     pub(super) mod der {
-        use super::*;
+        use core::fmt::Display;
+        use std::io;
+
+        use super::invalid_data;
 
         pub(crate) fn not_enough_data(context: &str) -> io::Error {
             invalid_data(format!("not enough data: {context}"))
@@ -99,7 +104,10 @@ mod cert_error {
 
     /// Private key error variants
     pub(super) mod key {
-        use super::*;
+        use core::fmt::Display;
+        use std::io;
+
+        use super::invalid_data;
 
         pub(crate) fn not_found(context: &str) -> io::Error {
             invalid_data(format!("No private key found in {context}"))

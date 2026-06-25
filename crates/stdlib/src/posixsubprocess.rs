@@ -20,10 +20,12 @@ pub(crate) use _posixsubprocess::module_def;
 
 #[pymodule]
 mod _posixsubprocess {
-    use rustpython_vm::{AsObject, TryFromBorrowedObject};
+    use rustpython_vm::{
+        AsObject, PyResult, TryFromBorrowedObject, VirtualMachine, convert::IntoPyException,
+    };
 
-    use super::*;
-    use crate::vm::{PyResult, VirtualMachine, convert::IntoPyException};
+    use super::{CharPtrVec, ForkExecArgs, ProcArgs, RawGid, exec};
+    use rustpython_host_env::posix as host_posix;
 
     #[pyfunction]
     fn fork_exec(args: ForkExecArgs<'_>, vm: &VirtualMachine) -> PyResult<libc::pid_t> {

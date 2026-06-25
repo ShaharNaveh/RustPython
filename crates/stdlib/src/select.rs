@@ -2,11 +2,8 @@
 
 pub(crate) use decl::module_def;
 
-use crate::vm::{
-    PyObject, PyObjectRef, PyResult, TryFromObject, VirtualMachine, builtins::PyListRef,
-};
-use rustpython_host_env::select::{self as host_select, FdSet, RawFd, platform::FD_SETSIZE};
-use std::io;
+use rustpython_host_env::select::RawFd;
+use rustpython_vm::{PyObjectRef, PyResult, TryFromObject, VirtualMachine};
 
 #[derive(Traverse)]
 struct Selectable {
@@ -31,14 +28,20 @@ impl TryFromObject for Selectable {
 
 #[pymodule(name = "select")]
 mod decl {
-    use super::*;
+
+    use std::io;
+
     use crate::vm::{
-        Py, PyObjectRef, PyResult, VirtualMachine,
-        builtins::{PyModule, PyTypeRef},
+        Py, PyObject, PyObjectRef, PyResult, VirtualMachine,
+        builtins::{PyListRef, PyModule, PyTypeRef},
         convert::ToPyException,
         function::{Either, OptionalOption},
         stdlib::time,
     };
+
+    use rustpython_host_env::select::{self as host_select, FdSet, platform::FD_SETSIZE};
+
+    use super::Selectable;
 
     #[expect(clippy::unnecessary_wraps, reason = "Needs to comply with a signature")]
     pub(crate) fn module_exec(vm: &VirtualMachine, module: &Py<PyModule>) -> PyResult<()> {
@@ -174,9 +177,8 @@ mod decl {
 
     #[cfg(unix)]
     pub(super) mod poll {
-        use super::*;
         use crate::vm::{
-            AsObject, PyPayload,
+            AsObject, PyObjectRef, PyPayload, PyResult, TryFromObject, VirtualMachine,
             builtins::PyFloat,
             common::lock::PyMutex,
             convert::{IntoPyException, ToPyObject},
@@ -186,6 +188,8 @@ mod decl {
         use core::{convert::TryFrom, time::Duration};
         use num_traits::{Signed, ToPrimitive};
         use std::time::Instant;
+
+        use rustpython_host_env::select::{self as host_select};
 
         #[derive(Default)]
         pub(super) struct TimeoutArg<const MILLIS: bool>(pub Option<Duration>);
@@ -357,10 +361,9 @@ mod decl {
 
     #[cfg(any(target_os = "linux", target_os = "android", target_os = "redox"))]
     pub(super) mod epoll {
-        use super::*;
         use crate::vm::{
-            Py, PyPayload, PyRef,
-            builtins::PyType,
+            Py, PyPayload, PyRef, PyResult, VirtualMachine,
+            builtins::{PyListRef, PyType, PyTypeRef},
             common::lock::{PyRwLock, PyRwLockReadGuard},
             convert::{IntoPyException, ToPyObject},
             function::OptionalArg,
@@ -370,6 +373,10 @@ mod decl {
         use core::ops::Deref;
         use std::os::fd::{AsRawFd, OwnedFd};
         use std::time::Instant;
+
+        use rustpython_host_env::select::{self as host_select};
+
+        use super::poll;
 
         #[pyclass(module = "select", name = "epoll")]
         #[derive(Debug, rustpython_vm::PyPayload)]
