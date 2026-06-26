@@ -1595,7 +1595,10 @@ pub mod sys {
 
     impl HashInfoData {
         const INFO: Self = {
-            use rustpython_common::hash::*;
+            use rustpython_common::hash::{
+                ALGO, HASH_BITS, IMAG, INF, MODULUS, NAN, PyHash, SEED_BITS,
+            };
+
             Self {
                 width: core::mem::size_of::<PyHash>() * 8,
                 modulus: MODULUS,

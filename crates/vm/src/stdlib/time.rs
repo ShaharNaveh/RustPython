@@ -37,18 +37,25 @@ mod decl {
 
     #[allow(dead_code)]
     pub(super) const SEC_TO_MS: i64 = host_time::SEC_TO_MS;
+
     #[allow(dead_code)]
     pub(super) const MS_TO_US: i64 = host_time::MS_TO_US;
+
     #[allow(dead_code)]
     pub(super) const SEC_TO_US: i64 = host_time::SEC_TO_US;
+
     #[allow(dead_code)]
     pub(super) const US_TO_NS: i64 = host_time::US_TO_NS;
+
     #[allow(dead_code)]
     pub(super) const MS_TO_NS: i64 = host_time::MS_TO_NS;
+
     #[allow(dead_code)]
     pub(super) const SEC_TO_NS: i64 = host_time::SEC_TO_NS;
+
     #[allow(dead_code)]
     pub(super) const NS_TO_MS: i64 = host_time::NS_TO_MS;
+
     #[allow(dead_code)]
     pub(super) const NS_TO_US: i64 = host_time::NS_TO_US;
 
@@ -890,8 +897,10 @@ mod decl {
     }
 
     #[cfg(any(unix, windows))]
-    #[allow(unused_imports)]
-    use super::platform::*;
+    use super::platform::{
+        current_time_t, get_monotonic_time, get_perf_time, get_process_time, get_thread_time,
+        gmtime_from_timestamp, localtime_from_timestamp, unix_mktime,
+    };
 
     #[expect(clippy::unnecessary_wraps, reason = "Needs to comply with a signature")]
     pub(crate) fn module_exec(
@@ -910,15 +919,16 @@ mod decl {
 #[cfg(unix)]
 #[pymodule(sub)]
 mod platform {
-    #[allow(unused_imports)]
-    use super::decl::{SEC_TO_NS, StructTimeData, US_TO_NS};
-    #[cfg_attr(target_os = "macos", allow(unused_imports))]
+    use super::decl::StructTimeData;
+
     use crate::{
         PyObject, PyRef, PyResult, TryFromBorrowedObject, VirtualMachine,
         builtins::{PyNamespace, PyUtf8StrRef},
         convert::IntoPyException,
     };
+
     use core::time::Duration;
+
     #[cfg(any(
         target_os = "illumos",
         target_os = "netbsd",
@@ -926,11 +936,13 @@ mod platform {
         target_os = "solaris",
     ))]
     use rustpython_host_env::resource as host_resource;
+
     use rustpython_host_env::time::{self as host_time, ClockId};
 
     #[cfg(target_os = "solaris")]
     #[pyattr]
     use libc::CLOCK_HIGHRES;
+
     #[cfg(not(any(
         target_os = "illumos",
         target_os = "netbsd",
@@ -940,6 +952,7 @@ mod platform {
     )))]
     #[pyattr]
     use libc::CLOCK_PROCESS_CPUTIME_ID;
+
     #[cfg(not(any(
         target_os = "illumos",
         target_os = "netbsd",
@@ -949,11 +962,14 @@ mod platform {
     )))]
     #[pyattr]
     use libc::CLOCK_THREAD_CPUTIME_ID;
+
     #[cfg(target_os = "linux")]
     #[pyattr]
     use libc::{CLOCK_BOOTTIME, CLOCK_MONOTONIC_RAW, CLOCK_TAI};
+
     #[pyattr]
     use libc::{CLOCK_MONOTONIC, CLOCK_REALTIME};
+
     #[cfg(any(target_os = "freebsd", target_os = "openbsd", target_os = "dragonfly"))]
     #[pyattr]
     use libc::{CLOCK_PROF, CLOCK_UPTIME};
@@ -1051,8 +1067,10 @@ mod platform {
         rustpython_host_env::time::clock_settime(clk_id, time).map_err(|e| e.into_pyexception(vm))
     }
 
-    #[cfg(not(target_os = "redox"))]
-    #[cfg(any(not(target_vendor = "apple"), target_os = "macos"))]
+    #[cfg(all(
+        any(not(target_vendor = "apple"), target_os = "macos"),
+        not(target_os = "redox")
+    ))]
     #[cfg_attr(target_env = "musl", allow(deprecated))]
     #[pyfunction]
     fn clock_settime_ns(clk_id: ClockId, time: libc::time_t, vm: &VirtualMachine) -> PyResult<()> {
@@ -1163,6 +1181,8 @@ mod platform {
         target_os = "openbsd",
     ))]
     pub(super) fn get_process_time(vm: &VirtualMachine) -> PyResult<Duration> {
+        use super::decl::{SEC_TO_NS, US_TO_NS};
+
         fn from_timeval(tv: libc::timeval, vm: &VirtualMachine) -> PyResult<i64> {
             (|tv: libc::timeval| {
                 let t = tv.tv_sec.checked_mul(SEC_TO_NS)?;

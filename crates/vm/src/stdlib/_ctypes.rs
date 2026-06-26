@@ -1041,7 +1041,10 @@ pub(crate) mod _ctypes {
         vm: &VirtualMachine,
         module: &Py<crate::builtins::PyModule>,
     ) -> PyResult<()> {
-        use super::*;
+        use super::{
+            PyCArray, PyCData, PyCField, PyCPointer, PyCSimple, PyCSimpleType, PyCStructure,
+            PyCUnion, PyClassImpl, array, function, pointer, structure, union,
+        };
 
         __module_exec(vm, module);
 

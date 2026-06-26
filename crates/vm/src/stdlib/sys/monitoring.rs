@@ -1,6 +1,6 @@
 use crate::{
     AsObject, PyObjectRef, PyPayload, PyRef, PyResult, VirtualMachine,
-    builtins::{PyCode, PyDictRef, PyNamespace, PyUtf8StrRef, code::CoMonitoringData},
+    builtins::{PyCode, PyDictRef, code::CoMonitoringData},
     function::FuncArgs,
 };
 use core::sync::atomic::Ordering;
@@ -1110,7 +1110,12 @@ pub(crate) fn fire_branch_right(
 
 #[pymodule(sub)]
 pub(super) mod sys_monitoring {
-    use super::*;
+    use crate::{
+        AsObject, PyObjectRef, PyPayload, PyRef, PyResult, VirtualMachine,
+        builtins::{PyDictRef, PyNamespace, PyUtf8StrRef},
+    };
+
+    use super::EVENT_NAMES;
 
     #[pyclass(no_attr, module = "sys.monitoring", name = "_Sentinel")]
     #[derive(Debug, PyPayload)]
@@ -1121,10 +1126,13 @@ pub(super) mod sys_monitoring {
 
     #[pyattr(name = "DEBUGGER_ID")]
     const DEBUGGER_ID: u8 = 0;
+
     #[pyattr(name = "COVERAGE_ID")]
     const COVERAGE_ID: u8 = 1;
+
     #[pyattr(name = "PROFILER_ID")]
     const PROFILER_ID: u8 = 2;
+
     #[pyattr(name = "OPTIMIZER_ID")]
     const OPTIMIZER_ID: u8 = 5;
 

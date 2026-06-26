@@ -1,10 +1,13 @@
-/*
- * I/O core tools.
- */
+//! I/O core tools.
 pub(crate) use _io::module_def;
+pub use _io::{OpenArgs, io_open as open};
 
 #[cfg(all(unix, feature = "threading", feature = "host_env"))]
 pub(crate) use _io::reinit_std_streams_after_fork;
+
+use rustpython_host_env::io as host_io;
+
+use crate::{AsObject, PyObject, PyObjectRef, PyResult, TryFromObject, VirtualMachine};
 
 cfg_select! {
     any(not(target_arch = "wasm32"), target_os = "wasi") => {
@@ -18,12 +21,6 @@ cfg_select! {
         const EAGAIN: i32 = 11; // Standard POSIX value
     }
 }
-
-use crate::{
-    AsObject, PyObject, PyObjectRef, PyResult, TryFromObject, VirtualMachine, builtins::PyModule,
-};
-pub use _io::{OpenArgs, io_open as open};
-use rustpython_host_env::io as host_io;
 
 fn file_closed(file: &PyObject, vm: &VirtualMachine) -> PyResult<bool> {
     file.get_attr("closed", vm)?.try_to_bool(vm)
@@ -113,13 +110,15 @@ impl std::os::fd::AsRawFd for Fildes {
 
 #[pymodule]
 mod _io {
-    use super::*;
+    use super::{EAGAIN, Offset, file_closed, host_io, iobase_finalize};
+
     use crate::{
         AsObject, Context, Py, PyObject, PyObjectRef, PyPayload, PyRef, PyResult,
         TryFromBorrowedObject, TryFromObject,
         builtins::{
             PyBaseExceptionRef, PyBool, PyByteArray, PyBytes, PyBytesRef, PyDict, PyMemoryView,
-            PyStr, PyStrRef, PyTuple, PyTupleRef, PyType, PyTypeRef, PyUtf8Str, PyUtf8StrRef,
+            PyModule, PyStr, PyStrRef, PyTuple, PyTupleRef, PyType, PyTypeRef, PyUtf8Str,
+            PyUtf8StrRef,
         },
         class::StaticType,
         common::lock::{
@@ -5358,7 +5357,13 @@ mod _io {
 #[cfg(feature = "host_env")]
 #[pymodule]
 mod fileio {
-    use super::{_io::*, Offset, iobase_finalize};
+    use super::{
+        _io::{
+            _RawIOBase, OptionalSize, get_offset, io_closed_error, iobase_close,
+            new_unsupported_operation, repr_file_obj_name,
+        },
+        Offset, iobase_finalize,
+    };
     use crate::host_env::crt_fd;
     use crate::{
         AsObject, Py, PyObject, PyObjectRef, PyPayload, PyRef, PyResult, TryFromObject,

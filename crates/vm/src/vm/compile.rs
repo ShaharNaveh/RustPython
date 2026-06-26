@@ -45,8 +45,7 @@ impl VirtualMachine {
 /// - `_PyTokenizer_warn_invalid_escape_sequence()` in `Parser/tokenizer/helpers.c`
 #[cfg(feature = "parser")]
 mod escape_warnings {
-    use super::*;
-    use crate::warn;
+    use crate::{VirtualMachine, warn};
     use ruff_python_ast::{self as ast, visitor::Visitor};
     use ruff_text_size::TextRange;
 
