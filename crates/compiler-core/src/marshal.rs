@@ -1,9 +1,16 @@
-use crate::{OneIndexed, SourceLocation, bytecode::*};
 use alloc::{boxed::Box, vec::Vec};
 use core::convert::Infallible;
+
 use malachite_bigint::{BigInt, Sign};
 use num_complex::Complex64;
+
 use rustpython_wtf8::Wtf8;
+
+use crate::{
+    OneIndexed, SourceLocation,
+    bytecode::*,
+    constant_data::{BytesInner, CodeInner, Complex, Frozenset, Integer, Slice, Tuple},
+};
 
 pub const FORMAT_VERSION: u32 = 5;
 
@@ -353,7 +360,7 @@ fn read_marshal_bytes<R: Read, Bag: ConstantBag>(
         let idx = rdr.read_u32()? as usize;
         let stored = resolve_ref(idx, refs)?;
         return match stored.borrow_constant() {
-            BorrowedConstant::Bytes { value } => Ok(value.to_vec()),
+            BorrowedConstant::Bytes(value) => Ok(value.to_vec()),
             _ => Err(MarshalError::BadType),
         };
     }
@@ -366,8 +373,7 @@ fn read_marshal_bytes<R: Read, Bag: ConstantBag>(
     let len = rdr.read_u32()?;
     let bytes = rdr.read_slice(len)?.to_vec();
     if let Some(idx) = slot {
-        refs[idx] =
-            Some(bag.make_constant::<Bag::Constant>(BorrowedConstant::Bytes { value: &bytes }));
+        refs[idx] = Some(bag.make_constant::<Bag::Constant>(BorrowedConstant::Bytes(&bytes)));
     }
     Ok(bytes)
 }
@@ -387,7 +393,7 @@ fn read_marshal_str<R: Read, Bag: ConstantBag>(
         let idx = rdr.read_u32()? as usize;
         let stored = resolve_ref(idx, refs)?;
         return match stored.borrow_constant() {
-            BorrowedConstant::Str { value } => Ok(value.to_string_lossy().into_owned()),
+            BorrowedConstant::Str(value) => Ok(value.to_string_lossy().into_owned()),
             _ => Err(MarshalError::BadType),
         };
     }
@@ -405,9 +411,9 @@ fn read_marshal_str<R: Read, Bag: ConstantBag>(
         _ => return Err(MarshalError::BadType),
     };
     if let Some(idx) = slot {
-        refs[idx] = Some(bag.make_constant::<Bag::Constant>(BorrowedConstant::Str {
-            value: Wtf8::new(owned.as_str()),
-        }));
+        refs[idx] = Some(
+            bag.make_constant::<Bag::Constant>(BorrowedConstant::Str(Wtf8::new(owned.as_str()))),
+        );
     }
     Ok(owned)
 }
@@ -426,10 +432,10 @@ fn read_marshal_str_vec<R: Read, Bag: ConstantBag>(
         let idx = rdr.read_u32()? as usize;
         let stored = resolve_ref(idx, refs)?;
         return match stored.borrow_constant() {
-            BorrowedConstant::Tuple { elements } => elements
+            BorrowedConstant::Tuple(elements) => elements
                 .iter()
                 .map(|c| match c.borrow_constant() {
-                    BorrowedConstant::Str { value } => Ok(value.to_string_lossy().into_owned()),
+                    BorrowedConstant::Str(value) => Ok(value.to_string_lossy().into_owned()),
                     _ => Err(MarshalError::BadType),
                 })
                 .collect(),
@@ -447,17 +453,14 @@ fn read_marshal_str_vec<R: Read, Bag: ConstantBag>(
         .map(|_| read_marshal_str(rdr, bag, refs))
         .collect::<Result<_>>()?;
     if let Some(idx) = slot {
-        let elements: Vec<Bag::Constant> = items
+        let elements = items
             .iter()
             .map(|s| {
-                bag.make_constant::<Bag::Constant>(BorrowedConstant::Str {
-                    value: Wtf8::new(s.as_str()),
-                })
+                bag.make_constant::<Bag::Constant>(BorrowedConstant::Str(Wtf8::new(s.as_str())))
             })
             .collect();
-        refs[idx] = Some(bag.make_constant::<Bag::Constant>(BorrowedConstant::Tuple {
-            elements: &elements,
-        }));
+
+        refs[idx] = Some(bag.make_constant::<Bag::Constant>(BorrowedConstant::Tuple(&elements)));
     }
     Ok(items)
 }
@@ -495,7 +498,7 @@ fn read_marshal_const_tuple<R: Read, Bag: ConstantBag>(
         let idx = rdr.read_u32()? as usize;
         let stored = resolve_ref(idx, refs)?;
         return match stored.borrow_constant() {
-            BorrowedConstant::Tuple { elements } => Ok(elements.iter().cloned().collect()),
+            BorrowedConstant::Tuple(elements) => Ok(elements.iter().cloned().collect()),
             _ => Err(MarshalError::BadType),
         };
     }
@@ -507,13 +510,14 @@ fn read_marshal_const_tuple<R: Read, Bag: ConstantBag>(
     };
     let slot = reserve_ref_slot(has_flag, refs);
     let child_depth = depth - 1;
-    let items: Vec<Bag::Constant> = (0..n)
+    let items = (0..n)
         .map(|_| read_const_value(rdr, bag, child_depth, refs))
         .collect::<Result<_>>()?;
+
     if let Some(idx) = slot {
-        refs[idx] =
-            Some(bag.make_constant::<Bag::Constant>(BorrowedConstant::Tuple { elements: &items }));
+        refs[idx] = Some(bag.make_constant::<Bag::Constant>(BorrowedConstant::Tuple(&items)));
     }
+
     Ok(items.into_iter().collect())
 }
 
@@ -566,7 +570,7 @@ pub trait MarshalBag: Copy {
 
     fn make_float(&self, value: f64) -> Self::Value;
 
-    fn make_complex(&self, value: Complex64) -> Self::Value;
+    fn make_complex<T: Into<Complex>>(&self, value: T) -> Self::Value;
 
     fn make_str(&self, value: &Wtf8) -> Self::Value;
 
@@ -729,12 +733,15 @@ pub trait MarshalBag: Copy {
     }
 }
 
-impl<Bag: ConstantBag> MarshalBag for Bag {
+impl<Bag> MarshalBag for Bag
+where
+    Bag: ConstantBag,
+{
     type Value = Bag::Constant;
     type ConstantBag = Self;
 
     fn make_bool(&self, value: bool) -> Self::Value {
-        self.make_constant::<Bag::Constant>(BorrowedConstant::Boolean { value })
+        self.make_constant::<Bag::Constant>(BorrowedConstant::Boolean(value))
     }
 
     fn make_none(&self) -> Self::Value {
@@ -746,19 +753,19 @@ impl<Bag: ConstantBag> MarshalBag for Bag {
     }
 
     fn make_float(&self, value: f64) -> Self::Value {
-        self.make_constant::<Bag::Constant>(BorrowedConstant::Float { value })
+        self.make_constant::<Bag::Constant>(BorrowedConstant::Float(value))
     }
 
-    fn make_complex(&self, value: Complex64) -> Self::Value {
-        self.make_constant::<Bag::Constant>(BorrowedConstant::Complex { value })
+    fn make_complex<T: Into<Complex>>(&self, value: T) -> Self::Value {
+        self.make_constant::<Bag::Constant>(BorrowedConstant::Complex(value.into()))
     }
 
     fn make_str(&self, value: &Wtf8) -> Self::Value {
-        self.make_constant::<Bag::Constant>(BorrowedConstant::Str { value })
+        self.make_constant::<Bag::Constant>(BorrowedConstant::Str(value))
     }
 
     fn make_bytes(&self, value: &[u8]) -> Self::Value {
-        self.make_constant::<Bag::Constant>(BorrowedConstant::Bytes { value })
+        self.make_constant::<Bag::Constant>(BorrowedConstant::Bytes(value))
     }
 
     fn make_int(&self, value: BigInt) -> Self::Value {
@@ -775,12 +782,8 @@ impl<Bag: ConstantBag> MarshalBag for Bag {
         stop: Self::Value,
         step: Self::Value,
     ) -> Result<Self::Value> {
-        let elements = [start, stop, step];
-        Ok(
-            self.make_constant::<Bag::Constant>(BorrowedConstant::Slice {
-                elements: &elements,
-            }),
-        )
+        let slice = Slice::new(start, stop, step);
+        Ok(self.make_constant::<Bag::Constant>(BorrowedConstant::Slice(&slice)))
     }
 
     fn make_code(
@@ -804,11 +807,7 @@ impl<Bag: ConstantBag> MarshalBag for Bag {
 
     fn make_frozenset(&self, it: impl Iterator<Item = Self::Value>) -> Result<Self::Value> {
         let elements: Vec<Self::Value> = it.collect();
-        Ok(
-            self.make_constant::<Bag::Constant>(BorrowedConstant::Frozenset {
-                elements: &elements,
-            }),
-        )
+        Ok(self.make_constant::<Bag::Constant>(BorrowedConstant::Frozenset(&elements.into())))
     }
 
     fn make_dict(
@@ -831,21 +830,21 @@ impl<Bag: ConstantBag> MarshalBag for Bag {
 
     fn bytes_from_value(&self, value: &Self::Value) -> Option<Vec<u8>> {
         match value.borrow_constant() {
-            BorrowedConstant::Bytes { value } => Some(value.to_vec()),
+            BorrowedConstant::Bytes(value) => Some(value.to_vec()),
             _ => None,
         }
     }
 
     fn str_from_value(&self, value: &Self::Value) -> Option<alloc::string::String> {
         match value.borrow_constant() {
-            BorrowedConstant::Str { value } => Some(value.to_string_lossy().into_owned()),
+            BorrowedConstant::Str(value) => Some(value.to_string_lossy().into_owned()),
             _ => None,
         }
     }
 
     fn tuple_elements_from_value(&self, value: &Self::Value) -> Option<Vec<Self::Value>> {
         match value.borrow_constant() {
-            BorrowedConstant::Tuple { elements } => Some(elements.to_vec()),
+            BorrowedConstant::Tuple(elements) => Some(elements.to_vec()),
             _ => None,
         }
     }
@@ -1253,46 +1252,52 @@ pub trait Dumpable: Sized {
 }
 
 pub enum DumpableValue<'a, D: Dumpable> {
-    Integer(&'a BigInt),
+    Integer(&'a Integer),
     Float(f64),
-    Complex(Complex64),
+    Complex(Complex),
     Boolean(bool),
     Str(&'a Wtf8),
-    Bytes(&'a [u8]),
-    Code(&'a CodeObject<D::Constant>),
-    Tuple(&'a [D]),
+    Bytes(&'a BytesInner),
+    Code(&'a CodeInner<D::Constant>),
+    Tuple(&'a Tuple<D>),
     None,
     Ellipsis,
     StopIter,
     List(&'a [D]),
     Set(&'a [D]),
-    Frozenset(&'a [D]),
+    Frozenset(&'a Frozenset<D>),
     Dict(&'a [(D, D)]),
-    Slice(&'a D, &'a D, &'a D),
+    Slice(&'a Slice<D>),
 }
 
-impl<'a, C: Constant> From<BorrowedConstant<'a, C>> for DumpableValue<'a, C> {
+impl<'a, C> From<BorrowedConstant<'a, C>> for DumpableValue<'a, C>
+where
+    C: Constant,
+    <C as Constant>::Name: Clone,
+{
     fn from(c: BorrowedConstant<'a, C>) -> Self {
         match c {
-            BorrowedConstant::Integer { value } => Self::Integer(value),
-            BorrowedConstant::Float { value } => Self::Float(value),
-            BorrowedConstant::Complex { value } => Self::Complex(value),
-            BorrowedConstant::Boolean { value } => Self::Boolean(value),
-            BorrowedConstant::Str { value } => Self::Str(value),
-            BorrowedConstant::Bytes { value } => Self::Bytes(value),
-            BorrowedConstant::Code { code } => Self::Code(code),
-            BorrowedConstant::Tuple { elements } => Self::Tuple(elements),
-            BorrowedConstant::Slice { elements } => {
-                Self::Slice(&elements[0], &elements[1], &elements[2])
-            }
-            BorrowedConstant::Frozenset { elements } => Self::Frozenset(elements),
+            BorrowedConstant::Integer(value) => Self::Integer(value),
+            BorrowedConstant::Float(value) => Self::Float(value),
+            BorrowedConstant::Complex(value) => Self::Complex(value),
+            BorrowedConstant::Boolean(value) => Self::Boolean(value),
+            BorrowedConstant::Str(value) => Self::Str(value),
+            BorrowedConstant::Bytes(value) => Self::Bytes(value),
+            BorrowedConstant::Code(code) => Self::Code(code),
+            BorrowedConstant::Tuple(elements) => Self::Tuple(elements),
+            BorrowedConstant::Slice(slice) => Self::Slice(slice),
+            BorrowedConstant::Frozenset(elements) => Self::Frozenset(elements),
             BorrowedConstant::None => Self::None,
             BorrowedConstant::Ellipsis => Self::Ellipsis,
         }
     }
 }
 
-impl<C: Constant> Dumpable for C {
+impl<C> Dumpable for C
+where
+    C: Constant,
+    <C as Constant>::Name: Clone,
+{
     type Error = Infallible;
     type Constant = Self;
 
@@ -1340,10 +1345,12 @@ pub(crate) fn write_vec<W: Write>(buf: &mut W, slice: &[u8]) {
     buf.write_slice(slice);
 }
 
-pub fn serialize_value<W: Write, D: Dumpable>(
-    buf: &mut W,
-    constant: DumpableValue<'_, D>,
-) -> Result<(), D::Error> {
+pub fn serialize_value<W, D>(buf: &mut W, constant: DumpableValue<'_, D>) -> Result<(), D::Error>
+where
+    W: Write,
+    D: Dumpable,
+    <<D as Dumpable>::Constant as Constant>::Name: Clone,
+{
     match constant {
         DumpableValue::Integer(int) => {
             if let Ok(val) = i32::try_from(int) {
@@ -1447,11 +1454,11 @@ pub fn serialize_value<W: Write, D: Dumpable>(
             }
             buf.write_u8(b'0'); // TYPE_NULL
         }
-        DumpableValue::Slice(start, stop, step) => {
+        DumpableValue::Slice(slice) => {
             buf.write_u8(Type::Slice as u8);
-            start.with_dump(|val| serialize_value(buf, val))??;
-            stop.with_dump(|val| serialize_value(buf, val))??;
-            step.with_dump(|val| serialize_value(buf, val))??;
+            slice.start.with_dump(|val| serialize_value(buf, val))??;
+            slice.stop.with_dump(|val| serialize_value(buf, val))??;
+            slice.step.with_dump(|val| serialize_value(buf, val))??;
         }
     }
     Ok(())
@@ -1461,7 +1468,12 @@ pub fn serialize_value<W: Write, D: Dumpable>(
 ///
 /// Split varnames/cellvars/freevars are reassembled into
 /// co_localsplusnames/co_localspluskinds.
-pub fn serialize_code<W: Write, C: Constant>(buf: &mut W, code: &CodeObject<C>) {
+pub fn serialize_code<W, C>(buf: &mut W, code: &CodeObject<C>)
+where
+    W: Write,
+    C: Constant,
+    <C as Constant>::Name: Clone,
+{
     serialize_code_with(buf, code, |buf, constant| {
         serialize_value(buf, constant.borrow_constant().into()).unwrap_or_else(|x| match x {});
         Ok::<(), core::convert::Infallible>(())
@@ -1896,11 +1908,11 @@ mod tests {
         }
     }
 
-    fn decode_tuple(hex: &str) -> Vec<ConstantData> {
+    fn decode_tuple(hex: &str) -> Tuple {
         let bytes = hex_to_bytes(hex);
         let value = deserialize_value(&mut &bytes[..], BasicBag).expect("decode failed");
         match value {
-            ConstantData::Tuple { elements } => elements,
+            ConstantData::Tuple(elements) => elements,
             other => panic!("expected Tuple, got {other:?}"),
         }
     }

@@ -1,6 +1,8 @@
 use alloc::{borrow::ToOwned, boxed::Box, string::String, vec::Vec};
 use core::{
-    fmt, hash, mem,
+    fmt,
+    hash::{Hash, Hasher},
+    mem,
     ops::{Deref, DerefMut, Index, IndexMut},
 };
 
@@ -12,6 +14,26 @@ use rustpython_wtf8::{Wtf8, Wtf8Buf};
 
 use crate::bytecode::{CodeObject, oparg};
 
+pub trait Constant: Sized + Clone {
+    type Name: AsRef<str>;
+
+    /// Does [`self`] contains a NaN.
+    fn contains_nan(&self) -> bool;
+
+    /// Transforms the given Constant to a BorrowedConstant
+    fn borrow_constant(&self) -> BorrowedConstant<'_, Self>;
+
+    /// Whether or not python would return True/False for the given constant data.
+    ///
+    /// ```py
+    /// bool(0) # False
+    /// bool(1) # True
+    /// bool([]) # False
+    /// bool(...) # True
+    /// ```
+    fn truthiness(&self) -> bool;
+}
+
 /// A Constant (which usually encapsulates data within it)
 ///
 /// # Examples
@@ -21,130 +43,56 @@ use crate::bytecode::{CodeObject, oparg};
 /// let b = ConstantData::Boolean {value: false};
 /// assert_ne!(a, b);
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum ConstantData {
-    Tuple {
-        elements: Vec<Self>,
-    },
-    Integer {
-        value: BigInt,
-    },
-    Float {
-        value: f64,
-    },
-    Complex {
-        value: Complex64,
-    },
-    Boolean {
-        value: bool,
-    },
-    Str {
-        value: Wtf8Buf,
-    },
-    Bytes {
-        value: Vec<u8>,
-    },
-    Code {
-        code: Box<CodeObject>,
-    },
-    /// Constant slice(start, stop, step)
-    Slice {
-        elements: Box<[Self; 3]>,
-    },
-    Frozenset {
-        elements: Vec<Self>,
-    },
+    Tuple(Tuple),
+    Integer(Integer),
+    Float(f64),
+    Complex(Complex),
+    Boolean(bool),
+    Str(Wtf8Buf),
+    Bytes(Bytes),
+    Code(Code),
+    Slice(Box<Slice>),
+    Frozenset(Frozenset),
     None,
     Ellipsis,
 }
 
-impl ConstantData {
-    /// Whether or not python would return True/False for the given constant data.
-    ///
-    /// ```py
-    /// bool(0) # False
-    /// bool(1) # True
-    /// bool([]) # False
-    /// bool(...) # True
-    /// ```
-    #[must_use]
-    pub fn truthiness(&self) -> bool {
-        match self {
-            Self::Tuple { elements } | Self::Frozenset { elements } => !elements.is_empty(),
-            Self::Integer { value } => !value.is_zero(),
-            Self::Float { value } => *value != 0.0,
-            Self::Complex { value } => value.re != 0.0 || value.im != 0.0,
-            Self::Boolean { value } => *value,
-            Self::Str { value } => !value.is_empty(),
-            Self::Bytes { value } => !value.is_empty(),
-            Self::Code { .. } | Self::Slice { .. } | Self::Ellipsis => true,
-            Self::None => false,
-        }
-    }
-}
-
-impl PartialEq for ConstantData {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Self::Integer { value: a }, Self::Integer { value: b }) => a == b,
-            (Self::Float { value: a }, Self::Float { value: b }) => a.to_bits() == b.to_bits(),
-            (Self::Complex { value: a }, Self::Complex { value: b }) => {
-                a.re.to_bits() == b.re.to_bits() && a.im.to_bits() == b.im.to_bits()
-            }
-            (Self::Boolean { value: a }, Self::Boolean { value: b }) => a == b,
-            (Self::Str { value: a }, Self::Str { value: b }) => a == b,
-            (Self::Bytes { value: a }, Self::Bytes { value: b }) => a == b,
-            (Self::Code { code: a }, Self::Code { code: b }) => {
-                core::ptr::eq(a.as_ref(), b.as_ref())
-            }
-            (Self::Tuple { elements: a }, Self::Tuple { elements: b }) => a == b,
-            (Self::Slice { elements: a }, Self::Slice { elements: b }) => a == b,
-            (Self::Frozenset { elements: a }, Self::Frozenset { elements: b }) => a == b,
-            (Self::None, Self::None) => true,
-            (Self::Ellipsis, Self::Ellipsis) => true,
-            _ => false,
-        }
-    }
-}
-
 impl Eq for ConstantData {}
 
-impl hash::Hash for ConstantData {
-    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+impl Hash for ConstantData {
+    fn hash<H: Hasher>(&self, state: &mut H) {
         mem::discriminant(self).hash(state);
 
         match self {
-            Self::Integer { value } => value.hash(state),
-            Self::Float { value } => value.to_bits().hash(state),
-            Self::Complex { value } => {
-                value.re.to_bits().hash(state);
-                value.im.to_bits().hash(state);
-            }
-            Self::Boolean { value } => value.hash(state),
-            Self::Str { value } => value.hash(state),
-            Self::Bytes { value } => value.hash(state),
-            Self::Code { code } => core::ptr::hash(code.as_ref(), state),
-            Self::Tuple { elements } => elements.hash(state),
-            Self::Slice { elements } => elements.hash(state),
-            Self::Frozenset { elements } => elements.hash(state),
-            Self::None => {}
-            Self::Ellipsis => {}
+            Self::Boolean(v) => v.hash(state),
+            Self::Bytes(bytes) => bytes.hash(state),
+            Self::Code(code) => core::ptr::hash(code.as_ref(), state),
+            Self::Complex(complex) => complex.hash(state),
+            Self::Float(value) => value.to_bits().hash(state),
+            Self::Frozenset(frozenset) => frozenset.hash(state),
+            Self::Integer(int) => int.hash(state),
+            Self::Slice(slice) => slice.hash(state),
+            Self::Str(s) => s.hash(state),
+            Self::Tuple(tup) => tup.hash(state),
+            Self::Ellipsis | Self::None => {}
         }
     }
 }
 
-/// A borrowed Constant
+/// A borrowed [`Constant`].
 pub enum BorrowedConstant<'a, C: Constant> {
-    Integer { value: &'a BigInt },
-    Float { value: f64 },
-    Complex { value: Complex64 },
-    Boolean { value: bool },
-    Str { value: &'a Wtf8 },
-    Bytes { value: &'a [u8] },
-    Code { code: &'a CodeObject<C> },
-    Tuple { elements: &'a [C] },
-    Slice { elements: &'a [C; 3] },
-    Frozenset { elements: &'a [C] },
+    Integer(&'a Integer),
+    Float(f64),
+    Complex(Complex),
+    Boolean(bool),
+    Str(&'a Wtf8),
+    Bytes(&'a BytesInner),
+    Code(&'a CodeInner<C>),
+    Tuple(&'a Tuple<C>),
+    Slice(&'a Slice<C>),
+    Frozenset(&'a Frozenset<C>),
     None,
     Ellipsis,
 }
@@ -160,16 +108,16 @@ impl<C: Constant> Clone for BorrowedConstant<'_, C> {
 impl<C: Constant> BorrowedConstant<'_, C> {
     pub fn fmt_display(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            BorrowedConstant::Integer { value } => write!(f, "{value}"),
-            BorrowedConstant::Float { value } => write!(f, "{value}"),
-            BorrowedConstant::Complex { value } => write!(f, "{value}"),
-            BorrowedConstant::Boolean { value } => {
+            BorrowedConstant::Integer(value) => write!(f, "{value}"),
+            BorrowedConstant::Float(value) => write!(f, "{value}"),
+            BorrowedConstant::Complex(value) => write!(f, "{value}"),
+            BorrowedConstant::Boolean(value) => {
                 write!(f, "{}", if *value { "True" } else { "False" })
             }
-            BorrowedConstant::Str { value } => write!(f, "{value:?}"),
-            BorrowedConstant::Bytes { value } => write!(f, r#"b"{}""#, value.escape_ascii()),
-            BorrowedConstant::Code { code } => write!(f, "{code:?}"),
-            BorrowedConstant::Tuple { elements } => {
+            BorrowedConstant::Str(value) => write!(f, "{value:?}"),
+            BorrowedConstant::Bytes(value) => write!(f, r#"b"{}""#, value.escape_ascii()),
+            BorrowedConstant::Code(code) => write!(f, "{code:?}"),
+            BorrowedConstant::Tuple(elements) => {
                 write!(f, "(")?;
                 let mut first = true;
                 for c in *elements {
@@ -182,16 +130,16 @@ impl<C: Constant> BorrowedConstant<'_, C> {
                 }
                 write!(f, ")")
             }
-            BorrowedConstant::Slice { elements } => {
+            BorrowedConstant::Slice(slice) => {
                 write!(f, "slice(")?;
-                elements[0].borrow_constant().fmt_display(f)?;
+                slice.start.borrow_constant().fmt_display(f)?;
                 write!(f, ", ")?;
-                elements[1].borrow_constant().fmt_display(f)?;
+                slice.stop.borrow_constant().fmt_display(f)?;
                 write!(f, ", ")?;
-                elements[2].borrow_constant().fmt_display(f)?;
+                slice.step.borrow_constant().fmt_display(f)?;
                 write!(f, ")")
             }
-            BorrowedConstant::Frozenset { elements } => {
+            BorrowedConstant::Frozenset(elements) => {
                 write!(f, "frozenset({{")?;
                 let mut first = true;
                 for c in *elements {
@@ -212,47 +160,37 @@ impl<C: Constant> BorrowedConstant<'_, C> {
     #[must_use]
     pub fn to_owned(self) -> ConstantData {
         match self {
-            BorrowedConstant::Integer { value } => ConstantData::Integer {
-                value: value.clone(),
-            },
-            BorrowedConstant::Float { value } => ConstantData::Float { value },
-            BorrowedConstant::Complex { value } => ConstantData::Complex { value },
-            BorrowedConstant::Boolean { value } => ConstantData::Boolean { value },
-            BorrowedConstant::Str { value } => ConstantData::Str {
-                value: value.to_owned(),
-            },
-            BorrowedConstant::Bytes { value } => ConstantData::Bytes {
-                value: value.to_owned(),
-            },
-            BorrowedConstant::Code { code } => ConstantData::Code {
-                code: Box::new(code.map_clone_bag(&BasicBag)),
-            },
-            BorrowedConstant::Tuple { elements } => ConstantData::Tuple {
-                elements: elements
+            BorrowedConstant::Integer(value) => ConstantData::Integer(value.clone()),
+            BorrowedConstant::Float(value) => ConstantData::Float(value),
+            BorrowedConstant::Complex(value) => ConstantData::Complex(value),
+            BorrowedConstant::Boolean(value) => ConstantData::Boolean(value),
+            BorrowedConstant::Str(value) => ConstantData::Str(value.to_owned()),
+            BorrowedConstant::Bytes(value) => ConstantData::Bytes(value.to_owned().into()),
+            BorrowedConstant::Code(code) => {
+                ConstantData::Code(code.map_clone_bag(&BasicBag).into())
+            }
+            BorrowedConstant::Tuple(elements) => ConstantData::Tuple(
+                elements
                     .iter()
                     .map(|c| c.borrow_constant().to_owned())
                     .collect(),
-            },
-            BorrowedConstant::Slice { elements } => ConstantData::Slice {
-                elements: Box::new(elements.each_ref().map(|c| c.borrow_constant().to_owned())),
-            },
-            BorrowedConstant::Frozenset { elements } => ConstantData::Frozenset {
-                elements: elements
+            ),
+            BorrowedConstant::Slice(slice) => ConstantData::Slice(Box::new(Slice {
+                start: slice.start.borrow_constant().to_owned(),
+                stop: slice.stop.borrow_constant().to_owned(),
+                step: slice.step.borrow_constant().to_owned(),
+            })),
+            BorrowedConstant::Frozenset(elements) => ConstantData::Frozenset(
+                elements
+                    .0
                     .iter()
                     .map(|c| c.borrow_constant().to_owned())
                     .collect(),
-            },
+            ),
             BorrowedConstant::None => ConstantData::None,
             BorrowedConstant::Ellipsis => ConstantData::Ellipsis,
         }
     }
-}
-
-pub trait Constant: Sized + Clone {
-    type Name: AsRef<str>;
-
-    /// Transforms the given Constant to a BorrowedConstant
-    fn borrow_constant(&self) -> BorrowedConstant<'_, Self>;
 }
 
 impl Constant for ConstantData {
@@ -260,18 +198,39 @@ impl Constant for ConstantData {
 
     fn borrow_constant(&self) -> BorrowedConstant<'_, Self> {
         match self {
-            Self::Integer { value } => BorrowedConstant::Integer { value },
-            Self::Float { value } => BorrowedConstant::Float { value: *value },
-            Self::Complex { value } => BorrowedConstant::Complex { value: *value },
-            Self::Boolean { value } => BorrowedConstant::Boolean { value: *value },
-            Self::Str { value } => BorrowedConstant::Str { value },
-            Self::Bytes { value } => BorrowedConstant::Bytes { value },
-            Self::Code { code } => BorrowedConstant::Code { code },
-            Self::Tuple { elements } => BorrowedConstant::Tuple { elements },
-            Self::Slice { elements } => BorrowedConstant::Slice { elements },
-            Self::Frozenset { elements } => BorrowedConstant::Frozenset { elements },
+            Self::Integer(value) => BorrowedConstant::Integer(value),
+            Self::Float(value) => BorrowedConstant::Float(*value),
+            Self::Complex(value) => BorrowedConstant::Complex(*value),
+            Self::Boolean(value) => BorrowedConstant::Boolean(*value),
+            Self::Str(value) => BorrowedConstant::Str(value),
+            Self::Bytes(value) => BorrowedConstant::Bytes(value),
+            Self::Code(code) => BorrowedConstant::Code(code),
+            Self::Tuple(elements) => BorrowedConstant::Tuple(elements),
+            Self::Slice(slice) => BorrowedConstant::Slice(slice),
+            Self::Frozenset(elements) => BorrowedConstant::Frozenset(elements),
             Self::None => BorrowedConstant::None,
             Self::Ellipsis => BorrowedConstant::Ellipsis,
+        }
+    }
+
+    fn contains_nan(&self) -> bool {
+        todo!()
+    }
+
+    fn truthiness(&self) -> bool {
+        match self {
+            Self::Tuple(value) => value.truthiness(),
+            Self::Frozenset(value) => value.truthiness(),
+            Self::Integer(value) => value.truthiness(),
+            Self::Float(value) => *value != 0.0,
+            Self::Complex(value) => value.truthiness(),
+            Self::Boolean(value) => *value,
+            Self::Str(value) => value.is_empty(),
+            Self::Bytes(value) => value.truthiness(),
+            Self::Code(_) => true,
+            Self::Slice(value) => value.truthiness(),
+            Self::Ellipsis => true,
+            Self::None => false,
         }
     }
 }
@@ -317,19 +276,15 @@ impl ConstantBag for BasicBag {
     }
 
     fn make_int(&self, value: BigInt) -> Self::Constant {
-        ConstantData::Integer { value }
+        ConstantData::Integer(value.into())
     }
 
     fn make_tuple(&self, elements: impl Iterator<Item = Self::Constant>) -> Self::Constant {
-        ConstantData::Tuple {
-            elements: elements.collect(),
-        }
+        ConstantData::Tuple(elements.collect())
     }
 
     fn make_code(&self, code: CodeObject<Self::Constant>) -> Self::Constant {
-        ConstantData::Code {
-            code: Box::new(code),
-        }
+        ConstantData::Code(code.into())
     }
 
     fn make_name(&self, name: &str) -> <Self::Constant as Constant>::Name {
@@ -387,5 +342,334 @@ impl<T> Index<oparg::VarNum> for [T] {
 impl<T> IndexMut<oparg::VarNum> for [T] {
     fn index_mut(&mut self, var_num: oparg::VarNum) -> &mut Self::Output {
         &mut self[var_num.as_usize()]
+    }
+}
+
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
+pub struct Complex(Complex64);
+
+impl From<Complex64> for Complex {
+    fn from(value: Complex64) -> Self {
+        Self(value)
+    }
+}
+
+impl Constant for Complex {
+    type Name = String;
+
+    fn contains_nan(&self) -> bool {
+        todo!()
+    }
+
+    fn borrow_constant(&self) -> BorrowedConstant<'_, Self> {
+        todo!()
+    }
+
+    fn truthiness(&self) -> bool {
+        self.re != 0.0 || self.im != 0.0
+    }
+}
+
+impl Deref for Complex {
+    type Target = Complex64;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Complex {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl fmt::Display for Complex {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl Eq for Complex {}
+
+impl Hash for Complex {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.re.to_bits().hash(state);
+        self.im.to_bits().hash(state);
+    }
+}
+
+pub type BytesInner = [u8];
+
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct Bytes(Box<BytesInner>);
+
+impl Constant for Bytes {
+    type Name = String;
+
+    fn contains_nan(&self) -> bool {
+        todo!()
+    }
+
+    fn borrow_constant(&self) -> BorrowedConstant<'_, Self> {
+        todo!()
+    }
+
+    fn truthiness(&self) -> bool {
+        !self.is_empty()
+    }
+}
+
+impl Deref for Bytes {
+    type Target = BytesInner;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl From<Vec<u8>> for Bytes {
+    fn from(value: Vec<u8>) -> Self {
+        Self(value.into())
+    }
+}
+
+/// Constant
+/// ```py
+/// slice(start, stop, step)
+/// ```
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct Slice<C = ConstantData> {
+    pub start: C,
+    pub stop: C,
+    pub step: C,
+}
+
+impl<C> Slice<C> {
+    #[must_use]
+    pub const fn new(start: C, stop: C, step: C) -> Self {
+        Self { start, stop, step }
+    }
+}
+
+impl Constant for Slice {
+    type Name = String;
+
+    fn contains_nan(&self) -> bool {
+        self.start.contains_nan() || self.stop.contains_nan() || self.stop.contains_nan()
+    }
+
+    fn borrow_constant(&self) -> BorrowedConstant<'_, Self> {
+        todo!()
+    }
+
+    fn truthiness(&self) -> bool {
+        true
+    }
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct Tuple<C = ConstantData>(Vec<C>);
+
+impl<T> IntoIterator for Tuple<T> {
+    type Item = T;
+    type IntoIter = alloc::vec::IntoIter<T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a Tuple<T> {
+    type Item = &'a T;
+    type IntoIter = core::slice::Iter<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
+    }
+}
+
+impl<T> FromIterator<T> for Tuple<T> {
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = T>,
+    {
+        Self(iter.into_iter().collect())
+    }
+}
+
+impl<T> From<Vec<T>> for Tuple<T> {
+    fn from(value: Vec<T>) -> Self {
+        Self(value)
+    }
+}
+
+impl Constant for Tuple {
+    type Name = String;
+
+    fn contains_nan(&self) -> bool {
+        self.iter().any(Constant::contains_nan)
+    }
+
+    fn borrow_constant(&self) -> BorrowedConstant<'_, Self> {
+        todo!()
+    }
+
+    fn truthiness(&self) -> bool {
+        !self.is_empty()
+    }
+}
+
+impl<C> Deref for Tuple<C> {
+    type Target = Vec<C>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<C> DerefMut for Tuple<C> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+#[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct Integer(BigInt);
+
+impl Constant for Integer {
+    type Name = String;
+
+    fn contains_nan(&self) -> bool {
+        todo!()
+    }
+
+    fn borrow_constant(&self) -> BorrowedConstant<'_, Self> {
+        todo!()
+    }
+
+    fn truthiness(&self) -> bool {
+        !self.is_zero()
+    }
+}
+
+impl From<BigInt> for Integer {
+    fn from(value: BigInt) -> Self {
+        Self(value)
+    }
+}
+
+impl From<&Integer> for i32 {
+    fn from(value: &Integer) -> Self {
+        value.into()
+    }
+}
+
+impl Deref for Integer {
+    type Target = BigInt;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl fmt::Display for Integer {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct Frozenset<C = ConstantData>(Vec<C>);
+
+impl<T> FromIterator<T> for Frozenset<T> {
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = T>,
+    {
+        Self(iter.into_iter().collect())
+    }
+}
+
+impl<T> From<Vec<T>> for Frozenset<T> {
+    fn from(value: Vec<T>) -> Self {
+        Self(value)
+    }
+}
+
+impl<T> IntoIterator for Frozenset<T> {
+    type Item = T;
+    type IntoIter = alloc::vec::IntoIter<T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a Frozenset<T> {
+    type Item = &'a T;
+    type IntoIter = core::slice::Iter<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
+    }
+}
+
+impl Constant for Frozenset {
+    type Name = String;
+
+    fn contains_nan(&self) -> bool {
+        self.iter().any(Constant::contains_nan)
+    }
+
+    fn borrow_constant(&self) -> BorrowedConstant<'_, Self> {
+        todo!()
+    }
+
+    fn truthiness(&self) -> bool {
+        !self.is_empty()
+    }
+}
+
+impl<C> Deref for Frozenset<C> {
+    type Target = Vec<C>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<C> DerefMut for Frozenset<C> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+pub type CodeInner<C: Constant = ConstantData> = CodeObject<C>;
+
+#[derive(Clone, Debug)]
+pub struct Code<C: Constant = ConstantData>(Box<CodeInner<C>>)
+where
+    C::Name: Clone;
+
+impl PartialEq for Code {
+    fn eq(&self, other: &Self) -> bool {
+        core::ptr::eq(self.as_ref(), other.as_ref())
+    }
+}
+
+impl From<CodeObject> for Code {
+    fn from(value: CodeObject) -> Self {
+        Self(value.into())
+    }
+}
+
+impl Eq for Code {}
+
+impl Deref for Code {
+    type Target = Box<CodeObject>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }

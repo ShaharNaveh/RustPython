@@ -6,7 +6,7 @@
 extern crate alloc;
 
 pub mod bytecode;
-mod constant_data;
+pub mod constant_data;
 pub mod frozen;
 pub mod marshal;
 mod mode;

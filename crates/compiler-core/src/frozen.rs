@@ -33,7 +33,11 @@ impl<B: AsRef<[u8]>> FrozenCodeObject<B> {
 }
 
 impl FrozenCodeObject<Vec<u8>> {
-    pub fn encode<C: Constant>(code: &CodeObject<C>) -> Self {
+    pub fn encode<C>(code: &CodeObject<C>) -> Self
+    where
+        C: Constant,
+        <C as Constant>::Name: Clone,
+    {
         let mut data = Vec::new();
         marshal::serialize_code(&mut data, code);
         let bytes = lz4_flex::compress_prepend_size(&data);
