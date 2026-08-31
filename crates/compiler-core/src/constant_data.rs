@@ -112,7 +112,7 @@ where
     Complex(Complex),
     Boolean(bool),
     Str(&'a Wtf8),
-    Bytes(&'a BytesInner),
+    Bytes(&'a [u8]),
     Code(&'a CodeObject<C>),
     Tuple(&'a Tuple<C>),
     Slice(&'a Slice<C>),
@@ -441,10 +441,8 @@ impl Hash for Complex {
     }
 }
 
-pub type BytesInner = [u8];
-
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
-pub struct Bytes(Box<BytesInner>);
+pub struct Bytes(Vec<u8>);
 
 impl Constant for Bytes {
     type Name = String;
@@ -463,15 +461,18 @@ impl Constant for Bytes {
 }
 
 impl Deref for Bytes {
-    type Target = BytesInner;
+    type Target = Vec<u8>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl From<Vec<u8>> for Bytes {
-    fn from(value: Vec<u8>) -> Self {
+impl<T> From<T> for Bytes
+where
+    T: Into<Vec<u8>>,
+{
+    fn from(value: T) -> Self {
         Self(value.into())
     }
 }
@@ -595,9 +596,12 @@ impl Constant for Integer {
     }
 }
 
-impl From<BigInt> for Integer {
-    fn from(value: BigInt) -> Self {
-        Self(value)
+impl<T> From<T> for Integer
+where
+    T: Into<BigInt>,
+{
+    fn from(value: T) -> Self {
+        Self(value.into())
     }
 }
 

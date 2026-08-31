@@ -9,6 +9,7 @@ extern crate log;
 extern crate alloc;
 
 use alloc::{string::String, vec::Vec};
+use malachite_bigint::BigInt;
 use rustpython_compiler_core::bytecode::ConstantData;
 
 type IndexMap<K, V> = indexmap::IndexMap<K, V, rapidhash::quality::RandomState>;
@@ -65,34 +66,31 @@ pub(crate) fn constant_data_to_ast_constant_value(value: ConstantData) -> ast::C
 pub(crate) fn ast_constant_value_to_constant_data(value: ast::ConstantValue) -> ConstantData {
     match value {
         ast::ConstantValue::None => ConstantData::None,
-        ast::ConstantValue::Boolean(value) => ConstantData::Boolean { value },
-        ast::ConstantValue::Str(value) => ConstantData::Str {
-            value: value.to_string().into(),
-        },
-        ast::ConstantValue::Bytes(value) => ConstantData::Bytes {
-            value: value.into_vec(),
-        },
-        ast::ConstantValue::Integer(value) => ConstantData::Integer {
-            value: value
-                .parse()
-                .expect("RustPython ast.Constant integer values are decimal integers"),
-        },
-        ast::ConstantValue::Tuple(elements) => ConstantData::Tuple {
-            elements: elements
+        ast::ConstantValue::Boolean(value) => ConstantData::Boolean(value),
+        ast::ConstantValue::Str(value) => ConstantData::Str(value.to_string().into()),
+        ast::ConstantValue::Bytes(value) => ConstantData::Bytes(value.into()),
+        ast::ConstantValue::Integer(value) => ConstantData::Integer(
+            value
+                .parse::<BigInt>()
+                .expect("RustPython ast.Constant integer values are decimal integers")
+                .into(),
+        ),
+        ast::ConstantValue::Tuple(elements) => ConstantData::Tuple(
+            elements
                 .into_iter()
                 .map(ast_constant_value_to_constant_data)
                 .collect(),
-        },
-        ast::ConstantValue::Frozenset(elements) => ConstantData::Frozenset {
-            elements: elements
+        ),
+        ast::ConstantValue::Frozenset(elements) => ConstantData::Frozenset(
+            elements
                 .into_iter()
                 .map(ast_constant_value_to_constant_data)
                 .collect(),
-        },
-        ast::ConstantValue::Float(value) => ConstantData::Float { value },
-        ast::ConstantValue::Complex { real, imag } => ConstantData::Complex {
-            value: num_complex::Complex::new(real, imag),
-        },
+        ),
+        ast::ConstantValue::Float(value) => ConstantData::Float(value),
+        ast::ConstantValue::Complex { real, imag } => {
+            ConstantData::Complex(num_complex::Complex::new(real, imag).into())
+        }
         ast::ConstantValue::Ellipsis => ConstantData::Ellipsis,
     }
 }

@@ -9,7 +9,7 @@ use rustpython_wtf8::Wtf8;
 use crate::{
     OneIndexed, SourceLocation,
     bytecode::*,
-    constant_data::{BytesInner, Complex, Frozenset, Integer, Slice, Tuple},
+    constant_data::{Complex, Frozenset, Integer, Slice, Tuple},
 };
 
 pub const FORMAT_VERSION: u32 = 5;
@@ -1295,7 +1295,7 @@ pub enum DumpableValue<'a, D: Dumpable> {
     Complex(Complex),
     Boolean(bool),
     Str(&'a Wtf8),
-    Bytes(&'a BytesInner),
+    Bytes(&'a [u8]),
     Code(&'a CodeObject<D::Constant>),
     Tuple(&'a Tuple<D>),
     None,
@@ -1937,7 +1937,7 @@ mod tests {
         let bytes = hex_to_bytes(hex);
         let value = deserialize_value(&mut &bytes[..], BasicBag).expect("decode failed");
         match value {
-            ConstantData::Code(code) => code,
+            ConstantData::Code(code) => *code,
             other => panic!("expected Code, got {other:?}"),
         }
     }
@@ -1972,7 +1972,7 @@ mod tests {
         let consts: &[ConstantData] = &code.constants;
         assert!(matches!(
             consts[0],
-            ConstantData::Integer { ref value } if *value == 1.into(),
+            ConstantData::Integer ( ref value ) if *value == 1.into(),
         ));
         assert!(matches!(consts[1], ConstantData::None));
     }
@@ -1997,7 +1997,7 @@ mod tests {
         // Inner code, "hello", None
         let consts: &[ConstantData] = &code.constants;
         let inner = match &consts[0] {
-            ConstantData::Code { code } => code,
+            ConstantData::Code(code) => code,
             other => panic!("expected nested Code, got {other:?}"),
         };
         assert_eq!(inner.obj_name.as_str(), "add");
@@ -2008,7 +2008,7 @@ mod tests {
         assert_eq!(inner.varnames[1].as_str(), "b");
         assert!(matches!(
             consts[1],
-            ConstantData::Str { ref value } if value.as_str().ok() == Some("hello"),
+            ConstantData::Str ( ref value ) if value.as_str().ok() == Some("hello"),
         ));
         assert!(matches!(consts[2], ConstantData::None));
     }
@@ -2025,7 +2025,7 @@ mod tests {
         let tuple = decode_tuple(hex);
         assert_eq!(tuple.len(), 1);
         let code = match &tuple[0] {
-            ConstantData::Code { code } => code,
+            ConstantData::Code(code) => code,
             other => panic!("expected nested Code, got {other:?}"),
         };
         assert_eq!(code.obj_name.as_str(), "<module>");

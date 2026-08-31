@@ -26,10 +26,7 @@ impl<B: AsRef<[u8]>> FrozenCodeObject<B> {
         Self::_decode(self.bytes.as_ref(), bag.as_bag())
     }
 
-    fn _decode<Bag>(data: &[u8], bag: Bag) -> CodeObject<Bag::Constant>
-    where
-        Bag: ConstantBag, //+ fmt::Debug,
-    {
+    fn _decode<Bag: ConstantBag>(data: &[u8], bag: Bag) -> CodeObject<Bag::Constant> {
         let decompressed = lz4_flex::decompress_size_prepended(data)
             .expect("deserialize frozen CodeObject failed");
         marshal::deserialize_code(&mut &decompressed[..], bag)
