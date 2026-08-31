@@ -4,6 +4,7 @@ use core::{
     hash::{Hash, Hasher},
     mem,
     ops::{Deref, DerefMut, Index, IndexMut},
+    ptr,
 };
 
 use malachite_bigint::BigInt;
@@ -43,7 +44,7 @@ pub trait Constant: Sized + Clone {
 /// let b = ConstantData::Boolean {value: false};
 /// assert_ne!(a, b);
 /// ```
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub enum ConstantData {
     Tuple(Tuple),
     Integer(Integer),
@@ -52,11 +53,31 @@ pub enum ConstantData {
     Boolean(bool),
     Str(Wtf8Buf),
     Bytes(Bytes),
-    Code(Code),
+    Code(Box<CodeObject>),
     Slice(Box<Slice>),
     Frozenset(Frozenset),
     None,
     Ellipsis,
+}
+
+impl PartialEq for ConstantData {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Tuple(a), Self::Tuple(b)) => a == b,
+            (Self::Integer(a), Self::Integer(b)) => a == b,
+            (Self::Float(a), Self::Float(b)) => a.to_bits() == b.to_bits(),
+            (Self::Complex(a), Self::Complex(b)) => a == b,
+            (Self::Boolean(a), Self::Boolean(b)) => a == b,
+            (Self::Str(a), Self::Str(b)) => a == b,
+            (Self::Bytes(a), Self::Bytes(b)) => a == b,
+            (Self::Code(a), Self::Code(b)) => ptr::eq(a.as_ref(), b.as_ref()),
+            (Self::Slice(a), Self::Slice(b)) => a == b,
+            (Self::Frozenset(a), Self::Frozenset(b)) => a == b,
+            (Self::None, Self::None) => true,
+            (Self::Ellipsis, Self::Ellipsis) => true,
+            (_, _) => false,
+        }
+    }
 }
 
 impl Eq for ConstantData {}
@@ -89,7 +110,7 @@ pub enum BorrowedConstant<'a, C: Constant> {
     Boolean(bool),
     Str(&'a Wtf8),
     Bytes(&'a BytesInner),
-    Code(&'a CodeInner<C>),
+    Code(&'a CodeObject<C>),
     Tuple(&'a Tuple<C>),
     Slice(&'a Slice<C>),
     Frozenset(&'a Frozenset<C>),
@@ -105,7 +126,7 @@ impl<C: Constant> Clone for BorrowedConstant<'_, C> {
     }
 }
 
-impl<C: Constant> BorrowedConstant<'_, C> {
+impl<C: Constant + fmt::Debug> BorrowedConstant<'_, C> {
     pub fn fmt_display(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             BorrowedConstant::Integer(value) => write!(f, "{value}"),
@@ -642,34 +663,5 @@ impl<C> Deref for Frozenset<C> {
 impl<C> DerefMut for Frozenset<C> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
-    }
-}
-
-pub type CodeInner<C: Constant = ConstantData> = CodeObject<C>;
-
-#[derive(Clone, Debug)]
-pub struct Code<C: Constant = ConstantData>(Box<CodeInner<C>>)
-where
-    C::Name: Clone;
-
-impl PartialEq for Code {
-    fn eq(&self, other: &Self) -> bool {
-        core::ptr::eq(self.as_ref(), other.as_ref())
-    }
-}
-
-impl From<CodeObject> for Code {
-    fn from(value: CodeObject) -> Self {
-        Self(value.into())
-    }
-}
-
-impl Eq for Code {}
-
-impl Deref for Code {
-    type Target = Box<CodeObject>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
     }
 }

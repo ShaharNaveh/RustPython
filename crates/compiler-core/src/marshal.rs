@@ -9,7 +9,7 @@ use rustpython_wtf8::Wtf8;
 use crate::{
     OneIndexed, SourceLocation,
     bytecode::*,
-    constant_data::{BytesInner, CodeInner, Complex, Frozenset, Integer, Slice, Tuple},
+    constant_data::{BytesInner, Complex, Frozenset, Integer, Slice, Tuple},
 };
 
 pub const FORMAT_VERSION: u32 = 5;
@@ -1258,7 +1258,7 @@ pub enum DumpableValue<'a, D: Dumpable> {
     Boolean(bool),
     Str(&'a Wtf8),
     Bytes(&'a BytesInner),
-    Code(&'a CodeInner<D::Constant>),
+    Code(&'a CodeObject<D::Constant>),
     Tuple(&'a Tuple<D>),
     None,
     Ellipsis,
@@ -1903,7 +1903,7 @@ mod tests {
         let bytes = hex_to_bytes(hex);
         let value = deserialize_value(&mut &bytes[..], BasicBag).expect("decode failed");
         match value {
-            ConstantData::Code { code } => *code,
+            ConstantData::Code(code) => code,
             other => panic!("expected Code, got {other:?}"),
         }
     }
