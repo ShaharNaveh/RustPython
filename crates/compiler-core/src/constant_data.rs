@@ -103,7 +103,10 @@ impl Hash for ConstantData {
 }
 
 /// A borrowed [`Constant`].
-pub enum BorrowedConstant<'a, C: Constant> {
+pub enum BorrowedConstant<'a, C>
+where
+    C: Constant,
+{
     Integer(&'a Integer),
     Float(f64),
     Complex(Complex),
@@ -118,15 +121,21 @@ pub enum BorrowedConstant<'a, C: Constant> {
     Ellipsis,
 }
 
-impl<C: Constant> Copy for BorrowedConstant<'_, C> {}
+impl<C> Copy for BorrowedConstant<'_, C> where C: Constant {}
 
-impl<C: Constant> Clone for BorrowedConstant<'_, C> {
+impl<C> Clone for BorrowedConstant<'_, C>
+where
+    C: Constant,
+{
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<C: Constant + fmt::Debug> BorrowedConstant<'_, C> {
+impl<C> BorrowedConstant<'_, C>
+where
+    C: Constant + fmt::Debug,
+{
     pub fn fmt_display(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             BorrowedConstant::Integer(value) => write!(f, "{value}"),
@@ -177,7 +186,12 @@ impl<C: Constant + fmt::Debug> BorrowedConstant<'_, C> {
             BorrowedConstant::Ellipsis => write!(f, "..."),
         }
     }
+}
 
+impl<C> BorrowedConstant<'_, C>
+where
+    C: Constant,
+{
     #[must_use]
     pub fn to_owned(self) -> ConstantData {
         match self {
@@ -260,11 +274,15 @@ impl Constant for ConstantData {
 pub trait ConstantBag: Sized + Copy {
     type Constant: Constant;
 
-    fn make_constant<C: Constant>(&self, constant: BorrowedConstant<'_, C>) -> Self::Constant;
+    fn make_constant<C>(&self, constant: BorrowedConstant<'_, C>) -> Self::Constant
+    where
+        C: Constant;
 
     fn make_int(&self, value: BigInt) -> Self::Constant;
 
-    fn make_tuple(&self, elements: impl Iterator<Item = Self::Constant>) -> Self::Constant;
+    fn make_tuple<I>(&self, elements: I) -> Self::Constant
+    where
+        I: Iterator<Item = Self::Constant>;
 
     fn make_code(&self, code: CodeObject<Self::Constant>) -> Self::Constant;
 
@@ -293,14 +311,17 @@ impl ConstantBag for BasicBag {
     type Constant = ConstantData;
 
     fn make_constant<C: Constant>(&self, constant: BorrowedConstant<'_, C>) -> Self::Constant {
-        constant.to_owned()
+        BorrowedConstant::to_owned(constant)
     }
 
     fn make_int(&self, value: BigInt) -> Self::Constant {
         ConstantData::Integer(value.into())
     }
 
-    fn make_tuple(&self, elements: impl Iterator<Item = Self::Constant>) -> Self::Constant {
+    fn make_tuple<I>(&self, elements: I) -> Self::Constant
+    where
+        I: Iterator<Item = Self::Constant>,
+    {
         ConstantData::Tuple(elements.collect())
     }
 

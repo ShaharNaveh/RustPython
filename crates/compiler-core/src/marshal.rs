@@ -1,5 +1,5 @@
 use alloc::{boxed::Box, vec::Vec};
-use core::convert::Infallible;
+use core::{convert::Infallible, fmt};
 
 use malachite_bigint::{BigInt, Sign};
 use num_complex::Complex64;
@@ -226,10 +226,12 @@ impl<B: AsRef<[u8]>> Read for Cursor<B> {
 }
 
 /// Deserialize a code object (CPython field order).
-pub fn deserialize_code<R: Read, Bag: ConstantBag>(
-    rdr: &mut R,
-    bag: Bag,
-) -> Result<CodeObject<Bag::Constant>> {
+pub fn deserialize_code<R, Bag>(rdr: &mut R, bag: Bag) -> Result<CodeObject<Bag::Constant>>
+where
+    R: Read,
+    Bag: ConstantBag,
+    // <Bag as ConstantBag>::Constant: fmt::Debug,
+{
     let mut refs: Vec<Option<Bag::Constant>> = Vec::new();
     deserialize_code_inner(rdr, bag, MAX_MARSHAL_STACK_DEPTH, &mut refs)
 }
@@ -237,12 +239,17 @@ pub fn deserialize_code<R: Read, Bag: ConstantBag>(
 /// Inner code-object deserializer that shares a ref table with caller.
 /// Used when decoding a code object embedded in another marshal stream so
 /// that TYPE_REF entries inside the code can resolve across nested values.
-fn deserialize_code_inner<R: Read, Bag: ConstantBag>(
+fn deserialize_code_inner<R, Bag>(
     rdr: &mut R,
     bag: Bag,
     depth: usize,
     refs: &mut Vec<Option<Bag::Constant>>,
-) -> Result<CodeObject<Bag::Constant>> {
+) -> Result<CodeObject<Bag::Constant>>
+where
+    R: Read,
+    Bag: ConstantBag,
+    // <Bag as ConstantBag>::Constant: fmt::Debug,
+{
     if depth == 0 {
         return Err(MarshalError::InvalidBytecode);
     }
@@ -347,11 +354,16 @@ fn resolve_ref<T: Clone>(idx: usize, refs: &[Option<T>]) -> Result<T> {
 
 /// Read a marshal bytes object (TYPE_STRING = b's'), resolving TYPE_REF
 /// and registering this read in the ref table when `FLAG_REF` is set.
-fn read_marshal_bytes<R: Read, Bag: ConstantBag>(
+fn read_marshal_bytes<R, Bag>(
     rdr: &mut R,
     bag: &Bag,
     refs: &mut Vec<Option<Bag::Constant>>,
-) -> Result<Vec<u8>> {
+) -> Result<Vec<u8>>
+where
+    R: Read,
+    Bag: ConstantBag,
+    // <Bag as ConstantBag>::Constant: fmt::Debug,
+{
     let raw = rdr.read_u8()?;
     let type_byte = raw & !FLAG_REF;
     let has_flag = raw & FLAG_REF != 0;
@@ -380,11 +392,16 @@ fn read_marshal_bytes<R: Read, Bag: ConstantBag>(
 
 /// Read a marshal string object, resolving TYPE_REF and registering
 /// this read in the ref table when `FLAG_REF` is set.
-fn read_marshal_str<R: Read, Bag: ConstantBag>(
+fn read_marshal_str<R, Bag>(
     rdr: &mut R,
     bag: &Bag,
     refs: &mut Vec<Option<Bag::Constant>>,
-) -> Result<alloc::string::String> {
+) -> Result<alloc::string::String>
+where
+    R: Read,
+    Bag: ConstantBag,
+    // <Bag as ConstantBag>::Constant: fmt::Debug,
+{
     let raw = rdr.read_u8()?;
     let type_byte = raw & !FLAG_REF;
     let has_flag = raw & FLAG_REF != 0;
@@ -419,11 +436,16 @@ fn read_marshal_str<R: Read, Bag: ConstantBag>(
 }
 
 /// Read a marshal tuple of strings, returning owned Strings.
-fn read_marshal_str_vec<R: Read, Bag: ConstantBag>(
+fn read_marshal_str_vec<R, Bag>(
     rdr: &mut R,
     bag: &Bag,
     refs: &mut Vec<Option<Bag::Constant>>,
-) -> Result<Vec<alloc::string::String>> {
+) -> Result<Vec<alloc::string::String>>
+where
+    R: Read,
+    Bag: ConstantBag,
+    // <Bag as ConstantBag>::Constant: fmt::Debug,
+{
     let raw = rdr.read_u8()?;
     let type_byte = raw & !FLAG_REF;
     let has_flag = raw & FLAG_REF != 0;
@@ -465,11 +487,16 @@ fn read_marshal_str_vec<R: Read, Bag: ConstantBag>(
     Ok(items)
 }
 
-fn read_marshal_name_tuple<R: Read, Bag: ConstantBag>(
+fn read_marshal_name_tuple<R, Bag>(
     rdr: &mut R,
     bag: &Bag,
     refs: &mut Vec<Option<Bag::Constant>>,
-) -> Result<Box<[<Bag::Constant as Constant>::Name]>> {
+) -> Result<Box<[<Bag::Constant as Constant>::Name]>>
+where
+    R: Read,
+    Bag: ConstantBag,
+    // <Bag as ConstantBag>::Constant: fmt::Debug,
+{
     let names = read_marshal_str_vec(rdr, bag, refs)?;
     Ok(names
         .iter()
@@ -481,12 +508,17 @@ fn read_marshal_name_tuple<R: Read, Bag: ConstantBag>(
 /// Read a marshal tuple of constants. Shares the ref table with the
 /// surrounding code-object decode so that nested TYPE_REF entries (for
 /// strings, bytes, code objects, etc.) resolve correctly.
-fn read_marshal_const_tuple<R: Read, Bag: ConstantBag>(
+fn read_marshal_const_tuple<R, Bag>(
     rdr: &mut R,
     bag: Bag,
     depth: usize,
     refs: &mut Vec<Option<Bag::Constant>>,
-) -> Result<Constants<Bag::Constant>> {
+) -> Result<Constants<Bag::Constant>>
+where
+    R: Read,
+    Bag: ConstantBag,
+    // <Bag as ConstantBag>::Constant: fmt::Debug,
+{
     if depth == 0 {
         return Err(MarshalError::InvalidBytecode);
     }
@@ -526,12 +558,17 @@ fn read_marshal_const_tuple<R: Read, Bag: ConstantBag>(
 /// here reuses the caller's ref table instead of opening a fresh one —
 /// this matches CPython's single global ref space for objects nested
 /// inside a code object's const tuple.
-fn read_const_value<R: Read, Bag: ConstantBag>(
+fn read_const_value<R, Bag>(
     rdr: &mut R,
     bag: Bag,
     depth: usize,
     refs: &mut Vec<Option<Bag::Constant>>,
-) -> Result<Bag::Constant> {
+) -> Result<Bag::Constant>
+where
+    R: Read,
+    Bag: ConstantBag,
+    // <Bag as ConstantBag>::Constant: fmt::Debug,
+{
     if depth == 0 {
         return Err(MarshalError::InvalidBytecode);
     }
@@ -736,6 +773,7 @@ pub trait MarshalBag: Copy {
 impl<Bag> MarshalBag for Bag
 where
     Bag: ConstantBag,
+    // <Bag as ConstantBag>::Constant: fmt::Debug,
 {
     type Value = Bag::Constant;
     type ConstantBag = Self;
@@ -1246,7 +1284,7 @@ fn deserialize_value_typed<R: Read, Bag: MarshalBag>(
 
 pub trait Dumpable: Sized {
     type Error;
-    type Constant: Constant;
+    type Constant: Constant + fmt::Debug;
 
     fn with_dump<R>(&self, f: impl FnOnce(DumpableValue<'_, Self>) -> R) -> Result<R, Self::Error>;
 }
@@ -1272,8 +1310,7 @@ pub enum DumpableValue<'a, D: Dumpable> {
 
 impl<'a, C> From<BorrowedConstant<'a, C>> for DumpableValue<'a, C>
 where
-    C: Constant,
-    <C as Constant>::Name: Clone,
+    C: Constant + fmt::Debug,
 {
     fn from(c: BorrowedConstant<'a, C>) -> Self {
         match c {
@@ -1295,8 +1332,7 @@ where
 
 impl<C> Dumpable for C
 where
-    C: Constant,
-    <C as Constant>::Name: Clone,
+    C: Constant + fmt::Debug,
 {
     type Error = Infallible;
     type Constant = Self;
@@ -1349,7 +1385,6 @@ pub fn serialize_value<W, D>(buf: &mut W, constant: DumpableValue<'_, D>) -> Res
 where
     W: Write,
     D: Dumpable,
-    <<D as Dumpable>::Constant as Constant>::Name: Clone,
 {
     match constant {
         DumpableValue::Integer(int) => {
@@ -1471,8 +1506,7 @@ where
 pub fn serialize_code<W, C>(buf: &mut W, code: &CodeObject<C>)
 where
     W: Write,
-    C: Constant,
-    <C as Constant>::Name: Clone,
+    C: Constant + fmt::Debug,
 {
     serialize_code_with(buf, code, |buf, constant| {
         serialize_value(buf, constant.borrow_constant().into()).unwrap_or_else(|x| match x {});

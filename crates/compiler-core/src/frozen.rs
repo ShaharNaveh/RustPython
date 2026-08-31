@@ -1,4 +1,5 @@
 use alloc::vec::Vec;
+use core::fmt;
 
 use crate::{
     bytecode::CodeObject,
@@ -24,7 +25,11 @@ impl<B: AsRef<[u8]>> FrozenCodeObject<B> {
     pub fn decode<Bag: AsBag>(&self, bag: Bag) -> CodeObject<<Bag::Bag as ConstantBag>::Constant> {
         Self::_decode(self.bytes.as_ref(), bag.as_bag())
     }
-    fn _decode<Bag: ConstantBag>(data: &[u8], bag: Bag) -> CodeObject<Bag::Constant> {
+
+    fn _decode<Bag>(data: &[u8], bag: Bag) -> CodeObject<Bag::Constant>
+    where
+        Bag: ConstantBag, //+ fmt::Debug,
+    {
         let decompressed = lz4_flex::decompress_size_prepended(data)
             .expect("deserialize frozen CodeObject failed");
         marshal::deserialize_code(&mut &decompressed[..], bag)
@@ -35,8 +40,7 @@ impl<B: AsRef<[u8]>> FrozenCodeObject<B> {
 impl FrozenCodeObject<Vec<u8>> {
     pub fn encode<C>(code: &CodeObject<C>) -> Self
     where
-        C: Constant,
-        <C as Constant>::Name: Clone,
+        C: Constant + fmt::Debug,
     {
         let mut data = Vec::new();
         marshal::serialize_code(&mut data, code);
